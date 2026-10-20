@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bye1ynj8eemii"]
 
 [ext_resource type="Script" uid="uid://cw0h7mjrhxr0h" path="res://scripts/menu.gd" id="1_menu"]
+[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="2_vjb58"]
 
 [node name="Menu" type="Node2D" unique_id=2110260203]
 script = ExtResource("1_menu")
@@ -28,3 +29,8 @@ gizmo_extents = 24.0
 [node name="Terreno" type="Marker2D" parent="." unique_id=268393638]
 position = Vector2(640, 600)
 gizmo_extents = 24.0
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=770449329]
+stream = ExtResource("2_vjb58")
+autoplay = true
+parameters/looping = true

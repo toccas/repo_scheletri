@@ -1,26 +1,32 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://d0bjd6637t3y"]
 
-[ext_resource type="Script" path="res://scripts/research.gd" id="1_research"]
+[ext_resource type="Script" uid="uid://4h3057xax748" path="res://scripts/research.gd" id="1_research"]
+[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="2_tlfbc"]
 
-[node name="Research" type="Node2D"]
+[node name="Research" type="Node2D" unique_id=381155078]
 script = ExtResource("1_research")
 
-[node name="Titolo" type="Marker2D" parent="."]
+[node name="Titolo" type="Marker2D" parent="." unique_id=2116188310]
 position = Vector2(640, 30)
 gizmo_extents = 24.0
 
-[node name="Indietro" type="Marker2D" parent="."]
+[node name="Indietro" type="Marker2D" parent="." unique_id=1002501591]
 position = Vector2(36, 42)
 gizmo_extents = 24.0
 
-[node name="Punti" type="Marker2D" parent="."]
+[node name="Punti" type="Marker2D" parent="." unique_id=67348157]
 position = Vector2(1244, 34)
 gizmo_extents = 24.0
 
-[node name="Albero" type="Marker2D" parent="."]
+[node name="Albero" type="Marker2D" parent="." unique_id=918413540]
 position = Vector2(128, 160)
 gizmo_extents = 24.0
 
-[node name="Dettagli" type="Marker2D" parent="."]
+[node name="Dettagli" type="Marker2D" parent="." unique_id=840191005]
 position = Vector2(104, 486)
 gizmo_extents = 24.0
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1217660935]
+stream = ExtResource("2_tlfbc")
+autoplay = true
+parameters/looping = true

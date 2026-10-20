@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://tyfnklxod1vh" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://wer22jpyh1wk" path="res://scripts/layout_marker.gd" id="2_marker"]
+[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="4_jyhfs"]
 
 [node name="Main" type="Node2D" unique_id=131095228]
 script = ExtResource("1_main")
@@ -20,3 +21,8 @@ position = Vector2(199, 577)
 gizmo_extents = 20.0
 script = ExtResource("2_marker")
 tipo = 1
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1602212194]
+stream = ExtResource("4_jyhfs")
+autoplay = true
+parameters/looping = true
