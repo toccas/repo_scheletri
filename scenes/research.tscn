@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/research.gd" id="1_research"]
+
+[node name="Research" type="Node2D"]
+script = ExtResource("1_research")
+
+[node name="Titolo" type="Marker2D" parent="."]
+position = Vector2(640, 30)
+gizmo_extents = 24.0
+
+[node name="Indietro" type="Marker2D" parent="."]
+position = Vector2(36, 42)
+gizmo_extents = 24.0
+
+[node name="Punti" type="Marker2D" parent="."]
+position = Vector2(1244, 34)
+gizmo_extents = 24.0
+
+[node name="Albero" type="Marker2D" parent="."]
+position = Vector2(128, 160)
+gizmo_extents = 24.0
+
+[node name="Dettagli" type="Marker2D" parent="."]
+position = Vector2(104, 486)
+gizmo_extents = 24.0

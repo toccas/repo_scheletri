@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://bye1ynj8eemii"]
+
+[ext_resource type="Script" uid="uid://cw0h7mjrhxr0h" path="res://scripts/menu.gd" id="1_menu"]
+
+[node name="Menu" type="Node2D" unique_id=2110260203]
+script = ExtResource("1_menu")
+
+[node name="Titolo" type="Marker2D" parent="." unique_id=60678374]
+position = Vector2(640, 70)
+gizmo_extents = 24.0
+
+[node name="Voci" type="Marker2D" parent="." unique_id=1469225168]
+position = Vector2(640, 330)
+gizmo_extents = 24.0
+
+[node name="Torre" type="Marker2D" parent="." unique_id=1535159584]
+position = Vector2(152, 653)
+gizmo_extents = 24.0
+
+[node name="Luna" type="Marker2D" parent="." unique_id=208949767]
+position = Vector2(1136, 168)
+gizmo_extents = 24.0
+
+[node name="Albero" type="Marker2D" parent="." unique_id=381184418]
+position = Vector2(1160, 600)
+gizmo_extents = 24.0
+
+[node name="Terreno" type="Marker2D" parent="." unique_id=268393638]
+position = Vector2(640, 600)
+gizmo_extents = 24.0

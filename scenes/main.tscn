@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://c6j11ieushd3v"]
+
+[ext_resource type="Script" uid="uid://tyfnklxod1vh" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="2_0wfyh"]
+[ext_resource type="Script" uid="uid://wer22jpyh1wk" path="res://scripts/layout_marker.gd" id="2_marker"]
+
+[node name="Main" type="Node2D" unique_id=131095228]
+script = ExtResource("1_main")
+tema_ui = ExtResource("2_0wfyh")
+arciere_gittata = 90.0
+mago_gittata = 65.0
+
+[node name="Griglia" type="Marker2D" parent="." unique_id=1689771535]
+position = Vector2(266, 243)
+gizmo_extents = 20.0
+script = ExtResource("2_marker")
+
+[node name="Torre" type="Marker2D" parent="." unique_id=219738757]
+position = Vector2(199, 577)
+gizmo_extents = 20.0
+script = ExtResource("2_marker")
+tipo = 1
