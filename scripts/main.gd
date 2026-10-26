@@ -23,6 +23,11 @@ const UnitScript := preload("res://scripts/unit.gd")
 const ProjectileScript := preload("res://scripts/projectile.gd")
 const FxScript := preload("res://scripts/fx.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const Collezione := preload("res://scripts/collezione.gd")
+const AURA_RADIUS := 40.0  # raggio dell'aura del totem
+const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
+const RAISE_MAX := 3
+const RAISE_LIFE := 14.0
 const ATLAS := preload("res://assets/sprites.png")
 # grafica 3D del campo (generata da make_campo_art.py, stesso stile del menu)
 const TEX_SKY := preload("res://assets/campo/cielo.png")
@@ -234,7 +239,11 @@ var autotest := false
 
 # Effetti dell'albero delle ricerche (vedi _apply_research)
 var max_deploy := MAX_DEPLOY
-var unlocked_units: Array = ["soldato"]
+var unlocked_units: Array = ["soldato"]  # la squadra della run (scelta in preparazione)
+var unit_ranks := {}  # rango di ogni unità della collezione
+var role_bonus := {}  # bonus delle ricerche per ruolo: {"dmg_corpo": 0.12, ...}
+var clouds: Array = []  # nubi di peste: {p, t, dps}
+var scrolls_earned := 0
 var unlocked_abilities: Array = []
 var xp_mult := 1.0
 var ability_cd_mult := 1.0
@@ -413,10 +422,20 @@ func _apply_research() -> void:
 	mods["ally_dmg"] *= 1.0 + b.get("ally_dmg", 0.0)
 	mods["ally_hp"] *= 1.0 + b.get("ally_hp", 0.0)
 	max_deploy = MAX_DEPLOY + int(b.get("deploy", 0.0))
-	unlocked_units = ["soldato"]
-	for k in Data.UNIT_ORDER:
-		if b.has("unlock_" + k):
-			unlocked_units.append(k)
+	# squadra della run: le 4 unità scelte nella preparazione (collezione salvata)
+	var col := Collezione.load_state()
+	unit_ranks = col["owned"]
+	unlocked_units = col["squad"].duplicate()
+	if "--autotest" in args:
+		unlocked_units = Data.STARTING_UNITS.duplicate()
+		unit_ranks = {}
+		for a in args:
+			if a.begins_with("--squadra="):
+				unlocked_units = Array(a.substr(10).split(","))
+	for k in b:
+		if k.begins_with("dmg_") or k.begins_with("hp_"):
+			role_bonus[k] = b[k]
+	print("[squadra] unità della run: ", unlocked_units)
 	unlocked_abilities = []
 	for k in Data.ABILITY_ORDER:
 		if b.has("unlock_" + k):
@@ -491,6 +510,7 @@ func _process(delta: float) -> void:
 			ability_cd[k] = maxf(0.0, ability_cd[k] - delta)
 		_process_waves(delta)
 		_process_necro(delta)
+		_update_clouds(delta)
 		if autotest:
 			_autotest_cast()
 	_update_hud()
@@ -515,6 +535,11 @@ func _process_waves(delta: float) -> void:
 			next_wave_timer = 3.0
 			_revive_squads()
 			set_hint("Ondata %d superata! Il necromante rianima i caduti." % wave, 2.5)
+			if wave % Data.WAVES_PER_SCROLL == 0:
+				scrolls_earned += 1
+				if not autotest:
+					Collezione.add_scrolls(1)
+				set_hint("Ondata %d superata: hai ottenuto una PERGAMENA! Aprila nel portale." % wave, 4.0)
 	else:
 		next_wave_timer -= delta
 		if next_wave_timer <= 0.0:
@@ -641,8 +666,7 @@ func spawn_unit_fx(g: Vector2, kind: String, lift: float, dir: float = 1.0, life
 func unit_icon(kind: String, size: int = 48) -> Texture2D:
 	var key := "%s_%d" % [kind, size]
 	if not _icon_cache.has(key):
-		var col: int = UnitScript.ATLAS_COL[kind]
-		var img := ATLAS.get_image().get_region(Rect2i(col * 16, 0, 16, 16))
+		var img := Data.ally_texture(kind).get_image().get_region(Rect2i(Data.ally_region(kind)))
 		img.resize(size, size, Image.INTERPOLATE_NEAREST)
 		_icon_cache[key] = ImageTexture.create_from_image(img)
 	return _icon_cache[key]
@@ -673,6 +697,7 @@ func damage_tower(amount: float) -> void:
 
 func on_enemy_killed(u) -> void:
 	kills += 1
+	_try_raise(u)
 	necro_xp += u.xp_value * xp_mult
 	while necro_xp >= necro_xp_next:
 		necro_xp -= necro_xp_next
@@ -740,15 +765,92 @@ func _remove_squad(idx: int) -> void:
 
 
 ## Statistiche base di uno scheletro, prese dall'Inspector del nodo Main.
+## Le quattro unità di base usano i valori dell'Inspector; le altre quelli di
+## game_data.gd. Il rango (doppioni delle pergamene) aumenta vita e danno.
 func ally_stats(kind: String) -> Dictionary:
-	var st := {
-		"hp": get(kind + "_vita"),
-		"dmg": get(kind + "_attacco"),
-		"cooldown": 1.0 / maxf(0.01, get(kind + "_velocita_attacco")),
-	}
-	if not Data.UNITS[kind]["melee"]:
-		st["range"] = get(kind + "_gittata")
+	var d: Dictionary = Data.UNITS[kind]
+	var st := {"hp": d["hp"], "dmg": d["dmg"], "cooldown": d["cooldown"], "range": d["range"]}
+	if get(kind + "_vita") != null:
+		st["hp"] = get(kind + "_vita")
+		st["dmg"] = get(kind + "_attacco")
+		st["cooldown"] = 1.0 / maxf(0.01, get(kind + "_velocita_attacco"))
+		if not d["melee"]:
+			st["range"] = get(kind + "_gittata")
+	var rank: int = unit_ranks.get(kind, 1)
+	var rm := Collezione.rank_mult(rank)
+	st["hp"] *= rm * (1.0 + role_bonus.get("hp_" + d["role"], 0.0))
+	st["dmg"] *= rm
+	st["rank"] = rank
 	return st
+
+
+## Bonus delle ricerche per ruolo (es. role_mult("distanza", "dmg")).
+func role_mult(role: String, stat: String) -> float:
+	return 1.0 + role_bonus.get(stat + "_" + role, 0.0)
+
+
+## +25% danni e velocità d'attacco vicino a un totem d'ossa.
+func aura_bonus(u) -> float:
+	if u.special == "aura":
+		return 1.0
+	for c in allies_root.get_children():
+		if c.special == "aura" and not c.dead and c.visible and c.ground.distance_to(u.ground) <= AURA_RADIUS:
+			return 1.25
+	return 1.0
+
+
+## Lo scheletro che provoca (scudiero, muro d'ossa) più vicino, entro `dist`.
+func nearest_taunter(from: Vector2, dist: float):
+	var best = null
+	var best_d := dist
+	for c in allies_root.get_children():
+		if c.dead or not c.visible or c.entering or not (c.special == "provoca" or c.special == "muro"):
+			continue
+		var d := from.distance_to(c.ground)
+		if d <= best_d:
+			best_d = d
+			best = c
+	return best
+
+
+## Nube di peste: avvelena (danno nel tempo) e rallenta i nemici dentro.
+func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1) -> void:
+	clouds.append({"p": g, "t": 3.0, "dps": dps})
+
+
+func _update_clouds(delta: float) -> void:
+	for cl in clouds:
+		cl["t"] -= delta
+		for c in enemies_root.get_children():
+			if not c.dead and c.ground.distance_to(cl["p"]) <= 16.0 + c.radius:
+				c.poison(cl["dps"] * delta)
+				c.slow_t = 0.4
+				c.slow_k = 0.3
+	clouds = clouds.filter(func(cl): return cl["t"] > 0.0)
+
+
+## Il negromante minore rialza come scheletro un nemico morto vicino a lui.
+func _try_raise(dead_enemy) -> void:
+	for n in allies_root.get_children():
+		if n.special != "rianima" or n.dead or n.ground.distance_to(dead_enemy.ground) > RAISE_RADIUS:
+			continue
+		var active := 0
+		for m in allies_root.get_children():
+			if m.summoner == n and not m.dead:
+				active += 1
+		if active >= RAISE_MAX:
+			continue
+		var u := UnitScript.new()
+		u.game = self
+		u.setup_ally("soldato", mods["ally_hp"] * 0.6, ally_stats("soldato"))
+		u.ground = dead_enemy.ground
+		u.home = dead_enemy.ground
+		u.life_left = RAISE_LIFE
+		u.summoner = n
+		allies_root.add_child(u)
+		spawn_ground_fx(u.ground, 6.0, C6, 0.4)
+		spawn_unit_fx(u.ground, "spark", 6.0, 1.0, 0.3)
+		return
 
 
 func is_ranged(kind: String) -> bool:
@@ -782,8 +884,8 @@ func _open_unit_picker(idx: int) -> void:
 		Vector2(c.x - size.x / 2.0, cell_rect.end.y + gap),  # sotto
 		Vector2(cell_rect.position.x - size.x - gap, c.y - size.y / 2.0),  # sinistra
 	]
-	for i in Data.UNIT_ORDER.size():
-		var k: String = Data.UNIT_ORDER[i]
+	for i in unlocked_units.size():
+		var k: String = unlocked_units[i]
 		var p: Vector2 = spots[i % spots.size()]
 		p.x = clampf(p.x, 8.0, vp.x - size.x - 8.0)
 		p.y = clampf(p.y, UI_TOP + 8.0, vp.y - size.y - 8.0)
@@ -820,10 +922,11 @@ func _draw_unit_tomb(b: Button, k: String, i: int) -> void:
 	var hot := picker_hover == k and not locked
 	var r := Rect2(Vector2(0, -4 if hot else 0), b.size)
 	Pietra.tomb(b, r, Color("8a8a8a") if hot else (C3 if locked else C4), hot)
-	var col: int = UnitScript.ATLAS_COL[k]
-	b.draw_texture_rect_region(ATLAS, Rect2(Vector2(r.get_center().x - 24, r.position.y + 10), Vector2(48, 48)),
-		Rect2(col * 16, 0, 16, 16), Color(1, 1, 1, 0.35 if locked else 1.0))
-	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 60, k.to_upper(), 16, C5 if locked else C6)
+	b.draw_texture_rect_region(Data.ally_texture(k), Rect2(Vector2(r.get_center().x - 24, r.position.y + 10), Vector2(48, 48)),
+		Data.ally_region(k), Color(1, 1, 1, 0.35 if locked else 1.0))
+	var label := k.to_upper()
+	var fs := 16 if ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= r.size.x - 10 else 12
+	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 60 + (16 - fs) / 2, label, fs, C5 if locked else C6)
 	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 79, "ricerca" if locked else "[%d]" % (i + 1), 16, C1, false)
 	if locked:  # catene incrociate e lucchetto
 		var a := r.position + Vector2(10, 14)
@@ -849,8 +952,16 @@ func _draw_picker_tip() -> void:
 	var lines: Array = ["%s x%d" % [d["ally_name"].to_upper(), d["count"]]]
 	if picker_hover in unlocked_units:
 		var st := ally_stats(picker_hover)
-		lines.append("Vita %d · Attacco %d" % [int(st["hp"]), int(st["dmg"])])
-		lines.append("Gittata %d · a distanza" % int(st["range"]) if is_ranged(picker_hover) else "Corpo a corpo")
+		var l2 := "Vita %d" % int(st["hp"])
+		if st["dmg"] > 0.0:
+			l2 += " · Attacco %d" % int(st["dmg"])
+		if st["rank"] > 1:
+			l2 += " · rango %d" % st["rank"]
+		lines.append(l2)
+		var l3: String = Data.ROLE_NAMES.get(d["role"], "")
+		if is_ranged(picker_hover):
+			l3 += " · gittata %d" % int(st["range"])
+		lines.append(l3)
 	else:
 		lines.append("Sbloccalo nell'albero")
 		lines.append("delle ricerche")
@@ -994,7 +1105,7 @@ func _draw_levelup_card(b: Button, i: int) -> void:
 	Pietra.tomb(b, r, C4 if hot else Color("5a5a5a"), hot, 6.0)
 	var icon_rect := Rect2(Vector2(r.get_center().x - 48, r.position.y + 34), Vector2(96, 96))
 	if o.has("summon"):
-		b.draw_texture_rect_region(ATLAS, icon_rect, Rect2(UnitScript.ATLAS_COL[o["summon"]] * 16, 0, 16, 16))
+		b.draw_texture_rect_region(Data.ally_texture(o["summon"]), icon_rect, Data.ally_region(o["summon"]))
 	else:
 		b.draw_texture_rect_region(ATLAS, icon_rect, o["icon"])
 	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 150, String(o["title"]).to_upper(), 24, C6)
@@ -1077,9 +1188,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if levelup.visible and num >= 0 and num < levelup_opts.size():
 			_choose_level_up(levelup_opts[num])
 			return
-		if picker.visible and num >= 0 and num < Data.UNIT_ORDER.size():
-			if Data.UNIT_ORDER[num] in unlocked_units:
-				_pick_unit(picker_slot, Data.UNIT_ORDER[num])
+		if picker.visible and num >= 0 and num < unlocked_units.size():
+			_pick_unit(picker_slot, unlocked_units[num])
 			return
 		match event.keycode:
 			KEY_1:
@@ -1110,8 +1220,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match state:
 		State.DEPLOY:
-			if idx >= 0 and slots[idx]["kind"] == "" and deployed_count() < max_deploy:
-				_open_unit_picker(idx)
+			if idx >= 0 and slots[idx]["kind"] == "":
+				if deployed_count() < max_deploy:
+					_open_unit_picker(idx)
+				else:
+					set_hint("Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up." % max_deploy, 4.0)
 		State.PLACING:
 			if idx >= 0 and slots[idx]["kind"] == "":
 				_spawn_squad(idx, pending_summon)
@@ -1152,8 +1265,11 @@ func _end_run(won: bool) -> void:
 	var title := "Hai resistito alle 100 ondate!" if won else "La torre è caduta"
 	var body := "Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d" % [
 		wave, kills, earned, total, best]
+	if scrolls_earned > 0:
+		body += "\nPergamene ottenute: %d  ·  aprile nel portale del menu" % scrolls_earned
 	_show_modal(title, body, [
 		["Nuova partita", _restart_game],
+		["Cambia squadra", func(): get_tree().change_scene_to_file("res://scenes/preparazione.tscn")],
 		["Torna al menu", _go_to_menu],
 	])
 
@@ -1162,6 +1278,13 @@ func _end_run(won: bool) -> void:
 
 func _start_autotest() -> void:
 	autotest = true
+	if Array(OS.get_cmdline_user_args()).any(func(x): return x.begins_with("--squadra=")):
+		# prova di una squadra precisa: tutte e quattro le unità in campo
+		var spots := [slot_index(2, 1), slot_index(1, 2), slot_index(1, 1), slot_index(2, 2)]
+		for i in mini(4, unlocked_units.size()):
+			_spawn_squad(spots[i], unlocked_units[i])
+		_on_start_pressed()
+		return
 	_spawn_squad(slot_index(2, 1), "soldato")
 	_spawn_squad(slot_index(1, 2), unlocked_units[1] if unlocked_units.size() > 1 else "soldato")
 	_spawn_squad(slot_index(1, 1), unlocked_units[3] if unlocked_units.size() > 3 else "soldato")
@@ -1688,11 +1811,11 @@ func _draw() -> void:
 
 ## Piccola icona (la testa dello scheletro) nell'angolo di una casella occupata.
 func _draw_cell_badge(rect: Rect2, kind: String) -> void:
-	var col: int = UnitScript.ATLAS_COL[kind]
-	var top := 3 if kind in ["soldato", "arciere"] else 0  # mago e gigante hanno cappello/testa più in alto
+	var top := 3 if kind in ["soldato", "arciere"] else (0 if kind in ["mago", "gigante"] else 2)
+	var src := Data.ally_region(kind)
 	var p := rect.position + Vector2(2, 2)
 	draw_rect(Rect2(p - Vector2.ONE, Vector2(10, 10)), Color(C0, 0.8))
-	draw_texture_rect_region(ATLAS, Rect2(p, Vector2(8, 8)), Rect2(col * 16 + 4, top, 8, 8))
+	draw_texture_rect_region(Data.ally_texture(kind), Rect2(p, Vector2(8, 8)), Rect2(src.position + Vector2(4, top), Vector2(8, 8)))
 
 
 ## Il mouse è sopra la torre (o sul necromante in cima)?
@@ -2097,6 +2220,17 @@ func _draw_ambient() -> void:
 		n.draw_rect(Rect2(tp.x - 3, tp.y - 3, 7, 7), Color(1, 1, 1, k))
 	for e in embers:
 		n.draw_rect(Rect2((e["p"] as Vector2).round(), Vector2.ONE), Color(1, 1, 1, clampf(e["life"], 0.0, 1.0)))
+	# nubi di peste sul terreno
+	for cl in clouds:
+		var a: float = clampf(cl["t"], 0.0, 1.0)
+		var cp: Vector2 = origin + (cl["p"] as Vector2).round()
+		for yy in range(-6, 7, 2):
+			for xx in range(-16, 17, 2):
+				if Vector2(xx, yy * 2.4).length() > 16.0:
+					continue
+				var v := sin(xx * 0.5 + t * 3.0 + yy) * cos(yy * 0.7 - t * 2.0)
+				if v > 0.1:
+					n.draw_rect(Rect2(cp + Vector2(xx, yy), Vector2(2, 2)), Color(0.55, 0.55, 0.55, 0.45 * a))
 	# nebbia che vortica nel portale degli eroi
 	var sx := origin.x + lane_len
 	for y in range(0, int(depth), 2):
