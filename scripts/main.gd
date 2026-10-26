@@ -28,6 +28,8 @@ const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
 const RAISE_LIFE := 14.0
+## Le statistiche delle unità si modificano nell'Inspector di questa scena.
+const PREP_SCENE_PATH := "res://scenes/preparazione.tscn"
 const ATLAS := preload("res://assets/sprites.png")
 # grafica 3D del campo (generata da make_campo_art.py, stesso stile del menu)
 const TEX_SKY := preload("res://assets/campo/cielo.png")
@@ -67,34 +69,8 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## dell'arte (32 = una casella). La ricerca "Occhio della notte" la aumenta.
 @export_range(8, 600, 1) var torre_gittata: float = Data.NECRO_RANGE
 
-## STATISTICHE DEGLI SCHELETRI. I valori di partenza vengono da game_data.gd.
-## Le ricerche e i potenziamenti del level-up si applicano sopra questi valori.
-## La velocità d'attacco è in attacchi al secondo; la gittata in pixel
-## dell'arte (una casella misura 32).
-@export_group("Soldato scheletro", "soldato_")
-@export_range(1, 2000, 1) var soldato_vita: float = Data.UNITS["soldato"]["hp"]
-@export_range(0, 500, 0.5) var soldato_attacco: float = Data.UNITS["soldato"]["dmg"]
-## Attacchi al secondo.
-@export_range(0.1, 10, 0.01) var soldato_velocita_attacco: float = 1.0 / Data.UNITS["soldato"]["cooldown"]
-@export_group("Arciere scheletro", "arciere_")
-@export_range(1, 2000, 1) var arciere_vita: float = Data.UNITS["arciere"]["hp"]
-@export_range(0, 500, 0.5) var arciere_attacco: float = Data.UNITS["arciere"]["dmg"]
-## Attacchi al secondo.
-@export_range(0.1, 10, 0.01) var arciere_velocita_attacco: float = 1.0 / Data.UNITS["arciere"]["cooldown"]
-## Distanza massima di tiro, in pixel dell'arte (32 = una casella).
-@export_range(8, 400, 1) var arciere_gittata: float = Data.UNITS["arciere"]["range"]
-@export_group("Scheletro mago", "mago_")
-@export_range(1, 2000, 1) var mago_vita: float = Data.UNITS["mago"]["hp"]
-@export_range(0, 500, 0.5) var mago_attacco: float = Data.UNITS["mago"]["dmg"]
-## Attacchi al secondo.
-@export_range(0.1, 10, 0.01) var mago_velocita_attacco: float = 1.0 / Data.UNITS["mago"]["cooldown"]
-## Distanza massima di tiro, in pixel dell'arte (32 = una casella).
-@export_range(8, 400, 1) var mago_gittata: float = Data.UNITS["mago"]["range"]
-@export_group("Scheletro gigante", "gigante_")
-@export_range(1, 5000, 1) var gigante_vita: float = Data.UNITS["gigante"]["hp"]
-@export_range(0, 500, 0.5) var gigante_attacco: float = Data.UNITS["gigante"]["dmg"]
-## Attacchi al secondo.
-@export_range(0.1, 10, 0.01) var gigante_velocita_attacco: float = 1.0 / Data.UNITS["gigante"]["cooldown"]
+## STATISTICHE DEGLI SCHELETRI: ora si modificano tutte (anche le unità delle
+## pergamene) nell'Inspector della scena PREPARAZIONE (scenes/preparazione.tscn).
 
 ## POSIZIONI: nella scena ci sono due nodi figli da spostare nell'editor
 ## (trascinandoli nella vista 2D o dal loro Transform nell'Inspector):
@@ -244,6 +220,7 @@ var unit_ranks := {}  # rango di ogni unità della collezione
 var role_bonus := {}  # bonus delle ricerche per ruolo: {"dmg_corpo": 0.12, ...}
 var clouds: Array = []  # nubi di peste: {p, t, dps}
 var scrolls_earned := 0
+var unit_overrides := {}  # statistiche base dall'Inspector della preparazione
 var unlocked_abilities: Array = []
 var xp_mult := 1.0
 var ability_cd_mult := 1.0
@@ -436,12 +413,37 @@ func _apply_research() -> void:
 		if k.begins_with("dmg_") or k.begins_with("hp_"):
 			role_bonus[k] = b[k]
 	print("[squadra] unità della run: ", unlocked_units)
+	_load_unit_overrides()
+
 	unlocked_abilities = []
 	for k in Data.ABILITY_ORDER:
 		if b.has("unlock_" + k):
 			unlocked_abilities.append(k)
 	ability_cd_mult = maxf(0.3, 1.0 - b.get("ability_cd", 0.0))
 	ability_power_mult = 1.0 + b.get("ability_power", 0.0)
+
+
+## Legge le statistiche delle unità dall'Inspector della scena di preparazione
+## (anche quando avvii direttamente main.tscn).
+func _load_unit_overrides() -> void:
+	unit_overrides = {}
+	if not ResourceLoader.exists(PREP_SCENE_PATH):
+		return
+	var packed := load(PREP_SCENE_PATH) as PackedScene
+	if packed == null:
+		return
+	var prep := packed.instantiate()
+	if prep.has_method("stats_for"):
+		for k in Data.ALLY_ORDER:
+			unit_overrides[k] = prep.stats_for(k)
+	prep.free()
+
+
+## Quanti scheletri evoca una squadra di questo tipo.
+func unit_count(kind: String) -> int:
+	if unit_overrides.has(kind):
+		return maxi(1, int(unit_overrides[kind]["count"]))
+	return int(Data.UNITS[kind]["count"])
 
 
 ## Profondità della base della torre quando è attaccata alla griglia
@@ -722,7 +724,7 @@ func _spawn_squad(idx: int, kind: String) -> void:
 	var s: Dictionary = slots[idx]
 	s["kind"] = kind
 	s["units"] = []
-	var n: int = Data.UNITS[kind]["count"]
+	var n: int = unit_count(kind)
 	var spread := cell * 0.22
 	for i in n:
 		var u := UnitScript.new()
@@ -747,7 +749,7 @@ func _revive_squads() -> void:
 		var kind: String = slots[i]["kind"]
 		if kind == "":
 			continue
-		var full: bool = slots[i]["units"].size() == Data.UNITS[kind]["count"]
+		var full: bool = slots[i]["units"].size() == unit_count(kind)
 		if full:
 			for u in slots[i]["units"]:
 				u.hp = u.max_hp
@@ -765,17 +767,14 @@ func _remove_squad(idx: int) -> void:
 
 
 ## Statistiche base di uno scheletro, prese dall'Inspector del nodo Main.
-## Le quattro unità di base usano i valori dell'Inspector; le altre quelli di
-## game_data.gd. Il rango (doppioni delle pergamene) aumenta vita e danno.
+## Statistiche base: quelle dell'Inspector della preparazione (o di game_data.gd).
+## Il rango (doppioni delle pergamene) e le ricerche per ruolo si aggiungono sopra.
 func ally_stats(kind: String) -> Dictionary:
 	var d: Dictionary = Data.UNITS[kind]
-	var st := {"hp": d["hp"], "dmg": d["dmg"], "cooldown": d["cooldown"], "range": d["range"]}
-	if get(kind + "_vita") != null:
-		st["hp"] = get(kind + "_vita")
-		st["dmg"] = get(kind + "_attacco")
-		st["cooldown"] = 1.0 / maxf(0.01, get(kind + "_velocita_attacco"))
-		if not d["melee"]:
-			st["range"] = get(kind + "_gittata")
+	var st := {"hp": d["hp"], "dmg": d["dmg"], "cooldown": d["cooldown"], "range": d["range"],
+		"speed": d["speed"], "splash": d["splash"], "count": d["count"]}
+	if unit_overrides.has(kind):
+		st.merge(unit_overrides[kind], true)
 	var rank: int = unit_ranks.get(kind, 1)
 	var rm := Collezione.rank_mult(rank)
 	st["hp"] *= rm * (1.0 + role_bonus.get("hp_" + d["role"], 0.0))
@@ -949,7 +948,7 @@ func _draw_picker_tip() -> void:
 	if tomb == null:
 		return
 	var d: Dictionary = Data.UNITS[picker_hover]
-	var lines: Array = ["%s x%d" % [d["ally_name"].to_upper(), d["count"]]]
+	var lines: Array = ["%s x%d" % [d["ally_name"].to_upper(), unit_count(picker_hover)]]
 	if picker_hover in unlocked_units:
 		var st := ally_stats(picker_hover)
 		var l2 := "Vita %d" % int(st["hp"])
@@ -1032,7 +1031,7 @@ func _level_up_options() -> Array:
 	if free_slot_count() > 0:
 		for k in unlocked_units:
 			var d: Dictionary = Data.UNITS[k]
-			pool.append({"title": "Evocazione", "text": "Evoca: %s (x%d)" % [d["ally_name"], d["count"]], "summon": k})
+			pool.append({"title": "Evocazione", "text": "Evoca: %s (x%d)" % [d["ally_name"], unit_count(k)], "summon": k})
 	return pool
 
 

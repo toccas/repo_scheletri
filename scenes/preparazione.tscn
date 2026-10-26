@@ -12,3 +12,5 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_prep")
 tema = ExtResource("2_tema")
+arciere_gittata = 90.0
+mago_gittata = 65.0

@@ -1,3 +1,4 @@
+@tool
 extends Control
 ## Preparazione della run: scegli le 4 unità che potrai evocare per tutta la partita.
 ##
@@ -7,6 +8,13 @@ extends Control
 ##   - tasto destro su un altare: lo svuota
 ##   - INIZIA LA RUN (o Invio) avvia la partita, BACK (o Esc) torna al menu
 ## Le unità nuove si trovano aprendo le pergamene nel portale (scena Evocazione).
+##
+## STATISTICHE: nell'Inspector di questo nodo, sezione "Statistiche delle unità",
+## c'è un gruppo per ogni scheletro (vita, attacco, velocità d'attacco, gittata,
+## velocità di movimento, quantità per squadra, area). La partita (main.gd) le
+## legge da questa scena, anche se avvii direttamente main.tscn. La freccia
+## accanto a un valore lo riporta a quello di game_data.gd. Ricerche, rango e
+## level-up si applicano sopra questi valori.
 
 const Data := preload("res://scripts/game_data.gd")
 const Collezione := preload("res://scripts/collezione.gd")
@@ -43,12 +51,101 @@ var message := ""
 var message_t := 0.0
 var card_rects := {}  # id unità -> Rect2
 var altar_rects: Array = []
+## [nome nell'Inspector, chiave, intervallo]: le statistiche modificabili di ogni unità.
+const STAT_FIELDS := [
+	["vita", "hp", "1,5000,1"],
+	["attacco", "dmg", "0,500,0.5"],
+	["velocita_attacco", "rate", "0.05,10,0.01"],
+	["gittata", "range", "0,400,1"],
+	["velocita", "speed", "0,200,1"],
+	["quantita", "count", "1,12,1"],
+	["area", "splash", "0,80,1"],
+]
+## Valori cambiati nell'Inspector: "lanciere_vita" -> 80.0 (gli altri restano quelli di game_data.gd).
+var unit_stats := {}
 var start_rect := Rect2(1000, 646, 256, 62)
 var back_rect := Rect2(24, 652, 120, 50)
 var portal_rect := Rect2(560, 652, 300, 50)
 
 
+# --- Statistiche nell'Inspector ------------------------------------------------
+
+func _stat_key(prop: StringName) -> Array:
+	var s := String(prop)
+	for f in STAT_FIELDS:
+		var suffix: String = "_" + f[0]
+		if s.ends_with(suffix):
+			var kind := s.substr(0, s.length() - suffix.length())
+			if Data.UNITS.has(kind) and kind in Data.ALLY_ORDER:
+				# "velocita_attacco" finisce anche con "_attacco": controlla il nome completo
+				if f[0] == "attacco" and s.ends_with("_velocita_attacco"):
+					continue
+				return [kind, f[1]]
+	return []
+
+
+func _stat_default(kind: String, key: String) -> Variant:
+	var d: Dictionary = Data.UNITS[kind]
+	match key:
+		"rate":
+			return snappedf(1.0 / maxf(0.01, d["cooldown"]), 0.01)
+		"count":
+			return int(d["count"])
+	return float(d[key])
+
+
+func _get_property_list() -> Array[Dictionary]:
+	var props: Array[Dictionary] = [{"name": "Statistiche delle unità", "type": TYPE_NIL, "usage": PROPERTY_USAGE_CATEGORY}]
+	for k in Data.ALLY_ORDER:
+		props.append({"name": Data.UNITS[k]["ally_name"], "type": TYPE_NIL, "usage": PROPERTY_USAGE_GROUP, "hint_string": k + "_"})
+		for f in STAT_FIELDS:
+			props.append({"name": k + "_" + f[0], "type": TYPE_INT if f[1] == "count" else TYPE_FLOAT,
+				"hint": PROPERTY_HINT_RANGE, "hint_string": f[2], "usage": PROPERTY_USAGE_DEFAULT})
+	return props
+
+
+func _get(prop: StringName) -> Variant:
+	var k := _stat_key(prop)
+	if k.is_empty():
+		return null
+	return unit_stats.get(String(prop), _stat_default(k[0], k[1]))
+
+
+func _set(prop: StringName, value: Variant) -> bool:
+	var k := _stat_key(prop)
+	if k.is_empty():
+		return false
+	unit_stats[String(prop)] = value
+	return true
+
+
+func _property_can_revert(prop: StringName) -> bool:
+	return not _stat_key(prop).is_empty()
+
+
+func _property_get_revert(prop: StringName) -> Variant:
+	var k := _stat_key(prop)
+	return null if k.is_empty() else _stat_default(k[0], k[1])
+
+
+## Statistiche base di un'unità (con le modifiche dell'Inspector), usate da main.gd:
+## {hp, dmg, cooldown, range, speed, count, splash}.
+func stats_for(kind: String) -> Dictionary:
+	var out := {}
+	for f in STAT_FIELDS:
+		out[f[1]] = _get(StringName(kind + "_" + f[0]))
+	if unit_stats.has(kind + "_velocita_attacco"):
+		out["cooldown"] = 1.0 / maxf(0.01, float(out["rate"]))
+	else:
+		out["cooldown"] = float(Data.UNITS[kind]["cooldown"])  # nessun arrotondamento se non lo tocchi
+	out.erase("rate")
+	out["count"] = int(out["count"])
+	return out
+
+
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if tema:
 		theme = tema
@@ -83,6 +180,8 @@ func _save() -> void:
 
 
 func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	t += delta
 	message_t = maxf(0.0, message_t - delta)
 	if leaving != "":
@@ -114,6 +213,8 @@ func _hit(p: Vector2) -> Dictionary:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint():
+		return
 	if leaving != "" or not (event is InputEventMouseButton and event.pressed):
 		return
 	var h := _hit(event.position)
@@ -137,6 +238,8 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint():
+		return
 	if leaving != "" or not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var num: int = [KEY_1, KEY_2, KEY_3, KEY_4].find(event.keycode)
@@ -192,6 +295,10 @@ func _say(text: String) -> void:
 # --- Disegno -----------------------------------------------------------------
 
 func _draw() -> void:
+	if Engine.is_editor_hint():
+		draw_rect(Rect2(Vector2.ZERO, size), C1)
+		draw_string(get_theme_default_font(), Vector2(40, 60), "PREPARAZIONE · le statistiche delle unità sono nell'Inspector", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, C5)
+		return
 	var vp := size
 	# sfondo: lo stesso campo della partita, scurito
 	draw_rect(Rect2(Vector2.ZERO, vp), C0)
@@ -344,10 +451,11 @@ func _draw_info(r: Rect2, k: String) -> void:
 		sub += " · rango %d (+%d%%)" % [rank, int(round((Collezione.rank_mult(rank) - 1.0) * 100.0))]
 	Pietra.text(self, font, Vector2(x, y + 34), sub, 16, C5)
 	var rm := Collezione.rank_mult(rank)
-	var line := "x%d per squadra · Vita %d" % [d["count"], int(d["hp"] * rm)]
-	if d["dmg"] > 0.0:
-		line += " · Attacco %d" % int(d["dmg"] * rm)
+	var ss := stats_for(k)
+	var line := "x%d per squadra · Vita %d" % [ss["count"], int(ss["hp"] * rm)]
+	if ss["dmg"] > 0.0:
+		line += " · Attacco %d" % int(ss["dmg"] * rm)
 	if not d["melee"]:
-		line += " · Gittata %d" % int(d["range"])
+		line += " · Gittata %d" % int(ss["range"])
 	Pietra.text(self, font, Vector2(x, y + 62), line, 16, C6)
 	Pietra.text_block_left(self, font, Vector2(x, y + 96), r.end.x - x - 20, d["desc"], 16, C5)
