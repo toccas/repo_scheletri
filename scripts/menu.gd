@@ -16,17 +16,30 @@ extends Node2D
 ##   Luna     -> centro della luna
 ##   Albero   -> base dell'albero secco
 ##   Terreno  -> conta solo la Y: linea dell'orizzonte
+##   Feedback -> angolo in alto a sinistra del pulsante "Bug e consigli"
 ## Se un nodo manca, quell'elemento torna alla posizione di partenza.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
 const ATLAS := preload("res://assets/sprites.png")
 const GAME_SCENE := "res://scenes/main.tscn"
 const RESEARCH_SCENE := "res://scenes/research.tscn"
+const FeedbackPanel := preload("res://scripts/feedback_panel.gd")
 
 ## Titolo del gioco mostrato in alto.
 @export var titolo := "GIOCO SCHELETRI"
 ## Pixel dello schermo per ogni pixel dello sfondo.
 @export_range(2, 6) var scala_pixel := 4
+
+@export_group("Bug e consigli")
+## La tua email: è il destinatario quando il gioco apre l'app email del giocatore.
+@export var email_feedback := "tua.email@esempio.com"
+## Invio diretto dal gioco, senza app email: incolla qui l'indirizzo del tuo
+## modulo Formspree (es. https://formspree.io/f/abcd1234). Vuoto = usa l'app email.
+@export var url_invio_feedback := ""
+## Versione scritta nei report, per sapere su quale build è successo il problema.
+@export var versione_gioco := "0.1"
+## Tema del pannello (facoltativo). Vuoto = stile in scala di grigi del gioco.
+@export var tema_feedback: Theme
 
 const C0 := Color("141414")
 const C1 := Color("242424")
@@ -56,6 +69,9 @@ var items_pos := Vector2(640, 330)  # pixel dello schermo
 var tower_base := Vector2(38, 137)  # pixel dello sfondo
 var moon_pos := Vector2(284, 42)  # pixel dello sfondo
 var tree_base := Vector2(290, 150)  # pixel dello sfondo
+var feedback_pos := Vector2(20, 20)  # pixel dello schermo
+var feedback_rect := Rect2()
+var feedback_panel: Node = null
 
 var stars: Array = []  # {pos, phase}
 var tombs: Array = []  # {x, kind}
@@ -110,6 +126,7 @@ func _update_layout() -> void:
 	tower_base = (_marker("Torre", Vector2(38, 137) * px) / px).floor()
 	moon_pos = (_marker("Luna", Vector2(art.x - 36, 42) * px) / px).floor()
 	tree_base = (_marker("Albero", Vector2(art.x - 30, 150) * px) / px).floor()
+	feedback_pos = _marker("Feedback", Vector2(20, 20)).round()
 
 
 func _spawn_walker(start_x: float = -16.0) -> void:
@@ -160,7 +177,11 @@ func _process(delta: float) -> void:
 # --- Input -----------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
-	if leaving or Engine.is_editor_hint():
+	if leaving or Engine.is_editor_hint() or feedback_panel != null:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT \
+			and feedback_rect.grow(4).has_point(event.position):
+		_open_feedback()
 		return
 	if event is InputEventMouseMotion:
 		var i := _item_at(event.position)
@@ -189,6 +210,16 @@ func _item_at(p: Vector2) -> int:
 	return -1
 
 
+func _open_feedback() -> void:
+	feedback_panel = FeedbackPanel.new()
+	feedback_panel.email_to = email_feedback.strip_edges()
+	feedback_panel.send_url = url_invio_feedback.strip_edges()
+	feedback_panel.game_version = versione_gioco
+	feedback_panel.theme_override = tema_feedback
+	feedback_panel.closed.connect(func(): feedback_panel = null)
+	add_child(feedback_panel)
+
+
 func _activate() -> void:
 	match ITEMS[selected]:
 		"START":
@@ -213,6 +244,7 @@ func _draw() -> void:
 	_draw_fog()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_draw_texts()
+	_draw_feedback_button()
 	if fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, _screen_size()), Color(C0, fade))
 
@@ -366,3 +398,36 @@ func _draw_texts() -> void:
 			PixelFont.draw_text(self, "<", Vector2(r.end.x + 3 * p, y), p, C5)
 		y += h + 22.0
 
+
+
+## Piccolo pulsante "Bug e consigli" in alto a sinistra, con un insetto a pixel.
+func _draw_feedback_button() -> void:
+	var p := 2.0  # grandezza dei pixel del testo
+	var label := "BUG E CONSIGLI"
+	var tw := PixelFont.text_width(label, p)
+	var size := Vector2(10 + 14 + 8 + tw + 10, 14 + PixelFont.text_height(p))
+	feedback_rect = Rect2(feedback_pos, size)
+	var hover := not Engine.is_editor_hint() and feedback_panel == null \
+			and feedback_rect.grow(4).has_point(get_local_mouse_position())
+	draw_rect(feedback_rect, C1 if not hover else C2)
+	var border := C6 if hover else C4
+	draw_rect(Rect2(feedback_rect.position, Vector2(size.x, 2)), border)
+	draw_rect(Rect2(feedback_rect.position + Vector2(0, size.y - 2), Vector2(size.x, 2)), border)
+	draw_rect(Rect2(feedback_rect.position, Vector2(2, size.y)), border)
+	draw_rect(Rect2(feedback_rect.position + Vector2(size.x - 2, 0), Vector2(2, size.y)), border)
+	# insetto 7x7 a pixel (scala 2)
+	var bug := [
+		".#...#.",
+		"..#.#..",
+		"#.###.#",
+		".#####.",
+		"#.###.#",
+		".#####.",
+		"#..#..#",
+	]
+	var o := feedback_rect.position + Vector2(10, 7)
+	for y in bug.size():
+		for x in bug[y].length():
+			if bug[y][x] == "#":
+				draw_rect(Rect2(o + Vector2(x, y) * 2.0, Vector2(2, 2)), C6 if hover else C5)
+	PixelFont.draw_text(self, label, feedback_rect.position + Vector2(10 + 14 + 8, 7), p, C6 if hover else C5)

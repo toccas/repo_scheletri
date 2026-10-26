@@ -17,7 +17,7 @@ gizmo_extents = 20.0
 script = ExtResource("2_marker")
 
 [node name="Torre" type="Marker2D" parent="." unique_id=219738757]
-position = Vector2(199, 577)
+position = Vector2(183, 579)
 gizmo_extents = 20.0
 script = ExtResource("2_marker")
 tipo = 1

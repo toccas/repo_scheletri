@@ -1,36 +1,73 @@
-[gd_scene format=3 uid="uid://bye1ynj8eemii"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://cw0h7mjrhxr0h" path="res://scripts/menu.gd" id="1_menu"]
-[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="2_vjb58"]
+[ext_resource type="Script" path="res://scripts/menu_castello.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/menu_building.gd" id="2_building"]
+[ext_resource type="Texture2D" path="res://assets/menu/cielo.png" id="3_cielo"]
+[ext_resource type="Texture2D" path="res://assets/menu/mura.png" id="4_mura"]
+[ext_resource type="Texture2D" path="res://assets/menu/alloggio.png" id="5_alloggio"]
+[ext_resource type="Texture2D" path="res://assets/menu/ricerca.png" id="6_ricerca"]
+[ext_resource type="Texture2D" path="res://assets/menu/portale.png" id="7_portale"]
+[ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="8_tema"]
 
-[node name="Menu" type="Node2D" unique_id=2110260203]
+[node name="Menu" type="Node2D"]
 script = ExtResource("1_menu")
+tema_feedback = ExtResource("8_tema")
 
-[node name="Titolo" type="Marker2D" parent="." unique_id=60678374]
-position = Vector2(640, 70)
+[node name="Mondo" type="Node2D" parent="."]
+scale = Vector2(4, 4)
+
+[node name="Cielo" type="Sprite2D" parent="Mondo"]
+texture = ExtResource("3_cielo")
+centered = false
+
+[node name="CieloAnim" type="Node2D" parent="Mondo"]
+
+[node name="Orda" type="Node2D" parent="Mondo"]
+
+[node name="Mura" type="Sprite2D" parent="Mondo"]
+texture = ExtResource("4_mura")
+centered = false
+
+[node name="Difese" type="Node2D" parent="Mondo"]
+
+[node name="Cortile" type="Node2D" parent="Mondo"]
+y_sort_enabled = true
+
+[node name="Ricerca" type="Sprite2D" parent="Mondo/Cortile"]
+position = Vector2(62, 166)
+texture = ExtResource("6_ricerca")
+centered = false
+offset = Vector2(-33, -62)
+script = ExtResource("2_building")
+etichetta = "RICERCA"
+azione = 1
+
+[node name="AlloggioNecromante" type="Sprite2D" parent="Mondo/Cortile"]
+position = Vector2(160, 124)
+texture = ExtResource("5_alloggio")
+centered = false
+offset = Vector2(-39, -116)
+script = ExtResource("2_building")
+etichetta = "AVVIA RUN"
+
+[node name="Portale" type="Sprite2D" parent="Mondo/Cortile"]
+position = Vector2(232, 170)
+texture = ExtResource("7_portale")
+centered = false
+offset = Vector2(-37, -70)
+script = ExtResource("2_building")
+etichetta = "EVOCAZIONE"
+azione = 2
+
+[node name="Nebbia" type="Node2D" parent="Mondo"]
+
+[node name="Back" type="Marker2D" parent="Mondo"]
+position = Vector2(8, 172)
+gizmo_extents = 6.0
+
+[node name="Interfaccia" type="Node2D" parent="."]
+z_index = 100
+
+[node name="Feedback" type="Marker2D" parent="."]
+position = Vector2(20, 20)
 gizmo_extents = 24.0
-
-[node name="Voci" type="Marker2D" parent="." unique_id=1469225168]
-position = Vector2(640, 330)
-gizmo_extents = 24.0
-
-[node name="Torre" type="Marker2D" parent="." unique_id=1535159584]
-position = Vector2(152, 653)
-gizmo_extents = 24.0
-
-[node name="Luna" type="Marker2D" parent="." unique_id=208949767]
-position = Vector2(1136, 168)
-gizmo_extents = 24.0
-
-[node name="Albero" type="Marker2D" parent="." unique_id=381184418]
-position = Vector2(1160, 600)
-gizmo_extents = 24.0
-
-[node name="Terreno" type="Marker2D" parent="." unique_id=268393638]
-position = Vector2(640, 600)
-gizmo_extents = 24.0
-
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=770449329]
-stream = ExtResource("2_vjb58")
-autoplay = true
-parameters/looping = true
