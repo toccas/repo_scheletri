@@ -13,30 +13,180 @@ extends RefCounted
 ##             per le unità a distanza è la distanza dal centro
 ## - splash:   raggio dell'esplosione dei proiettili (0 = bersaglio singolo)
 ## - xp:       esperienza data al necromante quando l'unità nemica muore
+## Campi in più (solo per gli scheletri):
+## - role:     ruolo per le ricerche: "corpo", "distanza", "magia", "supporto"
+## - rarity:   "base" (le hai da subito), "comune", "raro", "epico", "leggendario"
+## - special:  abilità speciale (vedi unit.gd), "" se nessuna
+## - sheet/sx: in quale atlante sta la sprite ("base" = sprites.png, colonna sx;
+##             "nuove" = unita_scheletri.png, indice sx: 4 unità per riga, 2 frame)
+## - desc:     descrizione mostrata in preparazione ed evocazione
 const UNITS := {
 	"soldato": {
 		"ally_name": "Soldato scheletro", "enemy_name": "Soldato umano",
 		"count": 4, "hp": 60.0, "dmg": 6.0, "range": 3.0, "cooldown": 0.9,
 		"speed": 24.0, "melee": true, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "corpo", "rarity": "base", "special": "", "sheet": "base", "sx": 0,
+		"desc": "Fanteria di base: tanti, economici, tengono la linea.",
 	},
 	"arciere": {
 		"ally_name": "Arciere scheletro", "enemy_name": "Arciere umano",
 		"count": 3, "hp": 30.0, "dmg": 6.0, "range": 56.0, "cooldown": 1.1,
 		"speed": 20.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "distanza", "rarity": "base", "special": "", "sheet": "base", "sx": 2,
+		"desc": "Tira frecce da lontano. Fragile: proteggilo.",
 	},
 	"gigante": {
 		"ally_name": "Scheletro gigante", "enemy_name": "Umano gigante",
 		"count": 1, "hp": 260.0, "dmg": 14.0, "range": 4.0, "cooldown": 1.5,
 		"speed": 15.0, "melee": true, "splash": 0.0, "radius": 7.0, "xp": 4,
+		"role": "corpo", "rarity": "base", "special": "", "sheet": "base", "sx": 6,
+		"desc": "Un muro di ossa con tanta vita e colpi pesanti.",
 	},
 	"mago": {
 		"ally_name": "Scheletro mago", "enemy_name": "Mago umano",
 		"count": 2, "hp": 25.0, "dmg": 14.0, "range": 64.0, "cooldown": 1.8,
 		"speed": 18.0, "melee": false, "splash": 12.0, "radius": 4.0, "xp": 2,
+		"role": "magia", "rarity": "base", "special": "", "sheet": "base", "sx": 4,
+		"desc": "Sfere magiche che esplodono e colpiscono un'area.",
+	},
+	# --- Unità da evocare con le pergamene (solo scheletri) --------------------
+	"lanciere": {
+		"ally_name": "Lanciere", "count": 3, "hp": 55.0, "dmg": 7.0, "range": 9.0, "cooldown": 1.0,
+		"speed": 22.0, "melee": true, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "corpo", "rarity": "comune", "special": "trafiggi", "sheet": "nuove", "sx": 0,
+		"desc": "Colpisce da più lontano e trafigge anche il nemico dietro (60%).",
+	},
+	"berserker": {
+		"ally_name": "Berserker", "count": 2, "hp": 70.0, "dmg": 8.0, "range": 3.0, "cooldown": 0.8,
+		"speed": 28.0, "melee": true, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "corpo", "rarity": "comune", "special": "furia", "sheet": "nuove", "sx": 1,
+		"desc": "Più è ferito, più colpisce forte e veloce (fino al doppio).",
+	},
+	"cavaliere": {
+		"ally_name": "Cavaliere scheletro", "count": 1, "hp": 150.0, "dmg": 16.0, "range": 4.0, "cooldown": 1.3,
+		"speed": 42.0, "melee": true, "splash": 0.0, "radius": 6.0, "xp": 1,
+		"role": "corpo", "rarity": "raro", "special": "carica", "sheet": "nuove", "sx": 2,
+		"desc": "Carica da lontano: il primo colpo dopo una corsa fa danno doppio.",
+	},
+	"scudiero": {
+		"ally_name": "Scudiero", "count": 2, "hp": 150.0, "dmg": 3.0, "range": 3.0, "cooldown": 1.2,
+		"speed": 18.0, "melee": true, "splash": 0.0, "radius": 5.0, "xp": 1,
+		"role": "corpo", "rarity": "comune", "special": "provoca", "sheet": "nuove", "sx": 3,
+		"desc": "Attira su di sé i nemici vicini e subisce il 30% di danni in meno.",
+	},
+	"balestriere": {
+		"ally_name": "Balestriere", "count": 2, "hp": 35.0, "dmg": 14.0, "range": 70.0, "cooldown": 2.0,
+		"speed": 20.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "distanza", "rarity": "comune", "special": "trapassa", "sheet": "nuove", "sx": 4,
+		"desc": "Dardi pesanti: un secondo dardo colpisce il nemico dietro (60%).",
+	},
+	"catapulta": {
+		"ally_name": "Catapulta d'ossa", "count": 1, "hp": 60.0, "dmg": 24.0, "range": 120.0, "cooldown": 3.2,
+		"speed": 0.0, "melee": false, "splash": 18.0, "radius": 6.0, "xp": 1,
+		"role": "distanza", "rarity": "raro", "special": "catapulta", "sheet": "nuove", "sx": 5,
+		"desc": "Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino.",
+	},
+	"cecchino": {
+		"ally_name": "Cecchino spettrale", "count": 1, "hp": 30.0, "dmg": 34.0, "range": 160.0, "cooldown": 2.6,
+		"speed": 20.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "distanza", "rarity": "epico", "special": "cecchino", "sheet": "nuove", "sx": 6,
+		"desc": "Gittata enorme: mira sempre il nemico con più vita.",
+	},
+	"negromante": {
+		"ally_name": "Negromante minore", "count": 1, "hp": 40.0, "dmg": 6.0, "range": 60.0, "cooldown": 1.6,
+		"speed": 18.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "magia", "rarity": "epico", "special": "rianima", "sheet": "nuove", "sx": 7,
+		"desc": "Quando un nemico muore vicino a lui, lo rialza come scheletro per 14 secondi (max 3).",
+	},
+	"peste": {
+		"ally_name": "Stregone della peste", "count": 1, "hp": 45.0, "dmg": 4.0, "range": 60.0, "cooldown": 2.4,
+		"speed": 18.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "magia", "rarity": "epico", "special": "peste", "sheet": "nuove", "sx": 8,
+		"desc": "Lascia nubi di peste che avvelenano e rallentano i nemici.",
+	},
+	"lich": {
+		"ally_name": "Lich", "count": 1, "hp": 80.0, "dmg": 18.0, "range": 72.0, "cooldown": 1.8,
+		"speed": 18.0, "melee": false, "splash": 10.0, "radius": 4.0, "xp": 1,
+		"role": "magia", "rarity": "leggendario", "special": "maledici", "sheet": "nuove", "sx": 9,
+		"desc": "Magie ad area che maledicono: i nemici colpiti subiscono +30% danni da tutti.",
+	},
+	"banshee": {
+		"ally_name": "Banshee", "count": 1, "hp": 50.0, "dmg": 6.0, "range": 40.0, "cooldown": 4.0,
+		"speed": 20.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "magia", "rarity": "epico", "special": "urlo", "sheet": "nuove", "sx": 10,
+		"desc": "Un urlo che ferisce e stordisce per un attimo tutti i nemici vicini.",
+	},
+	"totem": {
+		"ally_name": "Totem d'ossa", "count": 1, "hp": 90.0, "dmg": 0.0, "range": 0.0, "cooldown": 2.0,
+		"speed": 0.0, "melee": true, "splash": 0.0, "radius": 5.0, "xp": 1,
+		"role": "supporto", "rarity": "raro", "special": "aura", "sheet": "nuove", "sx": 11,
+		"desc": "Non attacca: gli scheletri vicini fanno +25% danni e attaccano più veloce.",
+	},
+	"golem": {
+		"ally_name": "Golem di ossa", "count": 1, "hp": 520.0, "dmg": 22.0, "range": 5.0, "cooldown": 1.8,
+		"speed": 12.0, "melee": true, "splash": 0.0, "radius": 9.0, "xp": 1,
+		"role": "corpo", "rarity": "leggendario", "special": "schianto", "sheet": "nuove", "sx": 12,
+		"desc": "Enorme. Ogni colpo fa tremare il terreno e ferisce anche chi è attorno.",
+	},
+	"mietitore": {
+		"ally_name": "Mietitore", "count": 1, "hp": 110.0, "dmg": 20.0, "range": 6.0, "cooldown": 1.2,
+		"speed": 30.0, "melee": true, "splash": 0.0, "radius": 5.0, "xp": 1,
+		"role": "corpo", "rarity": "leggendario", "special": "falce", "sheet": "nuove", "sx": 13,
+		"desc": "La falce colpisce tutti i vicini e finisce all'istante chi ha meno del 20% di vita.",
+	},
+	"muro": {
+		"ally_name": "Muro d'ossa", "count": 1, "hp": 420.0, "dmg": 0.0, "range": 0.0, "cooldown": 1.0,
+		"speed": 0.0, "melee": true, "splash": 0.0, "radius": 8.0, "xp": 1,
+		"role": "supporto", "rarity": "raro", "special": "muro", "sheet": "nuove", "sx": 14,
+		"desc": "Una barricata: non attacca, ma i nemici vicini devono abbatterla per passare.",
+	},
+	"carcassa": {
+		"ally_name": "Carcassa esplosiva", "count": 2, "hp": 30.0, "dmg": 45.0, "range": 3.0, "cooldown": 1.0,
+		"speed": 36.0, "melee": true, "splash": 20.0, "radius": 4.0, "xp": 1,
+		"role": "corpo", "rarity": "raro", "special": "esplodi", "sheet": "nuove", "sx": 15,
+		"desc": "Corre contro i nemici ed esplode, colpendo un'area. Rinasce a fine ondata.",
 	},
 }
 
+## Tipi dei nemici (gli umani usano solo questi).
 const UNIT_ORDER := ["soldato", "arciere", "gigante", "mago"]
+## Tutti gli scheletri, nell'ordine della collezione.
+const ALLY_ORDER := ["soldato", "arciere", "mago", "gigante",
+	"lanciere", "scudiero", "balestriere", "berserker",
+	"cavaliere", "catapulta", "totem", "muro", "carcassa",
+	"negromante", "peste", "banshee", "cecchino",
+	"lich", "golem", "mietitore"]
+const STARTING_UNITS := ["soldato", "arciere", "mago", "gigante"]
+
+const ROLE_NAMES := {"corpo": "Corpo a corpo", "distanza": "A distanza", "magia": "Magia", "supporto": "Supporto"}
+const RARITY_NAMES := {"base": "Base", "comune": "Comune", "raro": "Raro", "epico": "Epico", "leggendario": "Leggendario"}
+## Probabilità di ogni rarità quando apri una pergamena.
+const RARITY_ODDS := {"comune": 0.50, "raro": 0.30, "epico": 0.15, "leggendario": 0.05}
+## Ogni quante pergamene un'unità epica o leggendaria è garantita.
+const PITY_EVERY := 10
+## Ogni quante ondate superate si guadagna una pergamena.
+const WAVES_PER_SCROLL := 10
+## Pergamene in regalo alla prima partita (per provare subito l'evocazione).
+const STARTING_SCROLLS := 3
+## Rango massimo di un'unità (i doppioni lo alzano): +10% vita e danno per rango.
+const MAX_RANK := 5
+const RANK_BONUS := 0.10
+
+const SHEET_BASE := preload("res://assets/sprites.png")
+const SHEET_NEW := preload("res://assets/unita_scheletri.png")
+
+
+## Atlante e rettangolo del frame (0 o 1) di uno scheletro.
+static func ally_texture(kind: String) -> Texture2D:
+	return SHEET_NEW if UNITS[kind]["sheet"] == "nuove" else SHEET_BASE
+
+
+static func ally_region(kind: String, frame: int = 0) -> Rect2:
+	var d: Dictionary = UNITS[kind]
+	if d["sheet"] == "nuove":
+		var i: int = d["sx"]
+		return Rect2((i % 4) * 32 + frame * 16, (i / 4) * 16, 16, 16)
+	return Rect2((d["sx"] + frame) * 16, 0, 16, 16)
 
 ## Abilità del necromante. La potenza scala con l'attacco del necromante.
 ## L'area curativa cura solo le unità alleate: la torre non si cura mai.

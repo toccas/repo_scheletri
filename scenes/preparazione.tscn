@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/preparazione.gd" id="1_prep"]
+[ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="2_tema"]
+
+[node name="Preparazione" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_prep")
+tema = ExtResource("2_tema")

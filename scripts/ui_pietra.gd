@@ -89,3 +89,10 @@ static func text_block(ci: CanvasItem, font: Font, pos: Vector2, width: float, s
 	var base := pos + Vector2(0, font.get_ascent(size))
 	ci.draw_multiline_string(font, base + Vector2(2, 2), s, HORIZONTAL_ALIGNMENT_CENTER, width, size, -1, C0)
 	ci.draw_multiline_string(font, base, s, HORIZONTAL_ALIGNMENT_CENTER, width, size, -1, col)
+
+
+## Testo su più righe allineato a sinistra.
+static func text_block_left(ci: CanvasItem, font: Font, pos: Vector2, width: float, s: String, size: int, col: Color) -> void:
+	var base := pos + Vector2(0, font.get_ascent(size))
+	ci.draw_multiline_string(font, base + Vector2(2, 2), s, HORIZONTAL_ALIGNMENT_LEFT, width, size, -1, C0)
+	ci.draw_multiline_string(font, base, s, HORIZONTAL_ALIGNMENT_LEFT, width, size, -1, col)

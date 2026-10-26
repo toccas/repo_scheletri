@@ -13,8 +13,10 @@ extends RefCounted
 ##   value     valore del bonus per ogni livello
 ##   icon      angolo in alto a sinistra dell'icona 16x16 in assets/sprites.png
 ##
-## A inizio carriera il giocatore ha solo il soldato scheletro e nessuna abilità:
-## arcieri, maghi, giganti e le tre abilità si sbloccano da qui.
+## Le unità NON si sbloccano più da qui: si trovano aprendo le pergamene nel
+## portale (vedi collezione.gd). Qui ci sono solo potenziamenti, anche per ruolo
+## (corpo a corpo, a distanza, magia), e le tre abilità del necromante.
+## Effetti per ruolo: "hp_<ruolo>" e "dmg_<ruolo>" (vedi main.gd: role_mult).
 
 const SAVE_PATH := "user://progressi.cfg"
 
@@ -62,24 +64,24 @@ const NODES := {
 		"branch": 1, "pos": Vector2i(4, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
 		"effect": "ally_hp", "value": 0.10, "icon": Vector2(80, 64),
 	},
-	"arcieri": {
-		"name": "Arcieri scheletro", "desc": "Sblocca l'arciere scheletro: 3 unità, attacco a distanza.",
-		"branch": 1, "pos": Vector2i(3, 1), "costs": [6], "requires": ["lame", 1],
-		"effect": "unlock_arciere", "value": 1.0, "icon": Vector2(32, 0),
+	"disciplina": {
+		"name": "Disciplina d'osso", "desc": "Vita delle unità corpo a corpo +12% per livello.",
+		"branch": 1, "pos": Vector2i(3, 1), "costs": [6, 10, 15], "requires": ["lame", 1],
+		"effect": "hp_corpo", "value": 0.12, "icon": Vector2(0, 0),
 	},
-	"maghi": {
-		"name": "Maghi scheletro", "desc": "Sblocca lo scheletro mago: 2 unità, magie ad area.",
-		"branch": 1, "pos": Vector2i(3, 2), "costs": [12], "requires": ["arcieri", 1],
-		"effect": "unlock_mago", "value": 1.0, "icon": Vector2(64, 0),
+	"mira": {
+		"name": "Mira spettrale", "desc": "Danno delle unità a distanza +12% per livello.",
+		"branch": 1, "pos": Vector2i(3, 2), "costs": [8, 12, 18], "requires": ["disciplina", 1],
+		"effect": "dmg_distanza", "value": 0.12, "icon": Vector2(32, 0),
 	},
-	"giganti": {
-		"name": "Giganti d'osso", "desc": "Sblocca lo scheletro gigante: 1 unità, tanta vita.",
-		"branch": 1, "pos": Vector2i(4, 1), "costs": [14], "requires": ["ossa", 1],
-		"effect": "unlock_gigante", "value": 1.0, "icon": Vector2(96, 0),
+	"occulto": {
+		"name": "Arti occulte", "desc": "Danno delle unità magiche +12% per livello.",
+		"branch": 1, "pos": Vector2i(4, 1), "costs": [8, 12, 18], "requires": ["ossa", 1],
+		"effect": "dmg_magia", "value": 0.12, "icon": Vector2(64, 0),
 	},
 	"legione": {
 		"name": "Legione", "desc": "Squadre schierabili a inizio partita +1 per livello.",
-		"branch": 1, "pos": Vector2i(4, 2), "costs": [25, 40], "requires": ["giganti", 1],
+		"branch": 1, "pos": Vector2i(4, 2), "costs": [25, 40], "requires": ["occulto", 1],
 		"effect": "deploy", "value": 1.0, "icon": Vector2(112, 64),
 	},
 	# --- Arcano -------------------------------------------------------------
@@ -113,6 +115,9 @@ const NODES := {
 
 # --- Salvataggio -------------------------------------------------------------
 
+## Ricerche tolte (sblocco delle unità) e il loro costo, per rimborsare i vecchi salvataggi.
+const OLD_UNLOCKS := {"arcieri": 6, "maghi": 12, "giganti": 14}
+
 ## Stato salvato: {"points": int, "best": int, "levels": {id: livello}}
 static func load_state() -> Dictionary:
 	var cfg := ConfigFile.new()
@@ -120,6 +125,15 @@ static func load_state() -> Dictionary:
 	var levels := {}
 	for id in NODES:
 		levels[id] = int(cfg.get_value("ricerche", id, 0))
+	# vecchi salvataggi: gli sblocchi delle unità non esistono più, restituisco i punti
+	var refund := 0
+	for old in OLD_UNLOCKS:
+		if int(cfg.get_value("ricerche", old, 0)) > 0:
+			refund += OLD_UNLOCKS[old]
+			cfg.set_value("ricerche", old, 0)
+	if refund > 0:
+		cfg.set_value("progressi", "punti", int(cfg.get_value("progressi", "punti", 0)) + refund)
+		cfg.save(SAVE_PATH)
 	return {
 		"points": int(cfg.get_value("progressi", "punti", 0)),
 		"best": int(cfg.get_value("progressi", "record_ondata", 0)),

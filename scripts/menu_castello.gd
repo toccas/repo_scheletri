@@ -16,6 +16,7 @@ const PixelFont := preload("res://scripts/pixel_font.gd")
 const ATLAS := preload("res://assets/sprites.png")
 const FeedbackPanel := preload("res://scripts/feedback_panel.gd")
 const GAME_SCENE := "res://scenes/main.tscn"
+const PREP_SCENE := "res://scenes/preparazione.tscn"  # AVVIA RUN: prima si sceglie la squadra
 const RESEARCH_SCENE := "res://scenes/research.tscn"
 const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
 
@@ -316,7 +317,7 @@ func _activate(target) -> void:
 		return
 	match target.azione:
 		0:
-			next_scene = GAME_SCENE
+			next_scene = PREP_SCENE
 		1:
 			next_scene = RESEARCH_SCENE
 		2:
