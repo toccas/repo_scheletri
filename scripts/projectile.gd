@@ -22,6 +22,8 @@ var dmg := 1.0
 var splash := 0.0
 var look := "arrow"  # "arrow", "magic" o "necro"
 var speed := 140.0  # pixel dell'arte al secondo
+## Colore d'accento di chi ha tirato (impennaggio delle frecce, alone delle magie).
+var tint := Color("acacac")
 
 var ground := Vector2.ZERO
 var height := 0.0
@@ -79,9 +81,10 @@ func _hit() -> void:
 		game.damage_tower(dmg * Data.TOWER_RANGED_TAKEN)
 	elif splash > 0.0:
 		game.damage_area(dest, splash, dmg, 1 - team, shooter)
-		game.spawn_ground_fx(dest, splash, C_LIGHT, 0.25)
+		game.spawn_ground_fx(dest, splash, tint if look != "arrow" else C_LIGHT, 0.25)
 	elif target != null and is_instance_valid(target) and not target.dead:
-		game.spawn_unit_fx(target.ground, "spark", dest_height, signf(dest.x - ground.x + 0.01), 0.22)
+		game.spawn_unit_fx(target.ground, "spark", dest_height, signf(dest.x - ground.x + 0.01), 0.22,
+			tint if look != "arrow" else C_WHITE)
 		target.take_damage(dmg, shooter)
 	if to_tower:
 		game.spawn_unit_fx(dest, "spark", dest_height, -1.0, 0.25)
@@ -93,18 +96,20 @@ func _draw() -> void:
 	for i in range(1, trail.size()):
 		var lp: Vector2 = (trail[i] - position) / scale
 		var a := 0.55 * (1.0 - float(i) / trail.size())
-		var col := C_WHITE if look != "arrow" else C_LIGHT
+		var col := tint if look != "arrow" else C_LIGHT
 		draw_rect(Rect2(lp.round(), Vector2.ONE * (2.0 if look == "magic" and i == 1 else 1.0)), Color(col, a))
 	match look:
 		"arrow":
 			draw_rect(Rect2(-3, 0, 4, 1), C_LIGHT)
 			draw_rect(Rect2(1, 0, 1, 1), C_WHITE)
-			draw_rect(Rect2(-4, -1, 1, 1), C_MID)
-			draw_rect(Rect2(-4, 1, 1, 1), C_MID)
+			draw_rect(Rect2(-4, -1, 1, 1), tint)  # impennaggio del colore dell'arciere
+			draw_rect(Rect2(-4, 1, 1, 1), tint)
 		"magic":
+			draw_rect(Rect2(-2, -2, 4, 4), Color(tint, 0.45))
 			draw_rect(Rect2(-1, -1, 2, 2), C_WHITE)
-			draw_rect(Rect2(-3, 0, 2, 1), C_LIGHT)
+			draw_rect(Rect2(-3, 0, 2, 1), tint)
 		"necro":
-			draw_rect(Rect2(-1, -1, 3, 3), C_BLACK)
+			draw_rect(Rect2(-2, -2, 5, 5), Color(tint, 0.4))
+			draw_rect(Rect2(-1, -1, 3, 3), tint.darkened(0.3))
 			draw_rect(Rect2(0, 0, 1, 1), C_WHITE)
-			draw_rect(Rect2(-3, 0, 2, 1), C_MID)
+			draw_rect(Rect2(-3, 0, 2, 1), tint)

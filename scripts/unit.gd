@@ -258,7 +258,7 @@ func _process(delta: float) -> void:
 		pulse_t -= delta
 		if pulse_t <= 0.0:
 			pulse_t = 2.0
-			game.spawn_ground_fx(ground, game.AURA_RADIUS, C_LIGHT, 0.6)
+			game.spawn_ground_fx(ground, game.AURA_RADIUS, accent(), 0.6)
 	atk_timer = maxf(0.0, atk_timer - delta)
 	var before := ground
 	if team == ALLY:
@@ -447,7 +447,7 @@ func _special_attack(t) -> void:
 			if special == "carica" and run_dist >= 24.0:
 				dmg *= 2.0
 				lunge = 8.0
-				game.spawn_ground_fx(t.ground, 8.0, C_WHITE, 0.3)
+				game.spawn_ground_fx(t.ground, 8.0, accent(), 0.3)
 			run_dist = 0.0
 			game.spawn_unit_fx(t.ground, "slash", hit_h, _face(), 0.2)
 			t.take_damage(dmg, self)
@@ -458,7 +458,7 @@ func _special_attack(t) -> void:
 					b.take_damage(dmg * 0.6, self)
 		"schianto":
 			lunge = 4.0
-			game.spawn_ground_fx(t.ground, 14.0, C_WHITE, 0.35)
+			game.spawn_ground_fx(t.ground, 14.0, accent(), 0.35)
 			t.take_damage(dmg, self)
 			for c in game.enemies_root.get_children():
 				if c != t and not c.dead and c.ground.distance_to(t.ground) <= 14.0 + c.radius:
@@ -475,8 +475,7 @@ func _special_attack(t) -> void:
 				else:
 					c.take_damage(dmg if c == t else dmg * 0.6, self)
 		"esplodi":
-			game.spawn_ground_fx(ground, splash, C_WHITE, 0.45)
-			game.spawn_ground_fx(ground, splash * 0.5, C_LIGHT, 0.3)
+			game.spawn_ground_fx(ground, splash, accent(), 0.6, "fire")
 			game.damage_area(ground, splash, dmg, ENEMY, self)
 			_die()
 		"trapassa":
@@ -507,8 +506,8 @@ func _special_attack(t) -> void:
 					c.curse_t = 4.0
 		"urlo":
 			lunge = -1.0
-			game.spawn_ground_fx(ground, attack_range, C_WHITE, 0.5)
-			game.spawn_ground_fx(ground, attack_range * 0.6, C_LIGHT, 0.4)
+			game.spawn_ground_fx(ground, attack_range, accent(), 0.5)
+			game.spawn_ground_fx(ground, attack_range * 0.6, accent().lightened(0.4), 0.4)
 			for c in game.enemies_root.get_children():
 				if not c.dead and c.ground.distance_to(ground) <= attack_range + c.radius:
 					c.take_damage(dmg, self)
@@ -527,7 +526,7 @@ func _attack_tower() -> void:
 		lunge = 5.0
 		game.spawn_unit_fx(ground + Vector2(-radius - 2, 0), "slash", muzzle_height(), _face(), 0.2)
 	else:
-		game.spawn_projectile(team, ground, muzzle_height(), null, true, get_dmg(), 0.0, kind == "mago")
+		game.spawn_projectile(team, ground, muzzle_height(), null, true, get_dmg(), 0.0, kind == "mago", "", self)
 
 
 func _separate(delta: float) -> void:
@@ -599,6 +598,11 @@ func heal(amount: float) -> void:
 		hp = minf(max_hp, hp + amount)
 
 
+## Colore d'accento dell'unità (lo stesso dell'elemento colorato della sprite).
+func accent() -> Color:
+	return Data.accent(kind, team)
+
+
 func _die() -> void:
 	dead = true
 	game.spawn_ground_fx(ground, radius + 3.0, C_WHITE if team == ALLY else C_LIGHT, 0.3)
@@ -624,7 +628,7 @@ func _draw_bar() -> void:
 	var size := 32.0 if is_boss else 16.0
 	if curse_t > 0.0:  # teschietto della maledizione sopra la testa
 		bar.draw_rect(Rect2(-1, -size - 7, 3, 2), C_BLACK)
-		bar.draw_rect(Rect2(-1, -size - 8, 3, 1), Color("4a4a4a"))
+		bar.draw_rect(Rect2(-1, -size - 8, 3, 1), Data.accent("lich"))  # fuoco verde del lich
 	if stun_t > 0.0:  # stelline dello stordimento
 		var a := fmod(Time.get_ticks_msec() / 150.0, 4.0)
 		bar.draw_rect(Rect2(-4 + roundf(a) * 2.0, -size - 5, 1, 1), C_WHITE)

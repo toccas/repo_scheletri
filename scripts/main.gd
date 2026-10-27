@@ -24,6 +24,7 @@ const ProjectileScript := preload("res://scripts/projectile.gd")
 const FxScript := preload("res://scripts/fx.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Collezione := preload("res://scripts/collezione.gd")
+const Portafoglio := preload("res://scripts/portafoglio.gd")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -68,6 +69,19 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## Fin dove spara il necromante, misurato dal lato destro della torre, in pixel
 ## dell'arte (32 = una casella). La ricerca "Occhio della notte" la aumenta.
 @export_range(8, 600, 1) var torre_gittata: float = Data.NECRO_RANGE
+
+@export_group("Colori degli effetti")
+## Fiamme e onda d'urto della palla di fuoco.
+@export var colore_palla_di_fuoco := Color("ec8a30")
+## Fulmine della saetta.
+@export var colore_saetta := Color("5292ec")
+## Cerchio e crocette dell'area curativa.
+@export var colore_area_curativa := Color("68be4c")
+## Colpi del necromante e bagliore del suo bastone.
+@export var colore_necromante := Color("9c5ccc")
+## Nubi dello stregone della peste.
+@export var colore_nube_peste := Color("b6d640")
+@export_group("")
 
 ## STATISTICHE DEGLI SCHELETRI: ora si modificano tutte (anche le unità delle
 ## pergamene) nell'Inspector della scena PREPARAZIONE (scenes/preparazione.tscn).
@@ -265,6 +279,7 @@ var paused := false
 func _ready() -> void:
 	randomize()
 	Engine.time_scale = 1.0
+	Portafoglio.install_dev_tool(get_tree())
 	_compute_layout()
 	_apply_research()
 	for r in rows:
@@ -644,6 +659,10 @@ func spawn_projectile(team: int, from: Vector2, from_height: float, target, to_t
 	p.dmg = dmg
 	p.splash = splash
 	p.look = look_override if look_override != "" else ("magic" if magic else "arrow")
+	if p.look == "necro":
+		p.tint = colore_necromante
+	elif shooter != null and is_instance_valid(shooter):
+		p.tint = shooter.accent()
 	p.ground = from
 	p.height = from_height
 	p.start_height = from_height
@@ -652,10 +671,10 @@ func spawn_projectile(team: int, from: Vector2, from_height: float, target, to_t
 
 ## Effetto sul corpo di un'unità (fendenti, scintille): `lift` è l'altezza da terra
 ## in pixel dell'arte, `dir` il verso (1 = verso destra).
-func spawn_unit_fx(g: Vector2, kind: String, lift: float, dir: float = 1.0, life: float = 0.2) -> void:
+func spawn_unit_fx(g: Vector2, kind: String, lift: float, dir: float = 1.0, life: float = 0.2, color: Color = C6) -> void:
 	var f := FxScript.new()
 	f.kind = kind
-	f.color = C6
+	f.color = color
 	f.life = life
 	f.dir = 1.0 if dir >= 0.0 else -1.0
 	f.scale = Vector2.ONE * px
@@ -847,8 +866,8 @@ func _try_raise(dead_enemy) -> void:
 		u.life_left = RAISE_LIFE
 		u.summoner = n
 		allies_root.add_child(u)
-		spawn_ground_fx(u.ground, 6.0, C6, 0.4)
-		spawn_unit_fx(u.ground, "spark", 6.0, 1.0, 0.3)
+		spawn_ground_fx(u.ground, 6.0, n.accent(), 0.4)
+		spawn_unit_fx(u.ground, "spark", 6.0, 1.0, 0.3, n.accent())
 		return
 
 
@@ -1163,15 +1182,15 @@ func _cast(key: String, g: Vector2) -> void:
 	match key:
 		"palla_di_fuoco":
 			damage_area(g, a["radius"], power, 1)
-			spawn_ground_fx(g, a["radius"], a["color"], 0.5)
+			spawn_ground_fx(g, a["radius"], colore_palla_di_fuoco, 0.7, "fire")
 		"saetta":
 			damage_area(g, a["radius"], power, 1)
-			spawn_ground_fx(g, a["radius"], a["color"], 0.35, "bolt")
+			spawn_ground_fx(g, a["radius"], colore_saetta, 0.4, "bolt")
 		"area_curativa":
 			for u in allies_root.get_children():
 				if not u.dead and g.distance_to(u.ground) <= a["radius"]:
 					u.heal(a["power"])
-			spawn_ground_fx(g, a["radius"], a["color"], 0.6)
+			spawn_ground_fx(g, a["radius"], colore_area_curativa, 0.9, "heal")
 
 
 # --- Input -------------------------------------------------------------------
@@ -1236,7 +1255,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _cycle_speed() -> void:
 	var next := Engine.time_scale + 1.0
-	Engine.time_scale = 1.0 if next > 3.0 else next
+	if next > 3.0:
+		next = 1.0
+	elif next > 2.0 and not Portafoglio.has_vip():
+		next = 1.0
+		set_hint("La velocità x3 si sblocca con il PACCHETTO VIP del negozio.", 3.0)
+	Engine.time_scale = next
 
 
 # --- Fine partita e progressi --------------------------------------------------
@@ -1254,16 +1278,20 @@ func _end_run(won: bool) -> void:
 	cfg.set_value("progressi", "punti", total)
 	cfg.set_value("progressi", "record_ondata", best)
 	cfg.save(SAVE_PATH)
+	var coins := cleared * Data.MONETE_PER_ONDATA + (Data.MONETE_VITTORIA if won else 0)
+	Portafoglio.add_monete(coins)
 
 	if autotest:
 		print("[autotest] fine partita: %s all'ondata %d | livello %d | uccisioni %d | punti %d" % [
 			"vittoria" if won else "sconfitta", wave, necro_level, kills, earned])
+		print("[autotest] monete d'osso: +%d" % coins)
 		get_tree().quit()
 		return
 
 	var title := "Hai resistito alle 100 ondate!" if won else "La torre è caduta"
 	var body := "Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d" % [
 		wave, kills, earned, total, best]
+	body += "\nMonete d'osso guadagnate: %d  ·  spendile nel negozio" % coins
 	if scrolls_earned > 0:
 		body += "\nPergamene ottenute: %d  ·  aprile nel portale del menu" % scrolls_earned
 	_show_modal(title, body, [
@@ -1907,11 +1935,12 @@ func _draw_tower() -> void:
 		t.draw_rect(Rect2((sm["p"] as Vector2).round(), Vector2(sz, sz)), Color(0.45, 0.45, 0.45, 0.55 * a))
 	var orb := necro + Vector2(14, 2)  # punta del bastone
 	var glow := 0.25 + 0.25 * absf(sin(amb_t * 2.2))
-	t.draw_rect(Rect2(orb - Vector2.ONE, Vector2(3, 3)), Color(1, 1, 1, glow))
+	t.draw_rect(Rect2(orb - Vector2.ONE * 2, Vector2(5, 5)), Color(colore_necromante, glow * 0.5))
+	t.draw_rect(Rect2(orb - Vector2.ONE, Vector2(3, 3)), Color(colore_necromante.lightened(0.4), glow))
 	if necro_flash > 0.0:
 		var r := 1.0 + roundf(necro_flash * 15.0)
-		t.draw_rect(Rect2(orb - Vector2(r, 0), Vector2(r * 2 + 1, 1)), C6)
-		t.draw_rect(Rect2(orb - Vector2(0, r), Vector2(1, r * 2 + 1)), C6)
+		t.draw_rect(Rect2(orb - Vector2(r, 0), Vector2(r * 2 + 1, 1)), colore_necromante.lightened(0.3))
+		t.draw_rect(Rect2(orb - Vector2(0, r), Vector2(1, r * 2 + 1)), colore_necromante.lightened(0.3))
 		t.draw_rect(Rect2(orb - Vector2.ONE, Vector2(3, 3)), Color(1, 1, 1))
 
 
@@ -2229,7 +2258,7 @@ func _draw_ambient() -> void:
 					continue
 				var v := sin(xx * 0.5 + t * 3.0 + yy) * cos(yy * 0.7 - t * 2.0)
 				if v > 0.1:
-					n.draw_rect(Rect2(cp + Vector2(xx, yy), Vector2(2, 2)), Color(0.55, 0.55, 0.55, 0.45 * a))
+					n.draw_rect(Rect2(cp + Vector2(xx, yy), Vector2(2, 2)), Color(colore_nube_peste, 0.4 * a))
 	# nebbia che vortica nel portale degli eroi
 	var sx := origin.x + lane_len
 	for y in range(0, int(depth), 2):

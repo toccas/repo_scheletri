@@ -9,23 +9,33 @@ extends Sprite2D
 ##
 ## Le animazioni (finestre, libro, vortice...) usano punti dell'immagine: se
 ## ridisegni un PNG mantieni le stesse proporzioni o aggiorna le coordinate qui sotto.
+##
+## TARGA CON IL NOME: con "Lato Etichetta" = Manuale compare un nodo figlio
+## "Etichetta" (Marker2D): trascinalo nella vista 2D e la targa lo segue.
+## Il segnaposto è il centro della targa.
 
 const ATLAS := preload("res://assets/sprites.png")
 const PixelFont := preload("res://scripts/pixel_font.gd")
 
-enum Azione { PARTITA, RICERCHE, EVOCAZIONE }
+enum Azione { PARTITA, RICERCHE, EVOCAZIONE, NEGOZIO }
 
 ## Testo sotto l'edificio.
 @export var etichetta := "AVVIA RUN"
 ## Cosa succede al clic.
 @export var azione: Azione = Azione.PARTITA
-enum Lato { AUTOMATICO, SOTTO, SOPRA }
+enum Lato { AUTOMATICO, SOTTO, SOPRA, MANUALE }
+
+const LABEL_NODE := "Etichetta"
 
 ## Dove mettere la targa con il nome. AUTOMATICO: sotto l'edificio se c'è spazio
-## prima del bordo dello schermo, altrimenti sopra.
+## prima del bordo dello schermo, altrimenti sopra. MANUALE: dove metti il nodo
+## figlio "Etichetta" (viene creato da solo nel punto in cui si trova ora la targa).
 @export var lato_etichetta: Lato = Lato.AUTOMATICO:
 	set(v):
+		var before := _label_rect().get_center() if is_inside_tree() else Vector2.ZERO
 		lato_etichetta = v
+		if v == Lato.MANUALE:
+			_ensure_label_marker(before)
 		if _label:
 			_label.queue_redraw()
 ## Spostamento extra della targa, in pixel dell'arte.
@@ -141,6 +151,10 @@ func footprint() -> Rect2:
 func _label_rect() -> Rect2:
 	var w := PixelFont.text_width(etichetta, 1.0)
 	var h := PixelFont.text_height(1.0)
+	if lato_etichetta == Lato.MANUALE:
+		var m := get_node_or_null(LABEL_NODE) as Node2D
+		if m:
+			return Rect2((m.position - Vector2(w, h) / 2.0).round(), Vector2(w, h))
 	var below := Vector2(-roundf(w / 2.0), 6)
 	var above := Vector2(-roundf(w / 2.0), offset.y - 15 - h)
 	var pos := below
@@ -155,8 +169,25 @@ func _label_rect() -> Rect2:
 	return Rect2((pos + spostamento_etichetta).round(), Vector2(w, h))
 
 
+## Crea (solo nell'editor) il segnaposto della targa, salvato nella scena.
+func _ensure_label_marker(at: Vector2) -> void:
+	if not Engine.is_editor_hint() or not is_inside_tree() or get_node_or_null(LABEL_NODE):
+		return
+	var root := get_tree().edited_scene_root
+	if root == null:
+		return
+	var m := Marker2D.new()
+	m.name = LABEL_NODE
+	m.gizmo_extents = 4.0
+	m.position = at.round()
+	add_child(m)
+	m.owner = root
+
+
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		if lato_etichetta == Lato.MANUALE and _label:
+			_label.queue_redraw()  # la targa segue il segnaposto mentre lo trascini
 		return
 	t += delta
 	_update_effects(delta)
@@ -280,6 +311,21 @@ func _draw_front() -> void:
 			var bp := _tex(Vector2(33, 16))
 			for k in 3:
 				f.draw_rect(Rect2(bp + Vector2(-8 + k * 2, -k), Vector2(16 - k * 4, 1)), Color(1, 1, 1, 0.08 + 0.06 * absf(sin(t * 2.0))))
+		Azione.NEGOZIO:
+			# lanterna che tremola e moneta dell'insegna che luccica
+			var lk := 0.25 + 0.3 * absf(sin(t * 7.0) * sin(t * 2.3))
+			f.draw_rect(Rect2(_tex(Vector2(7, 20)), Vector2(1, 4)), Color(1, 1, 1, 0.4 + lk))
+			f.draw_rect(Rect2(_tex(Vector2(4, 18)), Vector2(7, 8)), Color(1, 1, 1, lk * 0.25))
+			var g := fmod(t, 3.0)
+			if g < 0.35:  # scintilla che attraversa la moneta
+				var p := _tex(Vector2(36, 23)) + Vector2(roundf(g / 0.35 * 4.0) - 2.0, -roundf(g / 0.35 * 4.0) + 2.0)
+				f.draw_rect(Rect2(p, Vector2.ONE), Color(1, 1, 1, 0.9))
+				f.draw_rect(Rect2(p - Vector2(1, 0), Vector2(3, 1)), Color(1, 1, 1, 0.35))
+				f.draw_rect(Rect2(p - Vector2(0, 1), Vector2(1, 3)), Color(1, 1, 1, 0.35))
+			# il mercante ogni tanto alza lo sguardo: occhi che brillano
+			if fmod(t + 1.3, 4.0) < 0.25:
+				f.draw_rect(Rect2(_tex(Vector2(24, 22)), Vector2(1, 1)), Color(1, 1, 1, 0.9))
+				f.draw_rect(Rect2(_tex(Vector2(26, 22)), Vector2(1, 1)), Color(1, 1, 1, 0.9))
 		Azione.EVOCAZIONE:
 			# runa della chiave di volta
 			var k := 0.4 + 0.6 * absf(sin(t * 1.7))

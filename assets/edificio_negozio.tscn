@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_building.gd" id="1_building"]
+[ext_resource type="Texture2D" path="res://assets/menu/negozio.png" id="2_negozio"]
+
+[node name="Negozio" type="Sprite2D"]
+position = Vector2(100, 118)
+texture = ExtResource("2_negozio")
+centered = false
+offset = Vector2(-27, -58)
+script = ExtResource("1_building")
+etichetta = "NEGOZIO"
+azione = 3

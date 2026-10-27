@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://cocys4dbumbnt"]
+
+[ext_resource type="Script" uid="uid://0uvfaif8hcec" path="res://scripts/negozio.gd" id="1_neg"]
+[ext_resource type="Script" uid="uid://blc5qmnk1wiet" path="res://scripts/oggetto_negozio.gd" id="2_mo37h"]
+[ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="2_tema"]
+[ext_resource type="Texture2D" uid="uid://ct1xe57ag056d" path="res://assets/negozio/pergamena.png" id="3_w72ry"]
+[ext_resource type="Texture2D" uid="uid://83brfeehfn1y" path="res://assets/negozio/fascio.png" id="4_kij0o"]
+[ext_resource type="Texture2D" uid="uid://3g54rbvivenv" path="res://assets/negozio/scrigno.png" id="5_j0pun"]
+[ext_resource type="Texture2D" uid="uid://ci1n4yv2itffx" path="res://assets/negozio/vip.png" id="6_kmrl8"]
+[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="8_w72ry"]
+
+[sub_resource type="Resource" id="Resource_s473i"]
+script = ExtResource("2_mo37h")
+id = "pergamena"
+nome = "Pergamena"
+descrizione = "Una pergamena da aprire nel portale per evocare un'unità."
+icona = ExtResource("3_w72ry")
+pergamene = 1
+
+[sub_resource type="Resource" id="Resource_fa878"]
+script = ExtResource("2_mo37h")
+id = "fascio"
+nome = "Fascio di pergamene"
+descrizione = "5 pergamene legate con il nastro del mercante."
+icona = ExtResource("4_kij0o")
+prezzo = 220.0
+pergamene = 5
+etichetta = "-12%"
+
+[sub_resource type="Resource" id="Resource_xr6ba"]
+script = ExtResource("2_mo37h")
+id = "scrigno"
+nome = "Scrigno del necromante"
+descrizione = "10 pergamene: con la garanzia ogni 10 esce almeno un epico."
+icona = ExtResource("5_j0pun")
+prezzo = 400.0
+pergamene = 10
+etichetta = "MIGLIORE"
+
+[sub_resource type="Resource" id="Resource_cq1er"]
+script = ExtResource("2_mo37h")
+id = "vip"
+nome = "Pacchetto VIP"
+descrizione = "Sblocca per sempre la velocità di gioco x3 e regala 5 pergamene."
+icona = ExtResource("6_kmrl8")
+valuta = 1
+prezzo = 4.99
+pergamene = 5
+sblocca_vip = true
+una_sola_volta = true
+etichetta = "VIP"
+id_store = "vip_pack"
+
+[node name="Negozio" type="Control" unique_id=404986186]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_tema")
+script = ExtResource("1_neg")
+oggetti = Array[ExtResource("2_mo37h")]([SubResource("Resource_s473i"), SubResource("Resource_fa878"), SubResource("Resource_xr6ba"), SubResource("Resource_cq1er"), null, null])
+tema = ExtResource("2_tema")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=40222031]
+stream = ExtResource("8_w72ry")
+autoplay = true
+parameters/looping = true

@@ -17,6 +17,7 @@ extends Control
 ## level-up si applicano sopra questi valori.
 
 const Data := preload("res://scripts/game_data.gd")
+const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const TEX_SKY := preload("res://assets/campo/cielo.png")
@@ -147,6 +148,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	Portafoglio.install_dev_tool(get_tree())
 	if tema:
 		theme = tema
 	font = get_theme_default_font()

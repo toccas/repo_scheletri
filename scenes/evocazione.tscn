@@ -1,9 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://b3fbirf5mj2aj"]
 
-[ext_resource type="Script" path="res://scripts/evocazione.gd" id="1_evo"]
+[ext_resource type="Script" uid="uid://cc2ls78b24wh8" path="res://scripts/evocazione.gd" id="1_evo"]
 [ext_resource type="Theme" uid="uid://ppbqlqpp70pl" path="res://tema.tres" id="2_tema"]
+[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="3_rlq2o"]
 
-[node name="Evocazione" type="Control"]
+[node name="Evocazione" type="Control" unique_id=1588284909]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,3 +13,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_evo")
 tema = ExtResource("2_tema")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=42318037]
+stream = ExtResource("3_rlq2o")
+autoplay = true
+parameters/looping = true

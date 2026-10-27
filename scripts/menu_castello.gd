@@ -13,12 +13,14 @@ extends Node2D
 ## Comandi: mouse; frecce sinistra/destra + Invio; Esc non fa nulla (per uscire c'è BACK).
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const Portafoglio := preload("res://scripts/portafoglio.gd")
 const ATLAS := preload("res://assets/sprites.png")
 const FeedbackPanel := preload("res://scripts/feedback_panel.gd")
 const GAME_SCENE := "res://scenes/main.tscn"
 const PREP_SCENE := "res://scenes/preparazione.tscn"  # AVVIA RUN: prima si sceglie la squadra
 const RESEARCH_SCENE := "res://scenes/research.tscn"
 const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
+const SHOP_SCENE := "res://scenes/negozio.tscn"
 
 ## Pixel dello schermo per ogni pixel dell'arte (320x180 -> 1280x720 con 4).
 @export_range(2, 6) var scala_pixel := 4
@@ -102,6 +104,7 @@ func _ready() -> void:
 		return
 	Engine.time_scale = 1.0
 	rnd.randomize()
+	Portafoglio.install_dev_tool(get_tree())
 	mondo.scale = Vector2.ONE * scala_pixel
 	for c in cortile.get_children():
 		if c.has_method("hit"):
@@ -322,6 +325,8 @@ func _activate(target) -> void:
 			next_scene = RESEARCH_SCENE
 		2:
 			next_scene = EVOCATION_SCENE
+		3:
+			next_scene = SHOP_SCENE
 	leaving = true
 	# piccolo lampo sull'edificio scelto
 	for i in 14:

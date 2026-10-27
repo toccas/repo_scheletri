@@ -166,6 +166,10 @@ const RARITY_ODDS := {"comune": 0.50, "raro": 0.30, "epico": 0.15, "leggendario"
 const PITY_EVERY := 10
 ## Ogni quante ondate superate si guadagna una pergamena.
 const WAVES_PER_SCROLL := 10
+## Monete d'osso guadagnate per ogni ondata superata (si spendono nel NEGOZIO).
+const MONETE_PER_ONDATA := 2
+## Monete d'osso in più se resisti a tutte le 100 ondate.
+const MONETE_VITTORIA := 300
 ## Pergamene in regalo alla prima partita (per provare subito l'evocazione).
 const STARTING_SCROLLS := 3
 ## Rango massimo di un'unità (i doppioni lo alzano): +10% vita e danno per rango.
@@ -188,20 +192,61 @@ static func ally_region(kind: String, frame: int = 0) -> Rect2:
 		return Rect2((i % 4) * 32 + frame * 16, (i / 4) * 16, 16, 16)
 	return Rect2((d["sx"] + frame) * 16, 0, 16, 16)
 
+## COLORE D'ACCENTO di ogni unità: è l'unico elemento colorato della sprite
+## (il resto è in scala di grigi) e colora anche i suoi proiettili e i suoi effetti.
+## Se cambi un colore qui, per coerenza ridisegna anche quel pixel nella sprite.
+const ACCENTI := {
+	"soldato": Color("d64034"),     # sciarpa rossa
+	"arciere": Color("68be4c"),     # cappellino verde
+	"mago": Color("5292ec"),        # sfera blu sul bastone
+	"gigante": Color("96643a"),     # clava di legno
+	"lanciere": Color("ec8a30"),    # pennone arancio
+	"berserker": Color("d64034"),   # asce insanguinate
+	"cavaliere": Color("f0ce52"),   # elmo d'oro
+	"scudiero": Color("5292ec"),    # scudo blu
+	"balestriere": Color("40b0a0"), # cappuccio verde acqua
+	"catapulta": Color("ec8a30"),   # teschi in fiamme
+	"cecchino": Color("f0ce52"),    # occhi gialli
+	"negromante": Color("de62b6"),  # stola magenta
+	"peste": Color("b6d640"),       # fumo velenoso
+	"lich": Color("68be4c"),        # fuoco verde
+	"banshee": Color("78e2ea"),     # corpo spettrale
+	"totem": Color("d64034"),       # palo dipinto di rosso
+	"golem": Color("ec8a30"),       # nucleo ardente
+	"mietitore": Color("ce96f6"),   # occhi lilla
+	"muro": Color("68be4c"),        # muschio
+	"carcassa": Color("ec8a30"),    # miccia accesa
+}
+## Accenti degli eroi nemici (stesse tipologie, altri colori).
+const ACCENTI_NEMICI := {
+	"soldato": Color("5292ec"),     # tunica blu
+	"arciere": Color("96643a"),     # cappuccio di cuoio
+	"mago": Color("d64034"),        # cappello rosso (magia di fuoco)
+	"gigante": Color("f0ce52"),     # elmo con la fascia d'oro
+}
+## Viola della veste del necromante (colpi della torre).
+const ACCENTO_NECROMANTE := Color("9c5ccc")
+
+
+static func accent(kind: String, team: int = 0) -> Color:
+	var d: Dictionary = ACCENTI if team == 0 else ACCENTI_NEMICI
+	return d.get(kind, Color("acacac"))
+
+
 ## Abilità del necromante. La potenza scala con l'attacco del necromante.
 ## L'area curativa cura solo le unità alleate: la torre non si cura mai.
 const ABILITIES := {
 	"palla_di_fuoco": {
 		"name": "Palla di fuoco", "key": "1", "radius": 24.0, "power": 60.0,
-		"cooldown": 12.0, "color": Color(1.0, 1.0, 1.0),
+		"cooldown": 12.0, "color": Color("ec8a30"),
 	},
 	"area_curativa": {
 		"name": "Area curativa", "key": "2", "radius": 36.0, "power": 40.0,
-		"cooldown": 15.0, "color": Color(0.67, 0.67, 0.67),
+		"cooldown": 15.0, "color": Color("68be4c"),
 	},
 	"saetta": {
 		"name": "Saetta", "key": "3", "radius": 10.0, "power": 140.0,
-		"cooldown": 8.0, "color": Color(0.92, 0.92, 0.92),
+		"cooldown": 8.0, "color": Color("5292ec"),
 	},
 }
 
