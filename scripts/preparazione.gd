@@ -17,6 +17,7 @@ extends Control
 ## level-up si applicano sopra questi valori.
 
 const Data := preload("res://scripts/game_data.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
@@ -149,6 +150,7 @@ func _ready() -> void:
 		return
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	Portafoglio.install_dev_tool(get_tree())
+	Suoni.install()
 	if tema:
 		theme = tema
 	font = get_theme_default_font()
@@ -224,6 +226,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		if h["type"] == "altar":
+			Suoni.play("click", 0.8)
 			st["squad"][h["id"]] = ""
 			selected = h["id"]
 			_save()
@@ -232,6 +235,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	match h["type"]:
 		"altar":
+			Suoni.play("click")
 			selected = h["id"]
 		"card":
 			_place(h["id"])
@@ -256,8 +260,10 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Mette l'unità sull'altare selezionato (se è già in squadra si scambiano).
 func _place(kind: String) -> void:
 	if not st["owned"].has(kind):
+		Suoni.play("errore")
 		_say("Non hai ancora questa unità: aprila con una pergamena nel portale.")
 		return
+	Suoni.play("conferma")
 	var squad: Array = st["squad"]
 	var j := squad.find(kind)
 	if j == selected:
@@ -277,14 +283,18 @@ func _press(id: String) -> void:
 	match id:
 		"start":
 			if _squad().is_empty():
+				Suoni.play("errore")
 				_say("Metti almeno un'unità sugli altari.")
 				return
+			Suoni.play("conferma")
 			_save()
 			leaving = GAME_SCENE
 		"back":
+			Suoni.play("click")
 			_save()
 			leaving = MENU_SCENE
 		"portal":
+			Suoni.play("click")
 			_save()
 			leaving = EVOCATION_SCENE
 

@@ -1,0 +1,218 @@
+[gd_resource type="Resource" script_class="LibreriaSuoni" format=3]
+
+[ext_resource type="Script" path="res://scripts/voce_suono.gd" id="1_nqbl0"]
+[ext_resource type="AudioStream" path="res://assets/suoni/area_curativa.wav" id="2_2kmvd"]
+[ext_resource type="AudioStream" path="res://assets/suoni/assorbimento.wav" id="3_orsav"]
+[ext_resource type="AudioStream" path="res://assets/suoni/carta.wav" id="4_7ybjp"]
+[ext_resource type="AudioStream" path="res://assets/suoni/click.wav" id="5_x04jd"]
+[ext_resource type="AudioStream" path="res://assets/suoni/conferma.wav" id="6_1v77h"]
+[ext_resource type="AudioStream" path="res://assets/suoni/errore.wav" id="7_fdj7k"]
+[ext_resource type="AudioStream" path="res://assets/suoni/evoca_carica.wav" id="8_aldlf"]
+[ext_resource type="AudioStream" path="res://assets/suoni/evoca_rivela.wav" id="9_essxo"]
+[ext_resource type="AudioStream" path="res://assets/suoni/freccia.wav" id="10_olwil"]
+[ext_resource type="AudioStream" path="res://assets/suoni/impatto.wav" id="11_x41gg"]
+[ext_resource type="AudioStream" path="res://assets/suoni/livello.wav" id="12_llkth"]
+[ext_resource type="AudioStream" path="res://assets/suoni/magia.wav" id="13_b3kf3"]
+[ext_resource type="AudioStream" path="res://assets/suoni/moneta.wav" id="14_qmp3u"]
+[ext_resource type="AudioStream" path="res://assets/suoni/morte_eroe.wav" id="15_ie5q2"]
+[ext_resource type="AudioStream" path="res://assets/suoni/morte_scheletro.wav" id="16_nksyi"]
+[ext_resource type="AudioStream" path="res://assets/suoni/necromante.wav" id="17_o8yuk"]
+[ext_resource type="AudioStream" path="res://assets/suoni/ondata.wav" id="18_wrf2v"]
+[ext_resource type="AudioStream" path="res://assets/suoni/ondata_superata.wav" id="19_7t35b"]
+[ext_resource type="AudioStream" path="res://assets/suoni/palla_di_fuoco.wav" id="20_h3fdl"]
+[ext_resource type="AudioStream" path="res://assets/suoni/saetta.wav" id="21_cs6ms"]
+[ext_resource type="Script" path="res://scripts/libreria_suoni.gd" id="22_hvcuk"]
+[ext_resource type="AudioStream" path="res://assets/suoni/spada.wav" id="23_ecl2p"]
+[ext_resource type="AudioStream" path="res://assets/suoni/torre_colpita.wav" id="24_jnn6b"]
+
+[sub_resource type="Resource" id="Resource_6628p"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("2_2kmvd")
+volume_db = -2.5
+variazione_tono = 0.0
+intervallo_minimo = 0.1
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_nacph"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("3_orsav")
+volume_db = -9.5
+variazione_tono = 0.0
+intervallo_minimo = 0.3
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_2pjmt"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("4_7ybjp")
+volume_db = -7.5
+variazione_tono = 0.03
+intervallo_minimo = 0.04
+
+[sub_resource type="Resource" id="Resource_wawd3"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("5_x04jd")
+volume_db = -14.0
+variazione_tono = 0.04
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_hefuu"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("6_1v77h")
+volume_db = -12.5
+variazione_tono = 0.0
+intervallo_minimo = 0.05
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_68kxt"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("7_fdj7k")
+volume_db = -18.0
+variazione_tono = 0.0
+intervallo_minimo = 0.1
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_yudpb"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("8_aldlf")
+volume_db = -5.5
+variazione_tono = 0.0
+intervallo_minimo = 0.2
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_80eer"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("9_essxo")
+volume_db = -2.5
+variazione_tono = 0.0
+intervallo_minimo = 0.08
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_6k4q2"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("10_olwil")
+volume_db = -12.0
+variazione_tono = 0.1
+intervallo_minimo = 0.06
+
+[sub_resource type="Resource" id="Resource_vu0uw"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("11_x41gg")
+volume_db = -16.0
+variazione_tono = 0.15
+intervallo_minimo = 0.05
+
+[sub_resource type="Resource" id="Resource_2rd4l"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("12_llkth")
+volume_db = -5.5
+variazione_tono = 0.0
+intervallo_minimo = 0.2
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_25wvt"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("13_b3kf3")
+volume_db = -13.5
+variazione_tono = 0.08
+intervallo_minimo = 0.07
+
+[sub_resource type="Resource" id="Resource_ksj33"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("14_qmp3u")
+volume_db = -9.0
+variazione_tono = 0.0
+intervallo_minimo = 0.05
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_p8t8b"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("15_ie5q2")
+volume_db = -8.5
+variazione_tono = 0.12
+intervallo_minimo = 0.06
+
+[sub_resource type="Resource" id="Resource_xmyib"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("16_nksyi")
+volume_db = -6.5
+variazione_tono = 0.1
+intervallo_minimo = 0.06
+
+[sub_resource type="Resource" id="Resource_umrcg"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("17_o8yuk")
+volume_db = -12.5
+intervallo_minimo = 0.1
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_wootc"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("18_wrf2v")
+volume_db = -11.5
+variazione_tono = 0.0
+intervallo_minimo = 0.5
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_750nu"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("19_7t35b")
+volume_db = -11.5
+variazione_tono = 0.0
+intervallo_minimo = 0.5
+voci_massime = 1
+
+[sub_resource type="Resource" id="Resource_p0v7m"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("20_h3fdl")
+volume_db = -1.5
+variazione_tono = 0.05
+intervallo_minimo = 0.1
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_ug4pj"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("21_cs6ms")
+volume_db = -2.0
+variazione_tono = 0.05
+intervallo_minimo = 0.1
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_yqfw2"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("23_ecl2p")
+volume_db = -11.5
+variazione_tono = 0.12
+intervallo_minimo = 0.05
+
+[sub_resource type="Resource" id="Resource_vll4n"]
+script = ExtResource("1_nqbl0")
+suono = ExtResource("24_jnn6b")
+volume_db = -8.0
+variazione_tono = 0.1
+intervallo_minimo = 0.18
+voci_massime = 2
+
+[resource]
+script = ExtResource("22_hvcuk")
+click = SubResource("Resource_wawd3")
+conferma = SubResource("Resource_hefuu")
+errore = SubResource("Resource_68kxt")
+moneta = SubResource("Resource_ksj33")
+spada = SubResource("Resource_yqfw2")
+freccia = SubResource("Resource_6k4q2")
+magia = SubResource("Resource_25wvt")
+necromante = SubResource("Resource_umrcg")
+impatto = SubResource("Resource_vu0uw")
+palla_di_fuoco = SubResource("Resource_p0v7m")
+saetta = SubResource("Resource_ug4pj")
+area_curativa = SubResource("Resource_6628p")
+morte_scheletro = SubResource("Resource_xmyib")
+morte_eroe = SubResource("Resource_p8t8b")
+assorbimento = SubResource("Resource_nacph")
+ondata = SubResource("Resource_wootc")
+ondata_superata = SubResource("Resource_750nu")
+livello = SubResource("Resource_2rd4l")
+torre_colpita = SubResource("Resource_vll4n")
+evoca_carica = SubResource("Resource_yudpb")
+evoca_rivela = SubResource("Resource_80eer")
+carta = SubResource("Resource_2pjmt")

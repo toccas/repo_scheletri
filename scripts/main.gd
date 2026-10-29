@@ -25,6 +25,7 @@ const FxScript := preload("res://scripts/fx.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -81,6 +82,14 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export var colore_necromante := Color("9c5ccc")
 ## Nubi dello stregone della peste.
 @export var colore_nube_peste := Color("b6d640")
+@export_group("Feedback")
+## Lo schermo trema con palla di fuoco, saetta, colpi alla torre e morte dei campioni.
+@export var scuoti_schermo := true
+## Quanto trema (1 = normale).
+@export_range(0.0, 4.0, 0.1) var forza_scuotimento := 1.0
+## Teschi e armi che possono restare per terra insieme (i più vecchi affondano prima).
+@export_range(0, 400) var resti_massimi := 120
+## I SUONI si modificano in assets/suoni/libreria_suoni.tres (doppio clic → Inspector).
 @export_group("")
 
 ## STATISTICHE DEGLI SCHELETRI: ora si modificano tutte (anche le unità delle
@@ -197,6 +206,10 @@ var bats: Array = []
 var marchers: Array = []  # eroi lontani che marciano verso il portale
 var embers: Array = []
 
+var remains_root: Node2D
+var remains: Array = []  # resti per terra (scripts/resti.gd)
+var shake_t := 0.0
+var shake_amp := 0.0
 var tower_max_hp := Data.TOWER_HP
 var tower_hp := Data.TOWER_HP
 
@@ -280,6 +293,7 @@ func _ready() -> void:
 	randomize()
 	Engine.time_scale = 1.0
 	Portafoglio.install_dev_tool(get_tree())
+	Suoni.install()
 	_compute_layout()
 	_apply_research()
 	for r in rows:
@@ -305,7 +319,7 @@ func _ready() -> void:
 	front_node.draw.connect(_draw_front)
 	add_child(front_node)
 	_setup_scenery()
-	for n in ["enemies", "allies", "projectiles", "fx"]:
+	for n in ["remains", "enemies", "allies", "projectiles", "fx"]:
 		var node := Node2D.new()
 		node.name = n
 		add_child(node)
@@ -313,6 +327,7 @@ func _ready() -> void:
 	allies_root = $allies
 	projectiles_root = $projectiles
 	fx_root = $fx
+	remains_root = $remains
 	for k in Data.ABILITY_ORDER:
 		ability_cd[k] = 0.0
 	next_queue = Data.build_wave(1)
@@ -513,6 +528,10 @@ func is_running() -> bool:
 
 
 func _process(delta: float) -> void:
+	if shake_t > 0.0:
+		shake_t -= delta
+		var a := roundf(shake_amp * forza_scuotimento * clampf(shake_t / 0.2, 0.3, 1.0))
+		position = Vector2(randi_range(-1, 1), randi_range(-1, 1)) * a * px if shake_t > 0.0 else Vector2.ZERO
 	hover_slot = slot_at_screen(get_global_mouse_position())
 	if tower_flash > 0.0:
 		tower_flash -= delta
@@ -551,6 +570,8 @@ func _process_waves(delta: float) -> void:
 				return
 			next_wave_timer = 3.0
 			_revive_squads()
+			_absorb_remains()
+			Suoni.play("ondata_superata")
 			set_hint("Ondata %d superata! Il necromante rianima i caduti." % wave, 2.5)
 			if wave % Data.WAVES_PER_SCROLL == 0:
 				scrolls_earned += 1
@@ -570,6 +591,7 @@ func _start_wave(n: int) -> void:
 	next_queue_wave = n + 1
 	spawn_timer = 0.0
 	wave_running = true
+	Suoni.play("ondata", 0.85 if n % Data.BOSS_EVERY == 0 else 1.0)
 	if n % Data.BOSS_EVERY == 0:
 		set_hint("Ondata %d: arriva un campione degli eroi!" % n, 3.0)
 	else:
@@ -596,6 +618,7 @@ func _process_necro(delta: float) -> void:
 	var t = nearest_to_tower(enemies_root, necro_range)
 	if t != null:
 		spawn_projectile(0, Vector2(wall_x - TOWER_W / 2.0, tower_base_y), TOWER_H + 6.0, t, false, necro_dmg, 0.0, false, "necro")
+		Suoni.play("necromante")
 		necro_flash = 0.2
 		necro_timer = necro_cooldown
 
@@ -711,6 +734,8 @@ func damage_tower(amount: float) -> void:
 		return
 	tower_hp -= amount
 	tower_flash = 0.15
+	Suoni.play("torre_colpita")
+	shake(0.12, 1.0)
 	if tower_hp <= 0.0:
 		tower_hp = 0.0
 		_end_run(false)
@@ -718,6 +743,8 @@ func damage_tower(amount: float) -> void:
 
 func on_enemy_killed(u) -> void:
 	kills += 1
+	if u.is_boss:
+		shake(0.4, 2.0)
 	_try_raise(u)
 	necro_xp += u.xp_value * xp_mult
 	while necro_xp >= necro_xp_next:
@@ -727,6 +754,37 @@ func on_enemy_killed(u) -> void:
 		pending_levelups += 1
 	if pending_levelups > 0 and state == State.PLAYING:
 		call_deferred("_open_level_up")
+
+
+## Scuote lo schermo per `dur` secondi di `amp` pixel dell'arte (vedi "Feedback" nell'Inspector).
+func shake(dur: float, amp: float) -> void:
+	if not scuoti_schermo or autotest:
+		return
+	shake_amp = amp if shake_t <= 0.0 else maxf(shake_amp, amp)
+	shake_t = maxf(shake_t, dur)
+
+
+## Resti di un'unità morta (teschio o arma per terra), vedi scripts/resti.gd.
+func add_remains(r: Node2D) -> void:
+	remains = remains.filter(func(x) -> bool: return is_instance_valid(x))
+	remains_root.add_child(r)
+	remains.append(r)
+	while remains.size() > resti_massimi:
+		var old = remains.pop_front()
+		if is_instance_valid(old):
+			old.sink(0.0)
+
+
+## Fine ondata: il terreno inghiotte teschi e armi, uno dopo l'altro.
+func _absorb_remains() -> void:
+	var any := false
+	for r in remains:
+		if is_instance_valid(r) and not r.sinking:
+			r.sink(randf_range(0.2, 0.9))
+			any = true
+	remains.clear()
+	if any:
+		get_tree().create_timer(0.25).timeout.connect(func() -> void: Suoni.play("assorbimento"))
 
 
 ## La casella resta occupata anche se la squadra muore tutta:
@@ -1066,6 +1124,7 @@ func _open_level_up() -> void:
 		return
 	state = State.LEVEL_UP
 	selected_ability = ""
+	Suoni.play("livello")
 	var opts := _level_up_options()
 	opts.shuffle()
 	opts = opts.slice(0, 3)
@@ -1166,6 +1225,8 @@ func _select_ability(key: String) -> void:
 		set_hint("%s non è ancora sbloccata: cercala nell'albero delle ricerche." % Data.ABILITIES[key]["name"], 2.5)
 		return
 	selected_ability = "" if selected_ability == key else key
+	if selected_ability != "" and not get_viewport().gui_get_hovered_control() is BaseButton:
+		Suoni.play("click")  # dalla tastiera (i pulsanti fanno già click da soli)
 	if selected_ability != "":
 		set_hint("Clicca sul campo per lanciare %s (tasto destro: annulla)" % Data.ABILITIES[key]["name"])
 	else:
@@ -1183,14 +1244,19 @@ func _cast(key: String, g: Vector2) -> void:
 		"palla_di_fuoco":
 			damage_area(g, a["radius"], power, 1)
 			spawn_ground_fx(g, a["radius"], colore_palla_di_fuoco, 0.7, "fire")
+			Suoni.play("palla_di_fuoco")
+			shake(0.3, 2.0)
 		"saetta":
 			damage_area(g, a["radius"], power, 1)
 			spawn_ground_fx(g, a["radius"], colore_saetta, 0.4, "bolt")
+			Suoni.play("saetta")
+			shake(0.2, 1.0)
 		"area_curativa":
 			for u in allies_root.get_children():
 				if not u.dead and g.distance_to(u.ground) <= a["radius"]:
 					u.heal(a["power"])
 			spawn_ground_fx(g, a["radius"], colore_area_curativa, 0.9, "heal")
+			Suoni.play("area_curativa")
 
 
 # --- Input -------------------------------------------------------------------
@@ -1240,11 +1306,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		State.DEPLOY:
 			if idx >= 0 and slots[idx]["kind"] == "":
 				if deployed_count() < max_deploy:
+					Suoni.play("click")
 					_open_unit_picker(idx)
 				else:
+					Suoni.play("errore")
 					set_hint("Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up." % max_deploy, 4.0)
 		State.PLACING:
 			if idx >= 0 and slots[idx]["kind"] == "":
+				Suoni.play("conferma")
 				_spawn_squad(idx, pending_summon)
 				pending_summon = ""
 				_resume_after_choice()
@@ -1269,6 +1338,13 @@ func _end_run(won: bool) -> void:
 	state = State.VICTORY if won else State.GAME_OVER
 	selected_ability = ""
 	Engine.time_scale = 1.0
+	position = Vector2.ZERO
+	shake_t = 0.0
+	if won:
+		Suoni.play("livello")
+	else:
+		Suoni.play("assorbimento", 0.6, 4.0)
+		Suoni.play("torre_colpita", 0.7)
 	var cleared := wave if won else maxi(0, wave - 1)
 	var earned := cleared + int(kills / 20.0) + (50 if won else 0)
 	var cfg := ConfigFile.new()

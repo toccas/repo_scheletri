@@ -13,11 +13,12 @@ extends Control
 ## Tasti: frecce sinistra/destra = pagina, Esc / Backspace = torna al menu.
 
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const TEX_STALL := preload("res://assets/menu/negozio.png")
-const TEX_COIN = preload("res://assets/negozio/moneta.png")
-const TEX_SCROLL = preload("res://assets/negozio/pergamena.png")
+const TEX_COIN := preload("res://assets/negozio/moneta.png")
+const TEX_SCROLL := preload("res://assets/negozio/pergamena.png")
 const MENU_SCENE := "res://scenes/menu.tscn"
 
 ## Gli oggetti in vendita, nell'ordine in cui compaiono.
@@ -86,6 +87,7 @@ func _ready() -> void:
 		fade = 0.0
 		return
 	Portafoglio.install_dev_tool(get_tree())
+	Suoni.install()
 	_refresh()
 	say = frase_benvenuto
 
@@ -195,6 +197,8 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _press(what: String) -> void:
+	if what != "" and what != "buy":
+		Suoni.play("click")
 	if what == "back":
 		leaving = true
 	elif what == "prev":
@@ -208,6 +212,7 @@ func _press(what: String) -> void:
 		var item := confirm_item
 		confirm_item = null
 		var msg := Portafoglio.buy(wallet, item)
+		Suoni.play("moneta" if msg.begins_with("Hai ottenuto") else "errore")
 		_refresh()
 		pop_t = 0.4
 		_merchant(msg)
@@ -216,6 +221,7 @@ func _press(what: String) -> void:
 		var item := oggetti[int(what.substr(5))]
 		var why := Portafoglio.why_not(wallet, item)
 		if why != "":
+			Suoni.play("errore")
 			_merchant(why)
 		else:
 			confirm_item = item

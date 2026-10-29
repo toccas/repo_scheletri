@@ -7,6 +7,7 @@ extends Node2D
 ## posizione nota: con splash esplode comunque, altrimenti si disperde.
 
 const Data := preload("res://scripts/game_data.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 
 const C_BLACK := Color("141414")
 const C_MID := Color("707070")
@@ -77,6 +78,7 @@ func _sync() -> void:
 
 
 func _hit() -> void:
+	Suoni.play("impatto", 0.8 if splash > 0.0 else 1.0, -2.0 if look == "necro" else 0.0)
 	if to_tower:
 		game.damage_tower(dmg * Data.TOWER_RANGED_TAKEN)
 	elif splash > 0.0:

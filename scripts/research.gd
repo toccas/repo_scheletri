@@ -17,6 +17,7 @@ extends Node2D
 ## Se un nodo manca, quell'elemento torna alla posizione di partenza.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 const Research := preload("res://scripts/research_data.gd")
 const ATLAS := preload("res://assets/sprites.png")
 const MENU_SCENE := "res://scenes/menu.tscn"
@@ -64,6 +65,7 @@ var stars: Array = []
 
 func _ready() -> void:
 	st = Research.load_state()
+	Suoni.install()
 	if Engine.is_editor_hint():
 		fade = 0.0
 	var vp := _screen_size()
@@ -141,10 +143,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		var p: Vector2 = event.position
 		var id := _node_at(p)
 		if id != "":
+			Suoni.play("click")
 			selected = id
 		elif buy_rect.grow(6).has_point(p):
 			_buy()
 		elif back_rect.grow(8).has_point(p):
+			Suoni.play("click")
 			leaving = true
 		elif reset_rect.grow(6).has_point(p):
 			_reset()
@@ -194,10 +198,12 @@ func _move(dir: Vector2i) -> void:
 func _buy() -> void:
 	var lv_before := Research.level(st, selected)
 	if Research.buy(st, selected):
+		Suoni.play("livello", 1.2, -3.0)
 		flash[selected] = 0.6
 		message = "%s %s!" % [Research.NODES[selected]["name"], "SBLOCCATO" if lv_before == 0 else "POTENZIATO"]
 		message_t = 2.0
 	elif Research.next_cost(st, selected) >= 0:
+		Suoni.play("errore")
 		if not Research.requirements_met(st, selected):
 			message = "PRIMA SBLOCCA LA RICERCA RICHIESTA"
 		else:

@@ -9,6 +9,7 @@ extends Control
 ## Tasti: Spazio/Invio = apri una o continua, 0 = apri 10, Esc = torna al menu.
 
 const Data := preload("res://scripts/game_data.gd")
+const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
@@ -46,6 +47,7 @@ var fase := Fase.ATTESA
 var fase_t := 0.0
 var result := {}
 var results: Array = []  # apertura multipla: un risultato per carta
+var flipped := 0  # carte già girate (per il suono di ognuna)
 var t := 0.0
 var spin := 2.0
 var fade := 1.0
@@ -65,6 +67,7 @@ func _ready() -> void:
 	font = get_theme_default_font()
 	st = Collezione.load_state()
 	Portafoglio.install_dev_tool(get_tree())
+	Suoni.install()
 
 
 func _process(delta: float) -> void:
@@ -86,6 +89,13 @@ func _process(delta: float) -> void:
 		if fase_t >= durata_evocazione:
 			fase = Fase.RIVELA_MULTI if results.size() > 1 else Fase.RIVELA
 			fase_t = 0.0
+			flipped = 0
+			if fase == Fase.RIVELA:
+				Suoni.play("evoca_rivela", 1.2 if result["rarity"] == "leggendario" else 1.0)
+			else:
+				Suoni.play("evoca_rivela", 0.9, -4.0)
+	if fase == Fase.RIVELA_MULTI:
+		_flip_sounds()
 	spin = lerpf(spin, target_spin, minf(1.0, delta * 4.0))
 	for s in sparks:
 		s["p"] = (s["p"] as Vector2).move_toward(PORTAL, delta * 260.0)
@@ -143,6 +153,7 @@ func _press(id: String) -> void:
 			results = []
 			fase = Fase.CARICA
 			fase_t = 0.0
+			Suoni.play("evoca_carica")
 		"multi":
 			if fase != Fase.ATTESA or st["scrolls"] < apertura_multipla:
 				return
@@ -156,9 +167,12 @@ func _press(id: String) -> void:
 			print("[evocazione] aperte %d pergamene: %s" % [results.size(), results.map(func(x: Dictionary) -> String: return "%s(%s)" % [x["kind"], x["rarity"]])])
 			fase = Fase.CARICA
 			fase_t = -0.3  # carica un po' più lunga
+			Suoni.play("evoca_carica", 0.9)
 		"back":
+			Suoni.play("click")
 			leaving = MENU_SCENE
 		"prep":
+			Suoni.play("click")
 			leaving = PREP_SCENE
 
 
@@ -400,3 +414,14 @@ func _not_yet_revealed() -> Array:
 			if results[i]["new"] and fase_t < _card_time(i) + FLIP * 0.5:
 				out.append(results[i]["kind"])
 	return out
+
+
+## Un suono per ogni carta che si gira: più acuto per le rarità alte.
+func _flip_sounds() -> void:
+	while flipped < results.size() and fase_t >= _card_time(flipped) + FLIP * 0.5:
+		var rar: String = results[flipped]["rarity"]
+		var pitch: float = {"comune": 1.0, "raro": 1.15, "epico": 1.3, "leggendario": 1.5}.get(rar, 1.0)
+		Suoni.play("carta", pitch)
+		if rar == "leggendario":
+			Suoni.play("evoca_rivela", 1.25, -3.0)
+		flipped += 1

@@ -24,6 +24,15 @@ extends Node2D
 
 const Data := preload("res://scripts/game_data.gd")
 const ATLAS := preload("res://assets/sprites.png")
+const Suoni := preload("res://scripts/suoni.gd")
+const RestiScript := preload("res://scripts/resti.gd")
+## Suono degli attacchi speciali: [nome, tono] (gli altri: spada / freccia / magia).
+const SPECIAL_SOUNDS := {
+	"schianto": ["spada", 0.65], "falce": ["spada", 0.8], "carica": ["spada", 0.9],
+	"catapulta": ["freccia", 0.55], "cecchino": ["freccia", 1.25], "trapassa": ["freccia", 0.9],
+	"urlo": ["magia", 0.55], "rianima": ["necromante", 1.3], "peste": ["magia", 0.8],
+	"maledici": ["necromante", 1.1], "esplodi": ["palla_di_fuoco", 1.2],
+}
 
 const ALLY := 0
 const ENEMY := 1
@@ -422,6 +431,7 @@ func _attack(t) -> void:
 		return
 	atk_timer = get_cooldown()
 	attack_anim = ATTACK_ANIM
+	_attack_sound()
 	if team == ALLY and special != "":
 		_special_attack(t)
 		return
@@ -521,6 +531,7 @@ func _attack_tower() -> void:
 		return
 	atk_timer = get_cooldown()
 	attack_anim = ATTACK_ANIM
+	_attack_sound()
 	if melee:
 		game.damage_tower(get_dmg())
 		lunge = 5.0
@@ -598,6 +609,19 @@ func heal(amount: float) -> void:
 		hp = minf(max_hp, hp + amount)
 
 
+func _attack_sound() -> void:
+	var big := 0.8 if is_boss or kind in ["gigante", "golem"] else 1.0
+	if team == ALLY and SPECIAL_SOUNDS.has(special):
+		var sp: Array = SPECIAL_SOUNDS[special]
+		Suoni.play(sp[0], sp[1] * big, -2.0)
+	elif melee:
+		Suoni.play("spada", big * (1.1 if team == ALLY else 0.95))
+	elif kind == "mago" or role == "magia":
+		Suoni.play("magia", 1.0 if team == ALLY else 0.85)
+	else:
+		Suoni.play("freccia", 1.0 if team == ALLY else 0.9)
+
+
 ## Colore d'accento dell'unità (lo stesso dell'elemento colorato della sprite).
 func accent() -> Color:
 	return Data.accent(kind, team)
@@ -605,7 +629,12 @@ func accent() -> Color:
 
 func _die() -> void:
 	dead = true
-	game.spawn_ground_fx(ground, radius + 3.0, C_WHITE if team == ALLY else C_LIGHT, 0.3)
+	game.spawn_ground_fx(ground, radius + 2.0, C_WHITE if team == ALLY else C_LIGHT, 0.25)
+	Suoni.play("morte_scheletro" if team == ALLY else "morte_eroe", 0.75 if is_boss or kind in ["gigante", "golem"] else 1.0)
+	if visible:  # si sbriciola lasciando il teschio (o l'arma, per gli eroi)
+		var r := RestiScript.new()
+		r.setup(self)
+		game.add_remains(r)
 	if team == ENEMY:
 		game.on_enemy_killed(self)
 	else:
