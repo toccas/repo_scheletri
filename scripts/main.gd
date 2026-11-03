@@ -28,6 +28,7 @@ const Pietra := preload("res://scripts/ui_pietra.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Suoni := preload("res://scripts/suoni.gd")
+const Livelli := preload("res://scripts/livelli.gd")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -48,6 +49,21 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
 ## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
 @export var dialogo_tutorial: Dialogo = preload("res://dialoghi/battaglia.tres")
+
+@export_group("Livello")
+## Nome del livello nei salvataggi (finito, record): ogni livello ne ha uno diverso,
+## uguale all'id in livelli/elenco_livelli.tres.
+@export var id_livello := "cimitero"
+## Aspetto del livello (cielo, terreno, lastre, ostacoli, meteo): biomi/*.tres.
+## Vuoto = il cimitero.
+@export var bioma: Bioma
+## Ondate da superare per finire il livello (e sbloccare il successivo).
+@export_range(1, 200) var ondate_totali := 100
+## File della griglia che non si possono usare (acqua, fosse, crepacci): dividono il
+## campo in corsie separate. 0 = la fila in fondo. Gli eroi restano nella loro corsia.
+@export var file_bloccate: PackedInt32Array = []
+## Caselle con un ostacolo (x = colonna, y = fila, da 0): nessuno ci passa e non ci si schiera.
+@export var ostacoli: Array[Vector2i] = []
 
 @export_group("Griglia di schieramento")
 ## Lunghezza della griglia: numero di caselle lungo la corsia.
@@ -212,6 +228,15 @@ var bats: Array = []
 var marchers: Array = []  # eroi lontani che marciano verso il portale
 var embers: Array = []
 
+const BIOMA_BASE := "res://biomi/cimitero.tres"
+var tex_sky: Texture2D = TEX_SKY
+var tex_ground: Texture2D = TEX_GROUND
+var tex_tiles: Texture2D = TEX_TILES
+var tex_obst: Texture2D = null
+var ambiente := 0  # Bioma.Ambiente
+var lanes: Array[Vector2] = []  # corsie libere: (y inizio, y fine) in pixel dell'arte
+var obstacle_rects: Array[Rect2] = []  # caselle con un ostacolo, in coordinate del terreno
+var weather: Array = []  # neve, polvere, fuochi fatui
 var dev_invincibile := false  # pannello dev (Ctrl+Shift+D): la torre non perde vita
 var dev_senza_ricarica := false  # pannello dev: le magie si ricaricano subito
 var dev_x5 := false  # pannello dev: il pulsante della velocità arriva fino a x5
@@ -304,6 +329,7 @@ func _ready() -> void:
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
 	Lingua.setup()
+	_apply_bioma()
 	if OS.is_debug_build():  # x5 scelto nel pannello dev resta attivo tra una partita e l'altra
 		var dcfg := ConfigFile.new()
 		dcfg.load(SAVE_PATH)
@@ -312,11 +338,15 @@ func _ready() -> void:
 	_apply_research()
 	for r in rows:
 		for c in cols:
+			var barrier := r in file_bloccate
+			var obstacle := Vector2i(c, r) in ostacoli
 			slots.append({
 				"cell": Vector2i(c, r),
 				"center": Vector2((c + 0.5) * cell, (r + 0.5) * cell),
 				"kind": "", "units": [],
+				"blocked": barrier or obstacle, "barrier": barrier, "obstacle": obstacle,
 			})
+	_build_lanes()
 	tower_node = Node2D.new()
 	tower_node.name = "tower"
 	tower_node.z_index = int(to_screen(Vector2(0, tower_base_y)).y)
@@ -333,6 +363,7 @@ func _ready() -> void:
 	front_node.draw.connect(_draw_front)
 	add_child(front_node)
 	_setup_scenery()
+	_build_obstacles()
 	for n in ["remains", "enemies", "allies", "projectiles", "fx"]:
 		var node := Node2D.new()
 		node.name = n
@@ -521,6 +552,8 @@ func slot_at_screen(p: Vector2) -> int:
 	var r := floori(g.y / cell)
 	if c < 0 or c >= cols or r < 0 or r >= rows:
 		return -1
+	if slots[r * cols + c]["blocked"]:
+		return -1  # acqua, crepaccio o ostacolo: lì non si schiera
 	return r * cols + c
 
 
@@ -533,7 +566,104 @@ func deployed_count() -> int:
 
 
 func free_slot_count() -> int:
-	return slots.size() - deployed_count()
+	var n := 0
+	for s in slots:
+		if s["kind"] == "" and not s["blocked"]:
+			n += 1
+	return n
+
+
+# --- Biomi, corsie e ostacoli ----------------------------------------------------
+
+func _apply_bioma() -> void:
+	var b := bioma
+	if b == null and ResourceLoader.exists(BIOMA_BASE):
+		b = load(BIOMA_BASE) as Bioma
+	if b == null:
+		return
+	bioma = b
+	tex_sky = b.cielo if b.cielo else TEX_SKY
+	tex_ground = b.terreno if b.terreno else TEX_GROUND
+	tex_tiles = b.lastre if b.lastre else TEX_TILES
+	tex_obst = b.ostacoli
+	ambiente = b.ambiente
+
+
+## Corsie = gruppi di file vicine non bloccate.
+func _build_lanes() -> void:
+	lanes.clear()
+	var start := -1
+	for r in rows + 1:
+		var free := r < rows and not r in file_bloccate
+		if free and start < 0:
+			start = r
+		elif not free and start >= 0:
+			lanes.append(Vector2(start * cell, r * cell))
+			start = -1
+	if lanes.is_empty():
+		lanes.append(Vector2(0, depth))
+	obstacle_rects.clear()
+	for o in ostacoli:
+		if o.x >= 0 and o.x < cols and o.y >= 0 and o.y < rows:
+			obstacle_rects.append(Rect2(Vector2(o) * cell, Vector2(cell, cell)))
+
+
+func lane_of(y: float) -> int:
+	var best := 0
+	var best_d := INF
+	for i in lanes.size():
+		var l: Vector2 = lanes[i]
+		var d := 0.0 if (y >= l.x and y <= l.y) else minf(absf(y - l.x), absf(y - l.y))
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
+
+
+## Due punti sono nella stessa corsia? (a sinistra della griglia, vicino alla torre, sì)
+func same_lane(a: Vector2, b: Vector2) -> bool:
+	if lanes.size() <= 1 or a.x < 0.0 or b.x < 0.0:
+		return true
+	return lane_of(a.y) == lane_of(b.y)
+
+
+## Tiene un punto dentro la sua corsia e fuori dagli ostacoli.
+func constrain(g: Vector2, radius: float) -> Vector2:
+	if lanes.size() > 1 and g.x >= 0.0 and g.x <= lane_len + SPAWN_W:
+		var l: Vector2 = lanes[lane_of(g.y)]
+		g.y = clampf(g.y, l.x + minf(radius, (l.y - l.x) / 2.0), l.y - minf(radius, (l.y - l.x) / 2.0))
+	for r in obstacle_rects:
+		var rr := r.grow(radius * 0.8)
+		if rr.has_point(g):
+			# esce dal lato più vicino (di solito sopra o sotto: così si gira attorno)
+			var dl := g.x - rr.position.x
+			var dr := rr.end.x - g.x
+			var du := g.y - rr.position.y
+			var dd := rr.end.y - g.y
+			var m := minf(minf(dl, dr), minf(du, dd))
+			if m == du:
+				g.y = rr.position.y
+			elif m == dd:
+				g.y = rr.end.y
+			elif m == dl:
+				g.x = rr.position.x
+			else:
+				g.x = rr.end.x
+	return g
+
+
+## Punto di partenza di un eroe: a caso in una delle corsie.
+func _spawn_point() -> Vector2:
+	var tot := 0.0
+	for l in lanes:
+		tot += l.y - l.x
+	var pick := randf() * tot
+	for l in lanes:
+		var h := l.y - l.x
+		if pick <= h:
+			return Vector2(lane_len + randf_range(3.0, SPAWN_W - 3.0), randf_range(l.x + minf(5.0, h / 2.0), l.y - minf(2.0, h / 2.0)))
+		pick -= h
+	return Vector2(lane_len + 8.0, depth / 2.0)
 
 
 # --- Ciclo di gioco ----------------------------------------------------------
@@ -569,6 +699,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	tower_node.queue_redraw()
 	ambient_node.queue_redraw()
+	front_node.queue_redraw()
 
 
 func _process_waves(delta: float) -> void:
@@ -580,7 +711,7 @@ func _process_waves(delta: float) -> void:
 				spawn_timer = maxf(0.25, 0.8 - wave * 0.006)
 		elif _alive_count(enemies_root) == 0:
 			wave_running = false
-			if wave >= Data.FINAL_WAVE:
+			if wave >= ondate_totali:
 				_end_run(true)
 				return
 			next_wave_timer = 3.0
@@ -622,7 +753,7 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	var hp_mult: float = Data.enemy_hp_mult(wave) * mods["enemy_hp"]
 	u.setup_enemy(entry["kind"], hp_mult, Data.enemy_dmg_mult(wave), entry["boss"])
 	# punto qualsiasi della striscia di spawn
-	u.ground = Vector2(lane_len + randf_range(3.0, SPAWN_W - 3.0), randf_range(5.0, depth - 2.0))
+	u.ground = _spawn_point()
 	enemies_root.add_child(u)
 
 
@@ -653,11 +784,14 @@ func tower_door() -> Vector2:
 	return Vector2(wall_x - TOWER_W + TOWER_DOOR_X, tower_base_y)
 
 
-func nearest_unit(root: Node, from: Vector2, max_dist: float):
+## `stessa_corsia`: per il corpo a corpo, ignora chi sta in un'altra corsia.
+func nearest_unit(root: Node, from: Vector2, max_dist: float, stessa_corsia: bool = false):
 	var best = null
 	var best_d := max_dist
 	for c in root.get_children():
 		if c.dead or not c.visible:  # chi è ancora dentro la torre non si può colpire
+			continue
+		if stessa_corsia and not same_lane(from, c.ground):
 			continue
 		var d := from.distance_to(c.ground)
 		if d <= best_d:
@@ -896,6 +1030,8 @@ func nearest_taunter(from: Vector2, dist: float):
 	var best_d := dist
 	for c in allies_root.get_children():
 		if c.dead or not c.visible or c.entering or not (c.special == "provoca" or c.special == "muro"):
+			continue
+		if not same_lane(from, c.ground):
 			continue
 		var d := from.distance_to(c.ground)
 		if d <= best_d:
@@ -1376,6 +1512,15 @@ func _end_run(won: bool) -> void:
 	cfg.set_value("progressi", "punti", total)
 	cfg.set_value("progressi", "record_ondata", best)
 	cfg.save(SAVE_PATH)
+	var nuovo_livello := ""
+	if not autotest:
+		Livelli.salva_record(id_livello, wave)
+		if won:
+			var lista := Livelli.elenco()
+			for i in lista.size() - 1:
+				if lista[i].id == id_livello and not Livelli.finito(id_livello):
+					nuovo_livello = lista[i + 1].nome
+			Livelli.segna_finito(id_livello)  # sblocca il livello successivo
 	var coins := cleared * Data.MONETE_PER_ONDATA + (Data.MONETE_VITTORIA if won else 0)
 	Portafoglio.add_monete(coins)
 
@@ -1386,15 +1531,18 @@ func _end_run(won: bool) -> void:
 		get_tree().quit()
 		return
 
-	var title := tr("Hai resistito alle 100 ondate!") if won else tr("La torre è caduta")
+	var title := tr("Hai resistito alle %d ondate!") % ondate_totali if won else tr("La torre è caduta")
 	var body := tr("Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d") % [
 		wave, kills, earned, total, best]
 	body += "\n" + tr("Monete d'osso guadagnate: %d  ·  spendile nel negozio") % coins
 	if scrolls_earned > 0:
 		body += "\n" + tr("Pergamene ottenute: %d  ·  aprile nel portale del menu") % scrolls_earned
+	if nuovo_livello != "":
+		body += "\n" + tr("Nuovo livello sbloccato: %s!") % tr(nuovo_livello)
 	_show_modal(title, body, [
 		[tr("Nuova partita"), _restart_game],
 		[tr("Cambia squadra"), func(): get_tree().change_scene_to_file("res://scenes/preparazione.tscn")],
+		[tr("Cambia livello"), func(): get_tree().change_scene_to_file("res://scenes/selezione_livello.tscn")],
 		[tr("Torna al menu"), _go_to_menu],
 	])
 
@@ -1407,25 +1555,32 @@ func _start_autotest() -> void:
 		# prova di una squadra precisa: tutte e quattro le unità in campo
 		var spots := [slot_index(2, 1), slot_index(1, 2), slot_index(1, 1), slot_index(2, 2)]
 		for i in mini(4, unlocked_units.size()):
-			_spawn_squad(spots[i], unlocked_units[i])
+			var sp: int = spots[i] if not slots[spots[i]]["blocked"] and slots[spots[i]]["kind"] == "" else _autotest_free_slot()
+			_spawn_squad(sp, unlocked_units[i])
 		_on_start_pressed()
 		return
-	_spawn_squad(slot_index(2, 1), "soldato")
-	_spawn_squad(slot_index(1, 2), unlocked_units[1] if unlocked_units.size() > 1 else "soldato")
-	_spawn_squad(slot_index(1, 1), unlocked_units[3] if unlocked_units.size() > 3 else "soldato")
+	_spawn_squad(_slot_libero(2, 1), "soldato")
+	_spawn_squad(_slot_libero(1, 2), unlocked_units[1] if unlocked_units.size() > 1 else "soldato")
+	_spawn_squad(_slot_libero(1, 1), unlocked_units[3] if unlocked_units.size() > 3 else "soldato")
 	_on_start_pressed()
+
+
+## La casella (c, r) se si può usare, altrimenti un'altra libera.
+func _slot_libero(c: int, r: int) -> int:
+	var i := slot_index(c, r)
+	return i if not slots[i]["blocked"] and slots[i]["kind"] == "" else _autotest_free_slot()
 
 
 ## Casella libera casuale nelle prime 4 colonne (o la prima libera).
 func _autotest_free_slot() -> int:
 	var choices := []
 	for i in slots.size():
-		if slots[i]["kind"] == "" and slots[i]["cell"].x <= 3:
+		if slots[i]["kind"] == "" and not slots[i]["blocked"] and slots[i]["cell"].x <= 3:
 			choices.append(i)
 	if not choices.is_empty():
 		return choices.pick_random()
 	for i in slots.size():
-		if slots[i]["kind"] == "":
+		if slots[i]["kind"] == "" and not slots[i]["blocked"]:
 			return i
 	return 0
 
@@ -1841,8 +1996,8 @@ func _draw_wave_banner() -> void:
 	var ts := 16 if ui_font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= w - 8 else 12
 	Pietra.text_c(n, ui_font, w / 2.0, 12, title, ts, C0, false)
 	var num := wave if wave_running else wave + 1
-	Pietra.text_c(n, ui_font, w / 2.0, 32, "%d" % mini(num, Data.FINAL_WAVE), 24, C0, false)
-	Pietra.text_c(n, ui_font, w / 2.0, 56, "/ %d" % Data.FINAL_WAVE, 12, C2, false)
+	Pietra.text_c(n, ui_font, w / 2.0, 32, "%d" % mini(num, ondate_totali), 24, C0, false)
+	Pietra.text_c(n, ui_font, w / 2.0, 56, "/ %d" % ondate_totali, 12, C2, false)
 	for i in counts.size():
 		var e: Array = counts[i]
 		var y := 74.0 + i * 36.0
@@ -1875,6 +2030,9 @@ func _draw() -> void:
 	for i in slots.size():
 		var s: Dictionary = slots[i]
 		var c: Vector2i = s["cell"]
+		if s["barrier"]:
+			_draw_barrier(Rect2(origin + Vector2(c.x * cell, c.y * cell), Vector2(cell, cell)), c)
+			continue
 		var tint := Color.WHITE if (c.x + c.y) % 2 == 0 else Color(0.84, 0.84, 0.84)
 		# più scuro in fondo, più chiaro davanti: aiuta la profondità
 		tint = tint * (0.86 + 0.14 * float(c.y) / maxf(1.0, rows - 1.0))
@@ -1883,7 +2041,7 @@ func _draw() -> void:
 			for tx2 in tile_per_casella:
 				var h := absi(c.x * 31 + c.y * 17 + c.x * c.y * 7) % R_SLABS.size()  # una pietra per casella
 				var dst := Rect2(origin + Vector2(c.x * cell + tx2 * TILE, c.y * cell + ty2 * TILE), Vector2(TILE, TILE))
-				draw_texture_rect_region(TEX_TILES, dst, R_SLABS[h], tint)
+				draw_texture_rect_region(tex_tiles, dst, R_SLABS[h], tint)
 		var rect := Rect2(origin + Vector2(c.x * cell, c.y * cell), Vector2(cell, cell))
 		_draw_bevel(self, rect)
 		if s["kind"] != "":
@@ -1902,7 +2060,7 @@ func _draw() -> void:
 	while sy < depth:
 		var hh := minf(TILE, depth - sy)
 		var r0: Rect2 = R_SLABS[int(sy / TILE) % R_SLABS.size()]
-		draw_texture_rect_region(TEX_TILES, Rect2(origin + Vector2(lane_len, sy), Vector2(SPAWN_W, hh)),
+		draw_texture_rect_region(tex_tiles, Rect2(origin + Vector2(lane_len, sy), Vector2(SPAWN_W, hh)),
 			Rect2(r0.position, Vector2(TILE, hh)), Color(0.5, 0.5, 0.5))
 		_draw_bevel(self, Rect2(origin + Vector2(lane_len, sy), Vector2(SPAWN_W, hh)), 0.5)
 		sy += TILE
@@ -2136,8 +2294,8 @@ func _setup_scenery() -> void:
 	props.sort_custom(func(a, b): return a["pos"].y < b["pos"].y)
 	# stelle solo dove nel panorama c'è cielo (non sulle montagne)
 	stars.clear()
-	var sky_img := TEX_SKY.get_image()
-	var sky_top := horizon - TEX_SKY.get_height()
+	var sky_img := tex_sky.get_image()
+	var sky_top := horizon - tex_sky.get_height()
 	for k in 200:
 		if stars.size() >= 40:
 			break
@@ -2162,6 +2320,7 @@ func _new_marcher(rnd: RandomNumberGenerator, anywhere: bool) -> Dictionary:
 
 func _update_ambient(delta: float) -> void:
 	amb_t += delta
+	_update_weather(delta)
 	for b in bats:
 		b["x"] += b["sp"] * delta
 		if b["x"] > art_size.x + 8:
@@ -2225,28 +2384,28 @@ func _draw_prop(ci: CanvasItem, pr: Dictionary) -> void:
 		dst = Rect2(pos + Vector2(r.size.x, 0), Vector2(-r.size.x, r.size.y))
 	# più lontano = più scuro (foschia)
 	var k := clampf(0.55 + 0.45 * (pr["pos"].y - horizon) / maxf(1.0, origin.y + depth - horizon), 0.55, 1.0)
-	ci.draw_texture_rect_region(TEX_TILES, dst, r, Color(k, k, k))
+	ci.draw_texture_rect_region(tex_tiles, dst, r, Color(k, k, k))
 
 
 ## Cielo, terreno, oggetti, muretto e pedana di pietra (tutto dietro le unità).
 func _draw_scenery() -> void:
 	var w := art_size.x
-	var sky_h := float(TEX_SKY.get_height())
+	var sky_h := float(tex_sky.get_height())
 	var sky_top := horizon - sky_h
 	if sky_top > 0.0:
 		draw_rect(Rect2(0, 0, w, sky_top + 1.0), C0)
 	var x := 0.0
 	while x < w:
-		draw_texture(TEX_SKY, Vector2(x, sky_top))
+		draw_texture(tex_sky, Vector2(x, sky_top))
 		var gy := horizon
-		draw_texture(TEX_GROUND, Vector2(x, gy))
-		gy += TEX_GROUND.get_height()
+		draw_texture(tex_ground, Vector2(x, gy))
+		gy += tex_ground.get_height()
 		while gy < art_size.y:  # schermi molto alti: ripeti la parte davanti del terreno
 			var hh := minf(120.0, art_size.y - gy)
-			draw_texture_rect_region(TEX_GROUND, Rect2(x, gy, TEX_GROUND.get_width(), hh),
-				Rect2(0, TEX_GROUND.get_height() - 120, TEX_GROUND.get_width(), hh))
+			draw_texture_rect_region(tex_ground, Rect2(x, gy, tex_ground.get_width(), hh),
+				Rect2(0, tex_ground.get_height() - 120, tex_ground.get_width(), hh))
 			gy += hh
-		x += TEX_GROUND.get_width()
+		x += tex_ground.get_width()
 	# oggetti dietro il muretto
 	for pr in props:
 		if pr["pos"].y < origin.y:
@@ -2262,7 +2421,7 @@ func _draw_scenery() -> void:
 	while fx < spawn_end:
 		var r: Rect2 = R_FACE[fi % R_FACE.size()]
 		var ww := minf(TILE, spawn_end - fx)
-		draw_texture_rect_region(TEX_TILES, Rect2(fx, origin.y + depth, ww, FACE_H), Rect2(r.position, Vector2(ww, FACE_H)))
+		draw_texture_rect_region(tex_tiles, Rect2(fx, origin.y + depth, ww, FACE_H), Rect2(r.position, Vector2(ww, FACE_H)))
 		fx += TILE
 		fi += 1
 	# pedana di pietra sotto la torre (a sinistra della griglia)
@@ -2273,14 +2432,14 @@ func _draw_scenery() -> void:
 			var h := absi(int(px2) * 13 + int(py) * 7) % R_SLABS.size()
 			var hh := minf(TILE, depth - py)
 			var ww := minf(TILE, origin.x - px2)
-			draw_texture_rect_region(TEX_TILES, Rect2(px2, origin.y + py, ww, hh), Rect2(R_SLABS[h].position, Vector2(ww, hh)), Color(0.72, 0.72, 0.72))
+			draw_texture_rect_region(tex_tiles, Rect2(px2, origin.y + py, ww, hh), Rect2(R_SLABS[h].position, Vector2(ww, hh)), Color(0.72, 0.72, 0.72))
 			_draw_bevel(self, Rect2(px2, origin.y + py, ww, hh), 0.7)
 			px2 += TILE
 		py += TILE
 	draw_rect(Rect2(ax, origin.y, 1, depth), Color(C0, 0.6))
 	# muretto in rovina dietro il campo
 	for wt in wall_tiles:
-		draw_texture_rect_region(TEX_TILES, Rect2(wt["x"], origin.y + 1 - TILE, TILE, TILE), wt["r"])
+		draw_texture_rect_region(tex_tiles, Rect2(wt["x"], origin.y + 1 - TILE, TILE, TILE), wt["r"])
 	# pilastro del portale (dietro)
 	draw_texture(TEX_PILLAR, Vector2(origin.x + lane_len, origin.y + 2 - TEX_PILLAR.get_height()))
 	# oggetti davanti e ai lati
@@ -2302,17 +2461,17 @@ func _draw_ambient() -> void:
 	var n := ambient_node
 	n.draw_set_transform(Vector2.ZERO, 0.0, Vector2(px, px))
 	var t := amb_t
-	for st in stars:
-		var a := 0.25 + 0.55 * absf(sin(t * st["sp"] + st["ph"]))
-		n.draw_rect(Rect2(st["p"], Vector2.ONE), Color(1, 1, 1, a))
-	for b in bats:
+	if bioma == null or bioma.stelle:
+		_draw_stars(n, t)
+	_draw_weather_back(n, t)
+	for b in (bats if (bioma == null or bioma.pipistrelli) else []):
 		var flap := int(t * 10.0 + b["ph"]) % 2
 		var p := Vector2(roundf(b["x"]), roundf(b["y"] + sin(t * 2.0 + b["ph"]) * 3.0))
 		n.draw_rect(Rect2(p, Vector2(1, 1)), C0)
 		n.draw_rect(Rect2(p + Vector2(-2, -flap), Vector2(2, 1)), C0)
 		n.draw_rect(Rect2(p + Vector2(1, -flap), Vector2(2, 1)), C0)
 	# fuochi dell'accampamento sulle colline
-	for f in SKY_FIRES:
+	for f in (SKY_FIRES if (bioma == null or bioma.eroi_lontani) else []):
 		var fp := Vector2(f.x, horizon - f.y)
 		if fp.x >= art_size.x:
 			continue
@@ -2325,7 +2484,7 @@ func _draw_ambient() -> void:
 		var fxp := fmod(t * (3.0 + i) + i * 140.0, art_size.x + fw) - fw
 		n.draw_rect(Rect2(roundf(fxp), horizon + 1 + i * 2, fw, 2), Color(1, 1, 1, 0.05))
 	# eroi lontani che marciano verso il portale
-	for m in marchers:
+	for m in (marchers if (bioma == null or bioma.eroi_lontani) else []):
 		var mx := roundf(m["x"])
 		var my := roundf(m["y"])
 		var step := int(t * 6.0 + m["ph"]) % 2
@@ -2377,3 +2536,143 @@ func _draw_front() -> void:
 	n.draw_texture_rect_region(TEX_PILLAR, Rect2(base - Vector2(0, stump), Vector2(16, stump)),
 		Rect2(0, ph - stump, 16, stump))
 	n.draw_rect(Rect2(base.x + 3, base.y - stump, 10, 1), Color("8a8a8c"))
+	_draw_weather_front(n, amb_t)
+
+
+
+# --- Biomi: file bloccate, ostacoli e meteo ----------------------------------------
+
+## Una casella di una fila bloccata, disegnata secondo il bioma.
+func _draw_barrier(r: Rect2, c: Vector2i) -> void:
+	var base: Color = bioma.colore_barriera if bioma else Color("1a1c1e")
+	var t := amb_t
+	var h := absi(c.x * 37 + c.y * 11)
+	match ambiente:
+		Bioma.Ambiente.PALUDE:  # acqua ferma con le increspature e le canne sulle rive
+			draw_rect(r, base)
+			draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), base.darkened(0.4))
+			for k in 4:
+				var yy := r.position.y + 5.0 + k * 7.0
+				var off := fmod(t * (3.0 + k) + h * 3.0 + k * 9.0, r.size.x + 10.0) - 10.0
+				draw_rect(Rect2(r.position.x + maxf(0.0, off), yy, minf(8.0, r.size.x - maxf(0.0, off)), 1), Color(base.lightened(0.35), 0.6))
+			if h % 3 == 0:  # ninfea
+				draw_rect(Rect2(r.position + Vector2(8 + h % 12, 12 + h % 9), Vector2(5, 2)), base.lightened(0.25))
+			for k in 3:
+				var rx := r.position.x + 4.0 + ((h * (k + 3)) % int(r.size.x - 6.0))
+				var rh := 3.0 + (h + k) % 4
+				draw_rect(Rect2(rx, r.position.y - rh + 2, 1, rh), Color(0.35, 0.4, 0.33))
+				draw_rect(Rect2(rx, r.end.y - 2, 1, rh - 1), Color(0.3, 0.34, 0.28))
+		Bioma.Ambiente.CATTEDRALE:  # pavimento sfondato: buio con i bordi spezzati
+			draw_rect(r, base)
+			for x in range(int(r.position.x), int(r.end.x), 2):
+				var j := (x * 7 + h) % 5
+				draw_rect(Rect2(x, r.position.y, 2, 2 + j % 3), Color(0.42, 0.39, 0.36))
+				draw_rect(Rect2(x, r.end.y - 2 - (j % 2), 2, 2 + (j % 2)), Color(0.3, 0.28, 0.26))
+			draw_rect(Rect2(r.position.x, r.position.y + 6, r.size.x, r.size.y - 12), base.darkened(0.5))
+		Bioma.Ambiente.MONTAGNA:  # crepaccio: fondo blu scuro e labbra di ghiaccio
+			draw_rect(r, base)
+			draw_rect(Rect2(r.position.x, r.position.y + 7, r.size.x, r.size.y - 14), base.darkened(0.45))
+			for x in range(int(r.position.x), int(r.end.x)):
+				var j := (x * 13 + h) % 7
+				draw_rect(Rect2(x, r.position.y, 1, 2 + j % 3), Color(0.86, 0.9, 0.98))
+				draw_rect(Rect2(x, r.end.y - 1 - j % 2, 1, 1 + j % 2), Color(0.7, 0.76, 0.86))
+		_:  # cimitero: fossa scavata
+			draw_rect(r, base)
+			draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color(0.32, 0.3, 0.28))
+			if h % 2 == 0:
+				draw_rect(Rect2(r.position + Vector2(10, 16), Vector2(6, 1)), Color(0.75, 0.75, 0.72))
+
+
+## Gli ostacoli sono nodi separati per stare davanti o dietro alle unità a seconda della fila.
+func _build_obstacles() -> void:
+	for o in ostacoli:
+		if o.x < 0 or o.x >= cols or o.y < 0 or o.y >= rows:
+			continue
+		var n := Node2D.new()
+		var bottom := Vector2(o.x * cell + cell / 2.0, (o.y + 1) * cell - 2.0)
+		n.position = to_screen(bottom)
+		n.scale = Vector2.ONE * px
+		n.z_index = int(n.position.y) - int(cell * 0.3 * px)
+		var variant := absi(o.x * 7 + o.y * 3) % 4
+		n.draw.connect(func() -> void:
+			if tex_obst:
+				n.draw_texture_rect_region(tex_obst, Rect2(-16, -30, 32, 32), Rect2(variant * 32, 0, 32, 32))
+			else:
+				n.draw_texture_rect_region(tex_tiles, Rect2(-8, -30, 16, 32), R_PROPS_TALL[1]))
+		add_child(n)
+
+
+func _draw_stars(n: CanvasItem, t: float) -> void:
+	for st in stars:
+		var a := 0.25 + 0.55 * absf(sin(t * st["sp"] + st["ph"]))
+		n.draw_rect(Rect2(st["p"], Vector2.ONE), Color(1, 1, 1, a))
+
+
+func _update_weather(delta: float) -> void:
+	match ambiente:
+		Bioma.Ambiente.MONTAGNA:  # neve
+			while weather.size() < 90:
+				weather.append({"p": Vector2(randf_range(-20, art_size.x), randf_range(-10, art_size.y)),
+					"v": Vector2(randf_range(-6, -2), randf_range(8, 16)), "s": 1.0 if randf() < 0.8 else 2.0})
+			for f in weather:
+				f["p"] += f["v"] * delta
+				if f["p"].y > art_size.y + 4 or f["p"].x < -24:
+					f["p"] = Vector2(randf_range(0, art_size.x + 30), -4)
+		Bioma.Ambiente.PALUDE:  # fuochi fatui che vagano sul campo
+			while weather.size() < 7:
+				weather.append({"p": origin + Vector2(randf_range(0, lane_len), randf_range(0, depth)), "ph": randf() * TAU})
+			for f in weather:
+				f["p"] += Vector2(sin(amb_t * 0.7 + f["ph"]) * 4.0, cos(amb_t * 0.9 + f["ph"] * 2.0) * 3.0) * delta
+		Bioma.Ambiente.CATTEDRALE:  # polvere che scende nella luce
+			while weather.size() < 40:
+				weather.append({"p": Vector2(randf_range(0, art_size.x), randf_range(horizon, art_size.y)),
+					"v": Vector2(randf_range(-1, 1), randf_range(1.5, 4.0)), "ph": randf() * TAU})
+			for f in weather:
+				f["p"] += f["v"] * delta
+				if f["p"].y > art_size.y:
+					f["p"] = Vector2(randf_range(0, art_size.x), horizon)
+
+
+## Dietro alle unità: fuochi fatui, fiammelle delle candele.
+func _draw_weather_back(n: CanvasItem, t: float) -> void:
+	if ambiente == Bioma.Ambiente.PALUDE:
+		for f in weather:
+			var a := 0.45 + 0.35 * sin(t * 3.0 + f["ph"])
+			var p: Vector2 = (f["p"] as Vector2).round()
+			n.draw_rect(Rect2(p - Vector2(2, 2), Vector2(5, 5)), Color(0.65, 1.0, 0.6, a * 0.18))
+			n.draw_rect(Rect2(p, Vector2(1, 1)), Color(0.85, 1.0, 0.8, a))
+	elif ambiente == Bioma.Ambiente.CATTEDRALE:
+		for pr in props:
+			if pr["r"] == R_PROPS_SMALL[6]:  # candele
+				var base: Vector2 = pr["pos"] - Vector2(0, 16)
+				for cx: float in [4.0, 7.0, 10.0]:
+					var fx: float = base.x + (16.0 - cx - 1.0 if pr["flip"] else cx)
+					var hy: float = 6.0 if cx == 4.0 else (9.0 if cx == 7.0 else 5.0)
+					var fl := 1.0 + roundf(absf(sin(t * 9.0 + cx + base.x)))
+					n.draw_rect(Rect2(fx, base.y + 15.0 - hy - 1.0 - fl, 1, fl), Color(1.0, 0.85, 0.5))
+					n.draw_rect(Rect2(fx - 2, base.y + 15.0 - hy - 4.0, 5, 5), Color(1.0, 0.8, 0.5, 0.08))
+
+
+## Davanti a tutto: neve, banchi di nebbia, raggi di luce.
+func _draw_weather_front(n: CanvasItem, t: float) -> void:
+	match ambiente:
+		Bioma.Ambiente.MONTAGNA:
+			for f in weather:
+				n.draw_rect(Rect2((f["p"] as Vector2).round(), Vector2.ONE * f["s"]), Color(0.93, 0.95, 1.0, 0.8))
+		Bioma.Ambiente.PALUDE:
+			for i in 5:  # banchi di nebbia bassa che scorrono sul campo
+				var fw := 90.0 + i * 24.0
+				var fy := origin.y + depth * (0.1 + i * 0.2)
+				var fx := fmod(t * (2.0 + i * 0.7) + i * 97.0, art_size.x + fw) - fw
+				for k in 3:
+					n.draw_rect(Rect2(roundf(fx + k * 8), fy + k * 2 - 3, fw - k * 16, 3), Color(0.8, 0.9, 0.8, 0.05))
+		Bioma.Ambiente.CATTEDRALE:
+			for i in 3:  # raggi di luce dalle finestre rotte
+				var x0 := 60.0 + i * 140.0 + sin(t * 0.2 + i) * 6.0
+				for y in range(int(horizon), int(art_size.y), 2):
+					var w := 14.0
+					var x := x0 + (y - horizon) * 0.45
+					n.draw_rect(Rect2(roundf(x), y, w, 2), Color(1.0, 0.92, 0.75, 0.035))
+			for f in weather:
+				var a := 0.25 + 0.25 * sin(t * 2.0 + f["ph"])
+				n.draw_rect(Rect2((f["p"] as Vector2).round(), Vector2.ONE), Color(1.0, 0.95, 0.8, a))

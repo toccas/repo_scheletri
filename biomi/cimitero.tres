@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Bioma" format=3]
+
+[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" path="res://assets/campo/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" path="res://assets/campo/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" path="res://assets/campo/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" path="res://assets/biomi/cimitero/ostacoli.png" id="5_ost"]
+
+[resource]
+script = ExtResource("1_bio")
+nome = "Cimitero"
+cielo = ExtResource("2_cie")
+terreno = ExtResource("3_ter")
+lastre = ExtResource("4_las")
+ostacoli = ExtResource("5_ost")
+ambiente = 0
+stelle = true
+pipistrelli = true
+eroi_lontani = true
+colore_barriera = Color(0.102, 0.11, 0.118, 1)

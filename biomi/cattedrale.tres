@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Bioma" format=3]
+
+[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" path="res://assets/biomi/cattedrale/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" path="res://assets/biomi/cattedrale/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" path="res://assets/biomi/cattedrale/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" path="res://assets/biomi/cattedrale/ostacoli.png" id="5_ost"]
+
+[resource]
+script = ExtResource("1_bio")
+nome = "Cattedrale in rovina"
+cielo = ExtResource("2_cie")
+terreno = ExtResource("3_ter")
+lastre = ExtResource("4_las")
+ostacoli = ExtResource("5_ost")
+ambiente = 2
+stelle = false
+pipistrelli = true
+eroi_lontani = false
+colore_barriera = Color(0.06, 0.06, 0.07, 1)

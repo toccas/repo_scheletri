@@ -23,8 +23,10 @@ const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const Livelli := preload("res://scripts/livelli.gd")
 const TEX_SKY := preload("res://assets/campo/cielo.png")
 const TEX_GROUND := preload("res://assets/campo/terreno.png")
+const LEVELS_SCENE := "res://scenes/selezione_livello.tscn"
 const GAME_SCENE := "res://scenes/main.tscn"
 const MENU_SCENE := "res://scenes/menu.tscn"
 const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
@@ -49,6 +51,9 @@ const CARD_GAP := 6.0
 const GRID_POS := Vector2(50, 156)
 
 var st: Dictionary
+## Lo sfondo è quello del livello scelto.
+var sfondo_cielo: Texture2D = TEX_SKY
+var sfondo_terreno: Texture2D = TEX_GROUND
 var font: Font
 var selected := 0  # altare selezionato
 var hover := {}  # {"type": "card"/"altar"/"button", "id": ...}
@@ -158,6 +163,7 @@ func _ready() -> void:
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
 	Lingua.setup()
+	_sfondo_livello()
 	Dialoghi.avvia(self, dialogo_tutorial)
 	if tema:
 		theme = tema
@@ -296,11 +302,11 @@ func _press(id: String) -> void:
 				return
 			Suoni.play("conferma")
 			_save()
-			leaving = GAME_SCENE
+			leaving = Livelli.scena_scelta()
 		"back":
 			Suoni.play("click")
 			_save()
-			leaving = MENU_SCENE
+			leaving = LEVELS_SCENE if ResourceLoader.exists(LEVELS_SCENE) else MENU_SCENE
 		"portal":
 			Suoni.play("click")
 			_save()
@@ -322,8 +328,8 @@ func _draw() -> void:
 	var vp := size
 	# sfondo: lo stesso campo della partita, scurito
 	draw_rect(Rect2(Vector2.ZERO, vp), C0)
-	draw_texture_rect(TEX_SKY, Rect2(Vector2(0, -60), TEX_SKY.get_size() * 3.0), false)
-	draw_texture_rect(TEX_GROUND, Rect2(Vector2(0, 270), TEX_GROUND.get_size() * 3.0), false)
+	draw_texture_rect(sfondo_cielo, Rect2(Vector2(0, -60), sfondo_cielo.get_size() * 3.0), false)
+	draw_texture_rect(sfondo_terreno, Rect2(Vector2(0, 270), sfondo_terreno.get_size() * 3.0), false)
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.05, 0.05, 0.05, 0.55))
 
 	Pietra.banner(self, Rect2(vp.x / 2.0 - 220, 18, 440, 74))
@@ -486,3 +492,14 @@ func _draw_info(r: Rect2, k: String) -> void:
 		line += tr(" · Gittata %d") % int(ss["range"])
 	Pietra.text(self, font, Vector2(x, y + 62), line, 16, C6)
 	Pietra.text_block_left(self, font, Vector2(x, y + 96), r.end.x - x - 20, Data.descrizione(k), 16, C5)
+
+
+## Usa cielo e terreno del bioma del livello scelto nella schermata dei livelli.
+func _sfondo_livello() -> void:
+	var id := Livelli.scelto()
+	for info in Livelli.elenco():
+		if info.id == id and info.bioma != null:
+			if info.bioma.cielo:
+				sfondo_cielo = info.bioma.cielo
+			if info.bioma.terreno:
+				sfondo_terreno = info.bioma.terreno

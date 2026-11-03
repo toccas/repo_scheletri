@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/main.tscn" id="1_main"]
+[ext_resource type="Resource" path="res://biomi/cattedrale.tres" id="2_bio"]
+
+[node name="Cattedrale" instance=ExtResource("1_main")]
+id_livello = "cattedrale"
+bioma = ExtResource("2_bio")
+ondate_totali = 100
+file_bloccate = PackedInt32Array()
+ostacoli = Array[Vector2i]([Vector2i(2, 1), Vector2i(2, 3), Vector2i(5, 1), Vector2i(5, 3), Vector2i(8, 1), Vector2i(8, 3)])
+colonne = 10
+file = 5
+
+[node name="Griglia" parent="." index="0"]
+position = Vector2(250, 129)

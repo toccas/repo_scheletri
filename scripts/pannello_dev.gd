@@ -7,6 +7,7 @@ extends CanvasLayer
 ##   UNITÀ     quali unità hai nella collezione e a che rango
 ##   RICERCHE  livello di ogni ricerca
 ##   RISORSE   pergamene, monete d'osso, punti, VIP, fondi infiniti, tutorial
+##   LIVELLI   sblocca/completa i livelli e gioca subito quello che vuoi
 ##   PARTITA   (solo in battaglia) vinci l'ondata, salta a un'ondata, livelli, torre invincibile
 ## Le modifiche si salvano subito; "Ricarica scena" le fa vedere nella scena aperta.
 
@@ -16,6 +17,7 @@ const Research := preload("res://scripts/research_data.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Lingua := preload("res://scripts/lingua.gd")
+const Livelli := preload("res://scripts/livelli.gd")
 const SAVE_PATH := "user://progressi.cfg"
 
 const C0 := Color("141414")
@@ -66,9 +68,12 @@ func _ready() -> void:
 	tabs.add_child(_tab_unita())
 	tabs.add_child(_tab_ricerche())
 	tabs.add_child(_tab_risorse())
+	tabs.add_child(_tab_livelli())
 	if _partita() != null:
 		tabs.add_child(_tab_partita())
-		tabs.current_tab = 3
+		tabs.current_tab = tabs.get_tab_count() - 1
+	elif get_tree().current_scene and get_tree().current_scene.has_method("_gioca"):
+		tabs.current_tab = 3  # dalla scelta del livello apre LIVELLI
 	info = Label.new()
 	info.add_theme_color_override("font_color", C5)
 	box.add_child(info)
@@ -376,6 +381,70 @@ func _uccidi_tutti(m: Node) -> void:
 	for u in m.enemies_root.get_children():
 		if not u.dead:
 			u.take_damage(u.hp * 100.0 + 99999.0)
+
+
+# --- Livelli --------------------------------------------------------------------------
+
+func _tab_livelli() -> Control:
+	var page := VBoxContainer.new()
+	page.name = "LIVELLI"
+	page.add_theme_constant_override("separation", 10)
+	var lista := Livelli.elenco()
+	var checks: Array[CheckBox] = []
+	var row := HBoxContainer.new()
+	page.add_child(row)
+	row.add_child(_btn("Sblocca tutti", func() -> void:
+		for c in checks:
+			c.button_pressed = true
+		_msg("Tutti i livelli completati: ora sono tutti giocabili.")))
+	row.add_child(_btn("Blocca tutti", func() -> void:
+		for c in checks:
+			c.button_pressed = false
+		_msg("Livelli di nuovo bloccati (resta giocabile solo il primo).")))
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 8)
+	page.add_child(grid)
+	for i in lista.size():
+		var info: InfoLivello = lista[i]
+		var l := Label.new()
+		l.text = "%d. %s" % [i + 1, tr(info.nome)]
+		l.custom_minimum_size.x = 320
+		grid.add_child(l)
+		var stato := Label.new()
+		stato.custom_minimum_size.x = 170
+		stato.add_theme_color_override("font_color", C5)
+		var aggiorna := func() -> void:
+			stato.text = ("sbloccato" if Livelli.sbloccato(lista, i) else "bloccato") + "  ·  record %d" % Livelli.record(info.id)
+		aggiorna.call()
+		var cb := CheckBox.new()
+		cb.text = "completato"
+		cb.focus_mode = Control.FOCUS_NONE
+		cb.button_pressed = Livelli.finito(info.id)
+		cb.toggled.connect(func(on: bool) -> void:
+			Livelli.segna_finito(info.id, on)
+			for f in page.get_meta("aggiorna", []):
+				(f as Callable).call())
+		checks.append(cb)
+		grid.add_child(cb)
+		grid.add_child(stato)
+		grid.add_child(_btn("Gioca", func() -> void:
+			if info.scena == "" or not ResourceLoader.exists(info.scena):
+				_msg("Scena del livello non trovata: " + info.scena)
+				return
+			Livelli.scegli(info)
+			chiudi()
+			get_tree().change_scene_to_file(info.scena)))
+		var fs: Array = page.get_meta("aggiorna", [])
+		fs.append(aggiorna)
+		page.set_meta("aggiorna", fs)
+	var nota := Label.new()
+	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nota.add_theme_color_override("font_color", C4)
+	nota.text = "\"completato\" sblocca il livello dopo. \"Gioca\" parte subito con la squadra salvata (senza preparazione). I livelli si modificano in livelli/elenco_livelli.tres e scenes/livelli/."
+	page.add_child(nota)
+	return page
 
 
 # --- Aspetto ---------------------------------------------------------------------------

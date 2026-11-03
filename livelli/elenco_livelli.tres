@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="ElencoLivelli" format=3]
+
+[ext_resource type="Script" path="res://scripts/elenco_livelli.gd" id="1_ele"]
+[ext_resource type="Script" path="res://scripts/info_livello.gd" id="2_inf"]
+[ext_resource type="Resource" path="res://biomi/cimitero.tres" id="3_cim"]
+[ext_resource type="Resource" path="res://biomi/palude.tres" id="4_pal"]
+[ext_resource type="Resource" path="res://biomi/cattedrale.tres" id="5_cat"]
+[ext_resource type="Resource" path="res://biomi/montagna.tres" id="6_mon"]
+
+[sub_resource type="Resource" id="Resource_cim"]
+script = ExtResource("2_inf")
+id = "cimitero"
+nome = "Cimitero"
+descrizione = "Dove tutto è cominciato. Lapidi, corvi e un campo aperto."
+scena = "res://scenes/main.tscn"
+bioma = ExtResource("3_cim")
+
+[sub_resource type="Resource" id="Resource_pal"]
+script = ExtResource("2_inf")
+id = "palude"
+nome = "Palude nebbiosa"
+descrizione = "Due canali d'acqua dividono il campo in tre corsie. Nella nebbia danzano i fuochi fatui."
+scena = "res://scenes/livelli/palude.tscn"
+bioma = ExtResource("4_pal")
+
+[sub_resource type="Resource" id="Resource_cat"]
+script = ExtResource("2_inf")
+id = "cattedrale"
+nome = "Cattedrale in rovina"
+descrizione = "Colonne crollate bloccano le caselle della navata. Si combatte tra le macerie."
+scena = "res://scenes/livelli/cattedrale.tscn"
+bioma = ExtResource("5_cat")
+
+[sub_resource type="Resource" id="Resource_mon"]
+script = ExtResource("2_inf")
+id = "montagna"
+nome = "Passo di montagna innevato"
+descrizione = "Un crepaccio taglia il passo in due e i massi chiudono la strada. Nevica sempre."
+scena = "res://scenes/livelli/montagna.tscn"
+bioma = ExtResource("6_mon")
+
+[resource]
+script = ExtResource("1_ele")
+livelli = Array[ExtResource("2_inf")]([SubResource("Resource_cim"), SubResource("Resource_pal"), SubResource("Resource_cat"), SubResource("Resource_mon")])

@@ -276,6 +276,7 @@ func _process(delta: float) -> void:
 	else:
 		_enemy_update(delta)
 	_separate(delta)
+	ground = game.constrain(ground, radius)  # corsie e ostacoli del livello
 	ground.y = clampf(ground.y, radius, game.depth - 1.0)
 	_animate_walk(ground.distance_squared_to(before) > 0.0001, delta)
 	sync_screen()
@@ -349,9 +350,12 @@ func _ally_update(delta: float) -> void:
 	var center := home if melee else ground
 	if not _is_valid(target):
 		retaliating = false
+	elif melee and not game.same_lane(ground, target.ground):
+		target = null  # è in un'altra corsia: non si può raggiungere
+		retaliating = false
 	# chi sta contrattaccando insegue l'aggressore ovunque, finché non muore
 	if not retaliating and (not _is_valid(target) or target.ground.distance_to(center) > aggro + 10.0):
-		target = game.nearest_unit(game.enemies_root, center, aggro)
+		target = game.nearest_unit(game.enemies_root, center, aggro, melee)
 	if _is_valid(target):
 		if _in_range(target):
 			_attack(target)
@@ -368,7 +372,7 @@ func _enemy_update(delta: float) -> void:
 	if taunter != null:
 		target = taunter
 	elif not _is_valid(target) or ground.distance_to(target.ground) > engage + 7.0:
-		target = game.nearest_unit(game.allies_root, ground, engage)
+		target = game.nearest_unit(game.allies_root, ground, engage, melee)
 	if _is_valid(target):
 		if _in_range(target):
 			_attack(target)

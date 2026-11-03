@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Bioma" format=3]
+
+[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" path="res://assets/biomi/montagna/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" path="res://assets/biomi/montagna/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" path="res://assets/biomi/montagna/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" path="res://assets/biomi/montagna/ostacoli.png" id="5_ost"]
+
+[resource]
+script = ExtResource("1_bio")
+nome = "Passo di montagna innevato"
+cielo = ExtResource("2_cie")
+terreno = ExtResource("3_ter")
+lastre = ExtResource("4_las")
+ostacoli = ExtResource("5_ost")
+ambiente = 3
+stelle = true
+pipistrelli = false
+eroi_lontani = true
+colore_barriera = Color(0.05, 0.06, 0.09, 1)
