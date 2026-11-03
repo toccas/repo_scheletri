@@ -1,7 +1,11 @@
 extends CanvasLayer
 ## DEV TOOL: fondi infiniti nel negozio.
 ##
+##   Ctrl + Shift + D   apre / chiude il PANNELLO DEV: sblocca unità, ricerche,
+##                      pergamene, monete, VIP; in battaglia salta ondate, livelli...
 ##   Ctrl + Shift + M   attiva / disattiva i fondi infiniti
+##   Ctrl + Shift + T   rifà il primo avvio: scelta della lingua e tutti i dialoghi
+##                      del tutorial (dalla prossima scena che apri)
 ##
 ## Funziona solo nell'editor e nelle build esportate con "Export With Debug":
 ## nelle build finali questo nodo non viene nemmeno creato (vedi portafoglio.gd).
@@ -10,6 +14,10 @@ extends CanvasLayer
 
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const COMBO_KEY := KEY_M  # insieme a Ctrl e Shift
+const COMBO_TUTORIAL := KEY_T
+const COMBO_PANNELLO := KEY_D
+const PannelloDev := preload("res://scripts/pannello_dev.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 
 var active := false
 var toast := ""
@@ -28,7 +36,32 @@ func _ready() -> void:
 	add_child(canvas)
 
 
+var pannello: Node = null
+
+
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo \
+			and event.ctrl_pressed and event.shift_pressed and event.keycode == COMBO_PANNELLO:
+		get_viewport().set_input_as_handled()
+		if pannello != null and is_instance_valid(pannello):
+			pannello.chiudi()
+		else:
+			pannello = PannelloDev.new()
+			pannello.chiuso.connect(func() -> void:
+				active = Portafoglio.infinite(Portafoglio.load_state())
+				var sc := get_tree().current_scene
+				if sc and sc.has_method("on_dev_tool_changed"):
+					sc.on_dev_tool_changed())
+			get_tree().root.add_child(pannello)
+		return
+	if event is InputEventKey and event.pressed and not event.echo \
+			and event.ctrl_pressed and event.shift_pressed and event.keycode == COMBO_TUTORIAL:
+		Dialoghi.azzera_tutti()
+		preload("res://scripts/lingua.gd").dimentica_scelta()
+		toast = "DEV TOOL: primo avvio azzerato (lingua e dialoghi): riapri il menu"
+		toast_t = 2.5
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo \
 			and event.ctrl_pressed and event.shift_pressed and event.keycode == COMBO_KEY:
 		active = not active

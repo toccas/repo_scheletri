@@ -13,6 +13,8 @@ extends Control
 ## Tasti: frecce sinistra/destra = pagina, Esc / Backspace = torna al menu.
 
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
@@ -20,6 +22,10 @@ const TEX_STALL := preload("res://assets/menu/negozio.png")
 const TEX_COIN := preload("res://assets/negozio/moneta.png")
 const TEX_SCROLL := preload("res://assets/negozio/pergamena.png")
 const MENU_SCENE := "res://scenes/menu.tscn"
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/negozio.tres")
 
 ## Gli oggetti in vendita, nell'ordine in cui compaiono.
 @export var oggetti: Array[OggettoNegozio] = []
@@ -88,8 +94,10 @@ func _ready() -> void:
 		return
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
+	Lingua.setup()
+	Dialoghi.avvia(self, dialogo_tutorial)
 	_refresh()
-	say = frase_benvenuto
+	say = tr(frase_benvenuto)
 
 
 func _refresh() -> void:
@@ -100,7 +108,7 @@ func _refresh() -> void:
 ## Chiamata dal dev tool quando premi Ctrl+Shift+M.
 func on_dev_tool_changed() -> void:
 	_refresh()
-	_merchant("Mmh... le tue tasche non hanno più fondo." if Portafoglio.infinite(wallet) else "Le tue tasche tornano normali.")
+	_merchant(tr("Mmh... le tue tasche non hanno più fondo.") if Portafoglio.infinite(wallet) else tr("Le tue tasche tornano normali."))
 
 
 func _merchant(s: String) -> void:
@@ -119,7 +127,7 @@ func page_count() -> int:
 func card_rect(i: int) -> Rect2:
 	var k := i % per_page()
 	var c := k % colonne
-	var r := k / colonne
+	var r := floori(k / float(colonne))
 	return Rect2(inizio_schede + Vector2(c, r) * (dimensione_scheda + Vector2.ONE * spazio), dimensione_scheda)
 
 
@@ -151,8 +159,8 @@ func _process(delta: float) -> void:
 	else:
 		fade = maxf(0.0, fade - delta * 3.0)
 	say_t = maxf(0.0, say_t - delta)
-	if say_t <= 0.0 and say != frase_benvenuto and confirm_item == null:
-		say = frase_benvenuto
+	if say_t <= 0.0 and say != tr(frase_benvenuto) and confirm_item == null:
+		say = tr(frase_benvenuto)
 	pop_t = maxf(0.0, pop_t - delta)
 	var st := TEX_STALL.get_size() * scala_bancarella
 	if randf() < delta * 3.0:
@@ -207,12 +215,13 @@ func _press(what: String) -> void:
 		page += 1
 	elif what == "cancel":
 		confirm_item = null
-		_merchant("Come vuoi. La merce non scappa.")
+		_merchant(tr("Come vuoi. La merce non scappa."))
 	elif what == "buy" and confirm_item != null:
 		var item := confirm_item
 		confirm_item = null
+		var ok := Portafoglio.why_not(wallet, item) == ""
 		var msg := Portafoglio.buy(wallet, item)
-		Suoni.play("moneta" if msg.begins_with("Hai ottenuto") else "errore")
+		Suoni.play("moneta" if ok else "errore")
 		_refresh()
 		pop_t = 0.4
 		_merchant(msg)
@@ -256,11 +265,11 @@ func _draw() -> void:
 	_draw_stall()
 	_draw_speech()
 	Pietra.banner(self, Rect2(vp.x / 2.0 - 150, 18, 300, 64))
-	Pietra.text_c(self, font, vp.x / 2.0, 32, titolo, 24, C0, false)
+	Pietra.text_c(self, font, vp.x / 2.0, 32, tr(titolo), 24, C0, false)
 	_draw_wallet(vp)
 
 	if oggetti.is_empty():
-		Pietra.text_c(self, font, inizio_schede.x + 420, inizio_schede.y + 200, "Nessun oggetto in vendita: aggiungili nell'Inspector (lista Oggetti).", 16, C4)
+		Pietra.text_c(self, font, inizio_schede.x + 420, inizio_schede.y + 200, tr("Nessun oggetto in vendita: aggiungili nell'Inspector (lista Oggetti)."), 16, C4)
 	for i in range(page * per_page(), mini(oggetti.size(), (page + 1) * per_page())):
 		_draw_card(i)
 	if page_count() > 1:
@@ -269,10 +278,10 @@ func _draw() -> void:
 		Pietra.text_c(self, font, ar[0].get_center().x, ar[0].position.y + 10, "<", 20, C6 if page > 0 else C3)
 		Pietra.stone(self, ar[1], C3 if page < page_count() - 1 else C1, hover == "next")
 		Pietra.text_c(self, font, ar[1].get_center().x, ar[1].position.y + 10, ">", 20, C6 if page < page_count() - 1 else C3)
-		Pietra.text_c(self, font, (ar[0].end.x + ar[1].position.x) / 2.0, ar[0].position.y + 12, "PAGINA %d / %d" % [page + 1, page_count()], 16, C5)
+		Pietra.text_c(self, font, (ar[0].end.x + ar[1].position.x) / 2.0, ar[0].position.y + 12, tr("PAGINA %d / %d") % [page + 1, page_count()], 16, C5)
 
 	Pietra.stone(self, back_rect, C3, hover == "back")
-	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, "< BACK", 16, C6)
+	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, tr("< BACK"), 16, C6)
 	if confirm_item != null:
 		_draw_confirm(vp)
 	if fade > 0.0:
@@ -325,7 +334,7 @@ func _draw_wallet(vp: Vector2) -> void:
 	Pietra.stone(self, r, C2)
 	var bump := -4.0 * sin(pop_t / 0.4 * PI) if pop_t > 0.0 else 0.0
 	draw_texture_rect(TEX_COIN, Rect2(r.position + Vector2(12, 12 + bump), Vector2(32, 32)), false)
-	var money := "INFINITE" if Portafoglio.infinite(wallet) else str(wallet["monete"])
+	var money := tr("INFINITE") if Portafoglio.infinite(wallet) else str(wallet["monete"])
 	Pietra.text(self, font, r.position + Vector2(52, 17 + bump), money, 20, C6)
 	draw_texture_rect(TEX_SCROLL, Rect2(r.position + Vector2(176, 12), Vector2(32, 32)), false)
 	Pietra.text(self, font, r.position + Vector2(214, 17), str(scrolls), 20, C6)
@@ -356,29 +365,30 @@ func _draw_card(i: int) -> void:
 	else:
 		Pietra.text_c(self, font, ip.x + isz.x / 2.0, ip.y + isz.y / 2.0 - 12, "?", 24, C4)
 	if item.etichetta != "":
-		var tw := font.get_string_size(item.etichetta, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		var tag := _tr(item.etichetta)
+		var tw := font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 		var e := Rect2(r.end.x - tw - 22, r.position.y + 10, tw + 14, 22)
 		draw_rect(e, C6)
 		draw_rect(Rect2(e.position.x, e.end.y, e.size.x, 3), C0)
-		Pietra.text(self, font, e.position + Vector2(7, 4), item.etichetta, 13, C0, false)
+		Pietra.text(self, font, e.position + Vector2(7, 4), tag, 13, C0, false)
 	var ny := r.position.y + 30 + isz.y
-	var title := item.nome.to_upper()
+	var title := _tr(item.nome).to_upper()
 	var fs := 18  # rimpicciolisce i nomi lunghi per farli stare nella scheda
 	while fs > 11 and font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 24:
 		fs -= 1
 	Pietra.text_c(self, font, r.get_center().x, ny + (18 - fs) / 2.0, title, fs, C6)
-	Pietra.text_block(self, font, Vector2(r.position.x + 14, ny + 28), r.size.x - 28, item.descrizione, 13, C5)
+	Pietra.text_block(self, font, Vector2(r.position.x + 14, ny + 28), r.size.x - 28, _tr(item.descrizione), 13, C5)
 	# pulsante del prezzo
 	var b := buy_rect(r)
 	if is_owned:
 		Pietra.stone(self, b, C1)
-		Pietra.text_c(self, font, b.get_center().x, b.position.y + 12, "ACQUISTATO", 16, C4, false)
+		Pietra.text_c(self, font, b.get_center().x, b.position.y + 12, tr("ACQUISTATO"), 16, C4, false)
 		return
 	var can := why == ""
 	Pietra.stone(self, b, C4 if (can and hot) else C1, false)
 	var euro := item.valuta == OggettoNegozio.Valuta.EURO
 	if euro and not OS.is_debug_build():
-		Pietra.text_c(self, font, b.get_center().x, b.position.y + 12, "IN ARRIVO", 16, C4, false)
+		Pietra.text_c(self, font, b.get_center().x, b.position.y + 12, tr("IN ARRIVO"), 16, C4, false)
 		return
 	var label := item.prezzo_testo()
 	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
@@ -397,21 +407,26 @@ func _draw_confirm(vp: Vector2) -> void:
 	Pietra.stone(self, r, C3)
 	if item.icona:
 		draw_texture_rect(item.icona, Rect2(c.x - 32, r.position.y + 20, 64, 64), false)
-	Pietra.text_c(self, font, c.x, r.position.y + 96, "COMPRARE %s?" % item.nome.to_upper(), 20, C6)
+	Pietra.text_c(self, font, c.x, r.position.y + 96, tr("COMPRARE %s?") % _tr(item.nome).to_upper(), 20, C6)
 	var price := item.prezzo_testo()
 	var line := ""
 	if item.valuta == OggettoNegozio.Valuta.EURO:
-		line = "Prezzo: %s  (acquisto simulato: build di prova)" % price
+		line = tr("Prezzo: %s  (acquisto simulato: build di prova)") % price
 	elif Portafoglio.infinite(wallet):
-		line = "Prezzo: %s monete d'osso  (DEV: gratis)" % price
+		line = tr("Prezzo: %s monete d'osso  (DEV: gratis)") % price
 	else:
-		line = "Prezzo: %s monete d'osso  ·  ne hai %d" % [price, wallet["monete"]]
+		line = tr("Prezzo: %s monete d'osso  ·  ne hai %d") % [price, wallet["monete"]]
 	Pietra.text_c(self, font, c.x, r.position.y + 130, line, 14, C5, false)
 	var cr := _confirm_rects()
 	Pietra.stone(self, cr[0], C4, hover == "buy")
-	Pietra.text_c(self, font, cr[0].get_center().x, cr[0].position.y + 15, "COMPRA", 18, C6)
+	Pietra.text_c(self, font, cr[0].get_center().x, cr[0].position.y + 15, tr("COMPRA"), 18, C6)
 	Pietra.stone(self, cr[1], C2, hover == "cancel")
-	Pietra.text_c(self, font, cr[1].get_center().x, cr[1].position.y + 15, "ANNULLA", 18, C5)
+	Pietra.text_c(self, font, cr[1].get_center().x, cr[1].position.y + 15, tr("ANNULLA"), 18, C5)
+
+
+## Traduce i testi scritti nell'Inspector (nell'editor restano come li scrivi).
+func _tr(s: String) -> String:
+	return s if Engine.is_editor_hint() or s == "" else tr(s)
 
 
 # --- Oggetti di base -----------------------------------------------------------

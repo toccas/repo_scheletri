@@ -177,6 +177,7 @@ const MAX_RANK := 5
 const RANK_BONUS := 0.10
 
 const SHEET_BASE := preload("res://assets/sprites.png")
+const Lingua := preload("res://scripts/lingua.gd")
 const SHEET_NEW := preload("res://assets/unita_scheletri.png")
 
 
@@ -189,7 +190,7 @@ static func ally_region(kind: String, frame: int = 0) -> Rect2:
 	var d: Dictionary = UNITS[kind]
 	if d["sheet"] == "nuove":
 		var i: int = d["sx"]
-		return Rect2((i % 4) * 32 + frame * 16, (i / 4) * 16, 16, 16)
+		return Rect2((i % 4) * 32 + frame * 16, floori(i / 4.0) * 16, 16, 16)
 	return Rect2((d["sx"] + frame) * 16, 0, 16, 16)
 
 ## COLORE D'ACCENTO di ogni unità: è l'unico elemento colorato della sprite
@@ -226,6 +227,39 @@ const ACCENTI_NEMICI := {
 }
 ## Viola della veste del necromante (colpi della torre).
 const ACCENTO_NECROMANTE := Color("9c5ccc")
+
+
+# --- Testi nella lingua scelta (traduzioni in lingue/testi.csv) ---------------
+
+## Nome completo dello scheletro, es. "Arciere scheletro".
+static func nome(k: String) -> String:
+	return Lingua.t(UNITS[k]["ally_name"])
+
+
+## Nome dell'eroe nemico, es. "Arciere umano".
+static func nome_nemico(k: String) -> String:
+	return Lingua.t(UNITS[k]["enemy_name"])
+
+
+## Nome breve in maiuscolo per le schede, es. "ARCIERE".
+static func nome_breve(k: String) -> String:
+	return Lingua.t(k.to_upper())
+
+
+static func descrizione(k: String) -> String:
+	return Lingua.t(UNITS[k]["desc"])
+
+
+static func rarita(r: String) -> String:
+	return Lingua.t(RARITY_NAMES.get(r, r))
+
+
+static func ruolo(r: String) -> String:
+	return Lingua.t(ROLE_NAMES.get(r, r))
+
+
+static func nome_abilita(key: String) -> String:
+	return Lingua.t(ABILITIES[key]["name"])
 
 
 static func accent(kind: String, team: int = 0) -> Color:

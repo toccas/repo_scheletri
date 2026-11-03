@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3]
+
+[ext_resource type="Script" path="res://scripts/battuta_dialogo.gd" id="1_y8nvp"]
+[ext_resource type="Script" path="res://scripts/dialogo.gd" id="2_a7qhi"]
+
+[sub_resource type="Resource" id="Resource_v7waq"]
+script = ExtResource("1_y8nvp")
+testo = "Il portale delle anime! Qui le pergamene diventano scheletri."
+espressione = 4
+
+[sub_resource type="Resource" id="Resource_cw7na"]
+script = ExtResource("1_y8nvp")
+testo = "Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove."
+
+[sub_resource type="Resource" id="Resource_mlcuh"]
+script = ExtResource("1_y8nvp")
+testo = "Se esce un'unità che hai già, sale di rango: più vita e più danno."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_ksdik"]
+script = ExtResource("1_y8nvp")
+testo = "Ogni dieci pergamene è garantita almeno un'unità epica. E con dieci pergamene puoi aprirle tutte insieme."
+espressione = 3
+
+[resource]
+script = ExtResource("2_a7qhi")
+id = "evocazione"
+battute = Array[ExtResource("1_y8nvp")]([SubResource("Resource_v7waq"), SubResource("Resource_cw7na"), SubResource("Resource_mlcuh"), SubResource("Resource_ksdik")])

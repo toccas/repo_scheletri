@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://cm66sh33qlacc"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_pfcmd"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_q1gkq"]
+
+[sub_resource type="Resource" id="Resource_rgnxh"]
+script = ExtResource("1_pfcmd")
+testo = "Oh! Un nuovo apprendista. Finalmente!"
+espressione = 4
+
+[sub_resource type="Resource" id="Resource_bgp5e"]
+script = ExtResource("1_pfcmd")
+testo = "Io sono il Necromante, signore di questa torre e di ogni osso che la circonda."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_eutoq"]
+script = ExtResource("1_pfcmd")
+testo = "Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra."
+espressione = 2
+
+[sub_resource type="Resource" id="Resource_wg4hq"]
+script = ExtResource("1_pfcmd")
+testo = "Il piano è semplice: io colpisco dall'alto della torre, tu comandi i miei scheletri sul campo."
+
+[sub_resource type="Resource" id="Resource_to4h0"]
+script = ExtResource("1_pfcmd")
+testo = "Questo è il cortile del castello. Sotto la torre c'è AVVIA RUN: da lì si parte per la battaglia."
+
+[sub_resource type="Resource" id="Resource_j8610"]
+script = ExtResource("1_pfcmd")
+testo = "Il libro della RICERCA dà potenziamenti che restano per sempre. Si pagano con i punti guadagnati in ogni partita."
+espressione = 3
+
+[sub_resource type="Resource" id="Resource_hxv85"]
+script = ExtResource("1_pfcmd")
+testo = "Nel portale dell'EVOCAZIONE le pergamene diventano nuovi scheletri. Ne ottieni una ogni dieci ondate superate."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_7i2dv"]
+script = ExtResource("1_pfcmd")
+testo = "E il mercante del NEGOZIO vende pergamene in cambio di monete d'osso."
+
+[sub_resource type="Resource" id="Resource_mq1rh"]
+script = ExtResource("1_pfcmd")
+testo = "Basta chiacchiere. Clicca su AVVIA RUN e mostrami di cosa sei capace!"
+espressione = 1
+
+[resource]
+script = ExtResource("2_q1gkq")
+id = "benvenuto"
+battute = Array[ExtResource("1_pfcmd")]([SubResource("Resource_rgnxh"), SubResource("Resource_bgp5e"), SubResource("Resource_eutoq"), SubResource("Resource_wg4hq"), SubResource("Resource_to4h0"), SubResource("Resource_j8610"), SubResource("Resource_hxv85"), SubResource("Resource_7i2dv"), SubResource("Resource_mq1rh")])

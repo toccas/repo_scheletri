@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://dc7jq4ntclmjk"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_a2oli"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_8x4u6"]
+
+[sub_resource type="Resource" id="Resource_jh54j"]
+script = ExtResource("1_a2oli")
+testo = "Ecco il campo di battaglia. Gli eroi arrivano da destra e marciano verso la mia torre."
+
+[sub_resource type="Resource" id="Resource_0yi21"]
+script = ExtResource("1_a2oli")
+testo = "Clicca una casella della griglia per evocare una squadra. All'inizio ne puoi schierare poche: le altre arrivano salendo di livello."
+
+[sub_resource type="Resource" id="Resource_qo3ip"]
+script = ExtResource("1_a2oli")
+testo = "Quando sei pronto premi INIZIA ONDATE. Io sparo da solo dalla torre: tu pensa ai tuoi scheletri."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_l1fnb"]
+script = ExtResource("1_a2oli")
+testo = "Ogni eroe ucciso mi dà esperienza. A ogni livello scegli un dono tra tre lapidi."
+espressione = 3
+
+[sub_resource type="Resource" id="Resource_8nhtm"]
+script = ExtResource("1_a2oli")
+testo = "In basso ci sono le mie magie: clicca un'icona (o premi 1, 2, 3) e poi il punto del campo dove lanciarla. Prima vanno sbloccate nelle ricerche."
+
+[sub_resource type="Resource" id="Resource_liyuy"]
+script = ExtResource("1_a2oli")
+testo = "Se gli eroi distruggono la torre, la partita è finita. Non deludermi."
+espressione = 2
+
+[resource]
+script = ExtResource("2_8x4u6")
+id = "battaglia"
+battute = Array[ExtResource("1_a2oli")]([SubResource("Resource_jh54j"), SubResource("Resource_0yi21"), SubResource("Resource_qo3ip"), SubResource("Resource_l1fnb"), SubResource("Resource_8nhtm"), SubResource("Resource_liyuy")])

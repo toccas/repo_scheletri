@@ -13,6 +13,9 @@ extends Node2D
 ## Comandi: mouse; frecce sinistra/destra + Invio; Esc non fa nulla (per uscire c'è BACK).
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
+const SceltaLingua := preload("res://scripts/scelta_lingua.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const ATLAS := preload("res://assets/sprites.png")
@@ -22,6 +25,10 @@ const PREP_SCENE := "res://scenes/preparazione.tscn"  # AVVIA RUN: prima si sceg
 const RESEARCH_SCENE := "res://scenes/research.tscn"
 const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
 const SHOP_SCENE := "res://scenes/negozio.tscn"
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/benvenuto.tres")
 
 ## Pixel dello schermo per ogni pixel dell'arte (320x180 -> 1280x720 con 4).
 @export_range(2, 6) var scala_pixel := 4
@@ -82,6 +89,7 @@ var next_scene := ""
 var quitting := false
 var feedback_panel: Node = null
 var feedback_rect := Rect2()
+var lang_rects := {}  # "it"/"en"/"es" -> rettangolo del pulsante (pixel dello schermo)
 var back_rect := Rect2()  # in pixel dell'arte
 
 var stars: Array = []
@@ -107,6 +115,16 @@ func _ready() -> void:
 	rnd.randomize()
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
+	Lingua.setup()
+	if Lingua.scelta_fatta():
+		Dialoghi.avvia(self, dialogo_tutorial)
+	else:
+		# primo avvio: prima si sceglie la lingua, poi parla il necromante
+		var scelta: Node = SceltaLingua.new()
+		scelta.scelta.connect(func(_code: String) -> void:
+			_aggiorna_testi()
+			Dialoghi.avvia(self, dialogo_tutorial))
+		add_child.call_deferred(scelta)
 	mondo.scale = Vector2.ONE * scala_pixel
 	for c in cortile.get_children():
 		if c.has_method("hit"):
@@ -266,7 +284,12 @@ func _update_hover() -> void:
 	if feedback_panel == null and not leaving:
 		var mouse := get_global_mouse_position()
 		var art_mouse := mondo.get_local_mouse_position()
-		if feedback_rect.grow(4).has_point(mouse):
+		for code in lang_rects:
+			if (lang_rects[code] as Rect2).grow(2).has_point(mouse):
+				new_hover = "lang:" + code
+		if new_hover != null:
+			pass
+		elif feedback_rect.grow(4).has_point(mouse):
 			new_hover = "feedback"
 		elif back_rect.grow(2).has_point(art_mouse):
 			new_hover = "back"
@@ -312,7 +335,19 @@ func _unhandled_input(event: InputEvent) -> void:
 					_activate(hovered)
 
 
+## Le targhe degli edifici si ridisegnano nella nuova lingua.
+func _aggiorna_testi() -> void:
+	for b in buildings:
+		if b._label:
+			b._label.queue_redraw()
+
+
 func _activate(target) -> void:
+	if target is String and target.begins_with("lang:"):
+		Suoni.play("click")
+		Lingua.set_lang(target.substr(5))
+		_aggiorna_testi()
+		return
 	Suoni.play("conferma")
 	if target is String:
 		if target == "feedback":
@@ -719,7 +754,7 @@ func _draw_back_sign(n: CanvasItem) -> void:
 	var m := mondo.get_node_or_null("Back") as Node2D
 	if m:
 		anchor = m.position.round()
-	var label := "< BACK"
+	var label := tr("< BACK")
 	var tw := PixelFont.text_width(label, 1.0)
 	var size := Vector2(tw + 10, 13)
 	var r := Rect2(anchor - Vector2(0, size.y), size)
@@ -741,8 +776,47 @@ func _draw_back_sign(n: CanvasItem) -> void:
 func _draw_ui() -> void:
 	var n := interfaccia
 	_draw_feedback_button(n)
+	_draw_language(n)
 	if fade > 0.0:
 		n.draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color(C0, fade))
+
+
+## Scelta della lingua in alto a destra: LINGUA [IT] [EN] [ES].
+## Per spostarla aggiungi alla scena un Marker2D chiamato "Lingua" (figlio di Menu):
+## il marker indica l'angolo in alto a sinistra.
+func _draw_language(n: CanvasItem) -> void:
+	var p := 2.0
+	var label := tr("LINGUA")
+	var lw := PixelFont.text_width(label, p)
+	var bw := PixelFont.text_width("EN", p) + 16.0
+	var h := PixelFont.text_height(p) + 14.0
+	var total := Vector2(10 + lw + 10 + (bw + 6) * Lingua.LINGUE.size() + 4, h + 8)
+	var pos := Vector2(get_viewport_rect().size.x - total.x - 20, 20)
+	var m := get_node_or_null("Lingua") as Node2D
+	if m:
+		pos = m.position.round()
+	var panel := Rect2(pos, total)
+	n.draw_rect(panel, Color(C1, 0.85))
+	n.draw_rect(Rect2(panel.position, Vector2(panel.size.x, 2)), C4)
+	n.draw_rect(Rect2(panel.position + Vector2(0, panel.size.y - 2), Vector2(panel.size.x, 2)), C4)
+	n.draw_rect(Rect2(panel.position, Vector2(2, panel.size.y)), C4)
+	n.draw_rect(Rect2(panel.position + Vector2(panel.size.x - 2, 0), Vector2(2, panel.size.y)), C4)
+	PixelFont.draw_text(n, label, pos + Vector2(10, 4 + 7), p, C5)
+	var cur := Lingua.current()
+	var x := pos.x + 10 + lw + 10
+	lang_rects.clear()
+	for code in Lingua.LINGUE:
+		var r := Rect2(x, pos.y + 4, bw, h)
+		lang_rects[code] = r
+		var on: bool = code == cur
+		var hot: bool = hovered is String and hovered == "lang:" + code
+		if hot:
+			n.draw_rect(r.grow(2), C6)
+		n.draw_rect(r, C5 if on else C2)
+		n.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), C6 if on else C3)
+		n.draw_rect(Rect2(r.position + Vector2(0, r.size.y - 2), Vector2(r.size.x, 2)), C3 if on else C1)
+		PixelFont.draw_text(n, code.to_upper(), r.position + Vector2(8, 7), p, C0 if on else (C6 if hot else C5))
+		x += bw + 6
 
 
 ## Piccolo pulsante "Bug e consigli" in alto a sinistra (pixel dello schermo).
@@ -752,7 +826,7 @@ func _draw_feedback_button(n: CanvasItem) -> void:
 	if m:
 		pos = m.position.round()
 	var p := 2.0
-	var label := "BUG E CONSIGLI"
+	var label := tr("BUG E CONSIGLI")
 	var tw := PixelFont.text_width(label, p)
 	var size := Vector2(10 + 14 + 8 + tw + 10, 14 + PixelFont.text_height(p))
 	feedback_rect = Rect2(pos, size)

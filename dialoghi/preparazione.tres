@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3]
+
+[ext_resource type="Script" path="res://scripts/battuta_dialogo.gd" id="1_rbdfy"]
+[ext_resource type="Script" path="res://scripts/dialogo.gd" id="2_gh24n"]
+
+[sub_resource type="Resource" id="Resource_igfap"]
+script = ExtResource("1_rbdfy")
+testo = "Prima di ogni partita si sceglie la squadra: quattro tipi di scheletri che potrai evocare per tutta la run."
+
+[sub_resource type="Resource" id="Resource_shbhe"]
+script = ExtResource("1_rbdfy")
+testo = "Clicca un altare, poi un'unità della collezione per metterla lì. Con il tasto destro svuoti un altare."
+
+[sub_resource type="Resource" id="Resource_vp3mu"]
+script = ExtResource("1_rbdfy")
+testo = "Mescola i ruoli: chi combatte corpo a corpo sta davanti e ferma gli eroi, chi tira o fa magie colpisce da dietro."
+espressione = 3
+
+[sub_resource type="Resource" id="Resource_y2g5y"]
+script = ExtResource("1_rbdfy")
+testo = "Quando sei pronto, premi INIZIA LA RUN."
+espressione = 1
+
+[resource]
+script = ExtResource("2_gh24n")
+id = "preparazione"
+battute = Array[ExtResource("1_rbdfy")]([SubResource("Resource_igfap"), SubResource("Resource_shbhe"), SubResource("Resource_vp3mu"), SubResource("Resource_y2g5y")])

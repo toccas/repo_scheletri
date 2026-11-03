@@ -9,6 +9,7 @@ extends RefCounted
 ## Le monete si guadagnano giocando (vedi MONETE_PER_ONDATA in game_data.gd).
 
 const Collezione := preload("res://scripts/collezione.gd")
+const Lingua := preload("res://scripts/lingua.gd")
 const SAVE_PATH := "user://progressi.cfg"
 const DEV_TOOL := "res://scripts/dev_tool.gd"
 
@@ -60,14 +61,14 @@ static func owned(st: Dictionary, item: OggettoNegozio) -> bool:
 ## Si può comprare? "" = sì, altrimenti il motivo.
 static func why_not(st: Dictionary, item: OggettoNegozio) -> String:
 	if owned(st, item):
-		return "Lo hai già."
+		return Lingua.t("Lo hai già.")
 	if item.valuta == OggettoNegozio.Valuta.EURO:
 		if OS.is_debug_build():
 			return ""  # nelle build di prova l'acquisto viene simulato
-		return "I pagamenti con soldi veri arriveranno più avanti."
+		return Lingua.t("I pagamenti con soldi veri arriveranno più avanti.")
 	var have: int = st["monete"]
 	if not infinite(st) and have < int(item.prezzo):
-		return "Ti mancano %d monete d'osso." % (int(item.prezzo) - have)
+		return Lingua.t("Ti mancano %d monete d'osso.") % (int(item.prezzo) - have)
 	return ""
 
 
@@ -81,20 +82,20 @@ static func buy(st: Dictionary, item: OggettoNegozio) -> String:
 	var got: Array = []
 	if item.monete > 0:
 		st["monete"] += item.monete
-		got.append("%d monete d'osso" % item.monete)
+		got.append(Lingua.t("%d monete d'osso") % item.monete)
 	if item.sblocca_vip:
 		st["vip"] = true
-		got.append("la velocità x3")
+		got.append(Lingua.t("la velocità x3"))
 	if item.una_sola_volta and item.id != "" and not item.id in st["acquistati"]:
 		st["acquistati"].append(item.id)
 	save_state(st)
 	if item.pergamene > 0:
 		Collezione.add_scrolls(item.pergamene)
-		got.append("%d %s" % [item.pergamene, "pergamena" if item.pergamene == 1 else "pergamene"])
-	var what: String = item.nome if got.is_empty() else ", ".join(got)
-	var msg := "Hai ottenuto " + what + "!"
+		got.append((Lingua.t("%d pergamena") if item.pergamene == 1 else Lingua.t("%d pergamene")) % item.pergamene)
+	var what: String = Lingua.t(item.nome) if got.is_empty() else ", ".join(got)
+	var msg := Lingua.t("Hai ottenuto %s!") % what
 	if item.valuta == OggettoNegozio.Valuta.EURO:
-		msg += "  (acquisto simulato: build di prova)"
+		msg += Lingua.t("  (acquisto simulato: build di prova)")
 	return msg
 
 

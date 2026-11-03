@@ -1,0 +1,323 @@
+keys,it,en,es
+SALTA  >>,SALTA  >>,SKIP  >>,SALTAR  >>
+EVOCAZIONE,EVOCAZIONE,SUMMON,INVOCAR
+PERGAMENE: %d,PERGAMENE: %d,SCROLLS: %d,PERGAMINOS: %d
+APRI 1,APRI 1,OPEN 1,ABRIR 1
+Spazio,Spazio,Space,Espacio
+APRI %d,APRI %d,OPEN %d,ABRIR %d
+tasto 0,tasto 0,key 0,tecla 0
+ne servono %d,ne servono %d,you need %d,necesitas %d
+Epica o leggendaria garantita entro %d pergamene,Epica o leggendaria garantita entro %d pergamene,Epic or legendary guaranteed within %d scrolls,Épica o legendaria garantizada en %d pergaminos
+"Supera le ondate 10, 20, 30... per ottenere pergamene","Supera le ondate 10, 20, 30... per ottenere pergamene","Clear waves 10, 20, 30... to earn scrolls","Supera las oleadas 10, 20, 30... para ganar pergaminos"
+< BACK,< BACK,< BACK,< VOLVER
+PREPARA LA SQUADRA >,PREPARA LA SQUADRA >,PREPARE THE SQUAD >,PREPARAR EL ESCUADRÓN >
+NUOVA UNITÀ!,NUOVA UNITÀ!,NEW UNIT!,¡NUEVA UNIDAD!
+RANGO %d  (+%d%% vita e danno),RANGO %d  (+%d%% vita e danno),RANK %d  (+%d%% health and damage),RANGO %d  (+%d%% vida y daño)
+clicca o premi Spazio per continuare,clicca o premi Spazio per continuare,click or press Space to continue,haz clic o pulsa Espacio para continuar
+COLLEZIONE  %d/%d,COLLEZIONE  %d/%d,COLLECTION  %d/%d,COLECCIÓN  %d/%d
+Unità nuove: %d   ·   Doppioni: %d,Unità nuove: %d   ·   Doppioni: %d,New units: %d   ·   Duplicates: %d,Unidades nuevas: %d   ·   Repetidas: %d
+clicca per girarle tutte,clicca per girarle tutte,click to flip them all,haz clic para girarlas todas
+NUOVA!,NUOVA!,NEW!,¡NUEVA!
+RANGO %d,RANGO %d,RANK %d,RANGO %d
+BUG E CONSIGLI,BUG E CONSIGLI,BUGS AND IDEAS,ERRORES E IDEAS
+Hai trovato un problema o hai un'idea? Scrivimi!,Hai trovato un problema o hai un'idea? Scrivimi!,Found a problem or have an idea? Write to me!,¿Has encontrado un problema o tienes una idea? ¡Escríbeme!
+Bug,Bug,Bug,Error
+Consiglio,Consiglio,Idea,Idea
+Cosa è successo? Cosa stavi facendo? (oppure: la tua idea),Cosa è successo? Cosa stavi facendo? (oppure: la tua idea),What happened? What were you doing? (or: your idea),¿Qué ha pasado? ¿Qué estabas haciendo? (o: tu idea)
+"La tua email (facoltativa, se vuoi una risposta)","La tua email (facoltativa, se vuoi una risposta)","Your email (optional, if you want a reply)","Tu email (opcional, si quieres una respuesta)"
+Chiudi,Chiudi,Close,Cerrar
+Apri email,Apri email,Open email,Abrir email
+Invia,Invia,Send,Enviar
+Premendo Invia si apre la tua app email con il messaggio pronto.,Premendo Invia si apre la tua app email con il messaggio pronto.,Pressing Send opens your email app with the message ready.,Al pulsar Enviar se abre tu app de email con el mensaje listo.
+Scrivi almeno qualche parola prima di inviare.,Scrivi almeno qualche parola prima di inviare.,Write at least a few words before sending.,Escribe al menos unas palabras antes de enviar.
+non riesco a contattare il server (errore %d),non riesco a contattare il server (errore %d),can't reach the server (error %d),no puedo contactar con el servidor (error %d)
+Invio in corso...,Invio in corso...,Sending...,Enviando...
+Grazie! Il tuo messaggio è stato inviato.,Grazie! Il tuo messaggio è stato inviato.,Thank you! Your message has been sent.,¡Gracias! Tu mensaje se ha enviado.
+connessione non riuscita: controlla Internet,connessione non riuscita: controlla Internet,connection failed: check your Internet,conexión fallida: revisa tu Internet
+il server ha risposto con l'errore %d,il server ha risposto con l'errore %d,the server replied with error %d,el servidor respondió con el error %d
+Invio non riuscito: %s. Puoi mandarlo per email con il pulsante qui sotto.,Invio non riuscito: %s. Puoi mandarlo per email con il pulsante qui sotto.,Sending failed: %s. You can send it by email with the button below.,No se pudo enviar: %s. Puedes mandarlo por email con el botón de abajo.
+Indirizzo email per i feedback non ancora configurato.,Indirizzo email per i feedback non ancora configurato.,Feedback email address not configured yet.,La dirección de email para comentarios aún no está configurada.
+Si è aperta la tua app email: premi Invia lì per mandarmi il messaggio.,Si è aperta la tua app email: premi Invia lì per mandarmi il messaggio.,Your email app is open: press Send there to send me the message.,Se ha abierto tu app de email: pulsa Enviar allí para mandarme el mensaje.
+Non trovo un'app email. Scrivimi a: %s,Non trovo un'app email. Scrivimi a: %s,No email app found. Write to me at: %s,No encuentro una app de email. Escríbeme a: %s
+Ondata %d superata! Il necromante rianima i caduti.,Ondata %d superata! Il necromante rianima i caduti.,Wave %d cleared! The necromancer raises the fallen.,¡Oleada %d superada! El nigromante alza a los caídos.
+Ondata %d superata: hai ottenuto una PERGAMENA! Aprila nel portale.,Ondata %d superata: hai ottenuto una PERGAMENA! Aprila nel portale.,Wave %d cleared: you got a SCROLL! Open it in the portal.,Oleada %d superada: ¡has conseguido un PERGAMINO! Ábrelo en el portal.
+Ondata %d: arriva un campione degli eroi!,Ondata %d: arriva un campione degli eroi!,Wave %d: a hero champion is coming!,Oleada %d: ¡llega un campeón de los héroes!
+Ondata %d,Ondata %d,Wave %d,Oleada %d
+ricerca,ricerca,research,investigar
+Vita %d,Vita %d,Health %d,Vida %d
+ · Attacco %d, · Attacco %d, · Attack %d, · Ataque %d
+ · rango %d, · rango %d, · rank %d, · rango %d
+ · gittata %d, · gittata %d, · range %d, · alcance %d
+Sbloccalo nell'albero,Sbloccalo nell'albero,Unlock it in the,Desbloquéalo en el árbol
+delle ricerche,delle ricerche,research tree,de investigación
+Clicca una casella della griglia per evocare un'unità (%d/%d). Tasto destro per rimuoverla.,Clicca una casella della griglia per evocare un'unità (%d/%d). Tasto destro per rimuoverla.,Click a grid square to summon a unit (%d/%d). Right-click to remove it.,Haz clic en una casilla para invocar una unidad (%d/%d). Clic derecho para quitarla.
+"Schieramento completo: premi ""Inizia ondate"".","Schieramento completo: premi ""Inizia ondate"".","Deployment complete: press ""Start waves"".","Despliegue completo: pulsa ""Empezar oleadas""."
+Arrivano gli eroi!,Arrivano gli eroi!,The heroes are coming!,¡Llegan los héroes!
+Furia oscura,Furia oscura,Dark fury,Furia oscura
+Attacco necromante +25%,Attacco necromante +25%,Necromancer attack +25%,Ataque del nigromante +25%
+Mano rapida,Mano rapida,Quick hand,Mano rápida
+Velocità d'attacco necromante +20%,Velocità d'attacco necromante +20%,Necromancer attack speed +20%,Velocidad de ataque del nigromante +20%
+Mura d'ossa,Mura d'ossa,Bone walls,Murallas de hueso
+Vita torre +25 (massima e attuale),Vita torre +25 (massima e attuale),Tower health +25 (max and current),Vida de la torre +25 (máxima y actual)
+Lame affilate,Lame affilate,Sharp blades,Hojas afiladas
+Attacco unità +20%,Attacco unità +20%,Unit attack +20%,Ataque de las unidades +20%
+Ossa leggere,Ossa leggere,Light bones,Huesos ligeros
+Velocità d'attacco unità +15%,Velocità d'attacco unità +15%,Unit attack speed +15%,Velocidad de ataque de las unidades +15%
+Ossa robuste,Ossa robuste,Sturdy bones,Huesos robustos
+Vita unità +20%,Vita unità +20%,Unit health +20%,Vida de las unidades +20%
+Nebbia gelida,Nebbia gelida,Freezing fog,Niebla gélida
+Nemici: velocità -10%,Nemici: velocità -10%,Enemies: speed -10%,Enemigos: velocidad -10%
+Peste,Peste,Plague,Peste
+Nemici: vita -10%,Nemici: vita -10%,Enemies: health -10%,Enemigos: vida -10%
+Terrore,Terrore,Terror,Terror
+Nemici: attacco -10%,Nemici: attacco -10%,Enemies: attack -10%,Enemigos: ataque -10%
+Evocazione,Evocazione,Summon,Invocación
+Evoca: %s (x%d),Evoca: %s (x%d),Summon: %s (x%d),Invoca: %s (x%d)
+IL NECROMANTE SALE,IL NECROMANTE SALE,THE NECROMANCER RISES,EL NIGROMANTE SUBE
+AL LIVELLO %d,AL LIVELLO %d,TO LEVEL %d,AL NIVEL %d
+Scegli un dono · tasti 1 2 3,Scegli un dono · tasti 1 2 3,Choose a gift · keys 1 2 3,Elige un don · teclas 1 2 3
+Clicca una casella libera della griglia per evocare: %s,Clicca una casella libera della griglia per evocare: %s,Click a free grid square to summon: %s,Haz clic en una casilla libre para invocar: %s
+%s non è ancora sbloccata: cercala nell'albero delle ricerche.,%s non è ancora sbloccata: cercala nell'albero delle ricerche.,%s is still locked: find it in the research tree.,%s aún está bloqueada: búscala en el árbol de investigación.
+Clicca sul campo per lanciare %s (tasto destro: annulla),Clicca sul campo per lanciare %s (tasto destro: annulla),Click on the field to cast %s (right-click: cancel),Haz clic en el campo para lanzar %s (clic derecho: cancelar)
+Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up.,Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up.,You can deploy %d squads at the start: remove one (right-click) to summon another. More come with level-ups.,Puedes desplegar %d escuadrones al empezar: quita uno (clic derecho) para invocar otro. Los demás llegan al subir de nivel.
+La velocità x3 si sblocca con il PACCHETTO VIP del negozio.,La velocità x3 si sblocca con il PACCHETTO VIP del negozio.,Speed x3 is unlocked with the VIP PACK in the shop.,La velocidad x3 se desbloquea con el PAQUETE VIP de la tienda.
+Hai resistito alle 100 ondate!,Hai resistito alle 100 ondate!,You survived all 100 waves!,¡Has resistido las 100 oleadas!
+La torre è caduta,La torre è caduta,The tower has fallen,La torre ha caído
+"Ondata raggiunta: %d   ·   Nemici uccisi: %d
+Punti progresso guadagnati: %d   (totale: %d)
+Record: ondata %d","Ondata raggiunta: %d   ·   Nemici uccisi: %d
+Punti progresso guadagnati: %d   (totale: %d)
+Record: ondata %d","Wave reached: %d   ·   Enemies killed: %d
+Progress points earned: %d   (total: %d)
+Best: wave %d","Oleada alcanzada: %d   ·   Enemigos eliminados: %d
+Puntos de progreso ganados: %d   (total: %d)
+Récord: oleada %d"
+Monete d'osso guadagnate: %d  ·  spendile nel negozio,Monete d'osso guadagnate: %d  ·  spendile nel negozio,Bone coins earned: %d  ·  spend them in the shop,Monedas de hueso ganadas: %d  ·  gástalas en la tienda
+Pergamene ottenute: %d  ·  aprile nel portale del menu,Pergamene ottenute: %d  ·  aprile nel portale del menu,Scrolls earned: %d  ·  open them in the menu portal,Pergaminos conseguidos: %d  ·  ábrelos en el portal del menú
+Nuova partita,Nuova partita,New game,Nueva partida
+Cambia squadra,Cambia squadra,Change squad,Cambiar escuadrón
+Torna al menu,Torna al menu,Back to menu,Volver al menú
+Velocità (Spazio),Velocità (Spazio),Speed (Space),Velocidad (Espacio)
+Pausa (Esc),Pausa (Esc),Pause (Esc),Pausa (Esc)
+Inizia ondate,Inizia ondate,Start waves,Empezar oleadas
+PAUSA,PAUSA,PAUSE,PAUSA
+Riprendi,Riprendi,Resume,Continuar
+Ricomincia partita,Ricomincia partita,Restart game,Reiniciar partida
+LIV,LIV,LVL,NIV
+TORRE %d/%d,TORRE %d/%d,TOWER %d/%d,TORRE %d/%d
+bloccata,bloccata,locked,bloqueada
+ONDATA,ONDATA,WAVE,OLEADA
+PROSSIMA,PROSSIMA,NEXT,PRÓXIMA
+LINGUA,LINGUA,LANGUAGE,IDIOMA
+Mmh... le tue tasche non hanno più fondo.,Mmh... le tue tasche non hanno più fondo.,Hmm... your pockets have no bottom anymore.,Mmm... tus bolsillos ya no tienen fondo.
+Le tue tasche tornano normali.,Le tue tasche tornano normali.,Your pockets are back to normal.,Tus bolsillos vuelven a la normalidad.
+Come vuoi. La merce non scappa.,Come vuoi. La merce non scappa.,As you wish. The goods won't run away.,Como quieras. La mercancía no se escapa.
+Nessun oggetto in vendita: aggiungili nell'Inspector (lista Oggetti).,Nessun oggetto in vendita: aggiungili nell'Inspector (lista Oggetti).,Nothing for sale: add items in the Inspector (Oggetti list).,Nada a la venta: añade objetos en el Inspector (lista Oggetti).
+PAGINA %d / %d,PAGINA %d / %d,PAGE %d / %d,PÁGINA %d / %d
+INFINITE,INFINITE,INFINITE,INFINITAS
+ACQUISTATO,ACQUISTATO,PURCHASED,COMPRADO
+IN ARRIVO,IN ARRIVO,COMING SOON,PRÓXIMAMENTE
+COMPRARE %s?,COMPRARE %s?,BUY %s?,¿COMPRAR %s?
+Prezzo: %s  (acquisto simulato: build di prova),Prezzo: %s  (acquisto simulato: build di prova),Price: %s  (simulated purchase: test build),Precio: %s  (compra simulada: versión de prueba)
+Prezzo: %s monete d'osso  (DEV: gratis),Prezzo: %s monete d'osso  (DEV: gratis),Price: %s bone coins  (DEV: free),Precio: %s monedas de hueso  (DEV: gratis)
+Prezzo: %s monete d'osso  ·  ne hai %d,Prezzo: %s monete d'osso  ·  ne hai %d,Price: %s bone coins  ·  you have %d,Precio: %s monedas de hueso  ·  tienes %d
+COMPRA,COMPRA,BUY,COMPRAR
+ANNULLA,ANNULLA,CANCEL,CANCELAR
+Lo hai già.,Lo hai già.,You already have it.,Ya lo tienes.
+I pagamenti con soldi veri arriveranno più avanti.,I pagamenti con soldi veri arriveranno più avanti.,Real-money payments will come later.,Los pagos con dinero real llegarán más adelante.
+Ti mancano %d monete d'osso.,Ti mancano %d monete d'osso.,You need %d more bone coins.,Te faltan %d monedas de hueso.
+%d monete d'osso,%d monete d'osso,%d bone coins,%d monedas de hueso
+la velocità x3,la velocità x3,speed x3,la velocidad x3
+%d pergamena,%d pergamena,%d scroll,%d pergamino
+%d pergamene,%d pergamene,%d scrolls,%d pergaminos
+Hai ottenuto %s!,Hai ottenuto %s!,You got %s!,¡Has conseguido %s!
+  (acquisto simulato: build di prova),  (acquisto simulato: build di prova),  (simulated purchase: test build),  (compra simulada: versión de prueba)
+Non hai ancora questa unità: aprila con una pergamena nel portale.,Non hai ancora questa unità: aprila con una pergamena nel portale.,You don't have this unit yet: get it with a scroll in the portal.,Aún no tienes esta unidad: consíguela con un pergamino en el portal.
+Metti almeno un'unità sugli altari.,Metti almeno un'unità sugli altari.,Put at least one unit on the altars.,Pon al menos una unidad en los altares.
+PREPARA LA LEGIONE,PREPARA LA LEGIONE,PREPARE THE LEGION,PREPARA LA LEGIÓN
+SQUADRA DELLA RUN,SQUADRA DELLA RUN,SQUAD FOR THIS RUN,ESCUADRÓN DE LA PARTIDA
+"clicca un altare, poi un'unità","clicca un altare, poi un'unità","click an altar, then a unit",haz clic en un altar y luego en una unidad
+PERGAMENE: %d  · PORTALE,PERGAMENE: %d  · PORTALE,SCROLLS: %d  · PORTAL,PERGAMINOS: %d  · PORTAL
+INIZIA LA RUN,INIZIA LA RUN,START THE RUN,EMPEZAR PARTIDA
+Invio,Invio,Enter,Intro
+vuoto,vuoto,empty,vacío
+Scegli un'unità dalla collezione,Scegli un'unità dalla collezione,Choose a unit from the collection,Elige una unidad de la colección
+UNITÀ SCONOSCIUTA,UNITÀ SCONOSCIUTA,UNKNOWN UNIT,UNIDAD DESCONOCIDA
+Trovala aprendo le pergamene nel portale.,Trovala aprendo le pergamene nel portale.,Find it by opening scrolls in the portal.,Encuéntrala abriendo pergaminos en el portal.
+ · rango %d (+%d%%), · rango %d (+%d%%), · rank %d (+%d%%), · rango %d (+%d%%)
+x%d per squadra · Vita %d,x%d per squadra · Vita %d,x%d per squad · Health %d,x%d por escuadrón · Vida %d
+ · Gittata %d, · Gittata %d, · Range %d, · Alcance %d
+SBLOCCATO,SBLOCCATO,UNLOCKED,DESBLOQUEADO
+POTENZIATO,POTENZIATO,UPGRADED,MEJORADO
+PRIMA SBLOCCA LA RICERCA RICHIESTA,PRIMA SBLOCCA LA RICERCA RICHIESTA,FIRST UNLOCK THE REQUIRED RESEARCH,PRIMERO DESBLOQUEA LA INVESTIGACIÓN NECESARIA
+PUNTI INSUFFICIENTI,PUNTI INSUFFICIENTI,NOT ENOUGH POINTS,PUNTOS INSUFICIENTES
+RICERCHE AZZERATE: PUNTI RESTITUITI,RICERCHE AZZERATE: PUNTI RESTITUITI,RESEARCH RESET: POINTS REFUNDED,INVESTIGACIONES REINICIADAS: PUNTOS DEVUELTOS
+RICERCHE,RICERCHE,RESEARCH,INVESTIGACIÓN
+< MENU,< MENU,< MENU,< MENÚ
+PUNTI: %d,PUNTI: %d,POINTS: %d,PUNTOS: %d
+CONFERMI? CLICCA ANCORA,CONFERMI? CLICCA ANCORA,SURE? CLICK AGAIN,¿SEGURO? HAZ CLIC OTRA VEZ
+AZZERA RICERCHE,AZZERA RICERCHE,RESET RESEARCH,REINICIAR INVESTIGACIÓN
+%s  -  LIVELLO %d/%d,%s  -  LIVELLO %d/%d,%s  -  LEVEL %d/%d,%s  -  NIVEL %d/%d
+MASSIMO,MASSIMO,MAXIMUM,NIVEL
+RAGGIUNTO,RAGGIUNTO,REACHED,MÁXIMO
+COSTO: %d PUNTI,COSTO: %d PUNTI,COST: %d POINTS,COSTE: %d PUNTOS
+SBLOCCA,SBLOCCA,UNLOCK,DESBLOQUEAR
+POTENZIA,POTENZIA,UPGRADE,MEJORAR
+RICHIEDE: %s,RICHIEDE: %s,REQUIRES: %s,REQUIERE: %s
+LIVELLO %d,LIVELLO %d,LEVEL %d,NIVEL %d
+Soldato scheletro,Soldato scheletro,Skeleton soldier,Soldado esqueleto
+Arciere scheletro,Arciere scheletro,Skeleton archer,Arquero esqueleto
+Scheletro gigante,Scheletro gigante,Giant skeleton,Esqueleto gigante
+Scheletro mago,Scheletro mago,Skeleton mage,Mago esqueleto
+Lanciere,Lanciere,Spearman,Lancero
+Berserker,Berserker,Berserker,Berserker
+Cavaliere scheletro,Cavaliere scheletro,Skeleton knight,Caballero esqueleto
+Scudiero,Scudiero,Shieldbearer,Escudero
+Balestriere,Balestriere,Crossbowman,Ballestero
+Catapulta d'ossa,Catapulta d'ossa,Bone catapult,Catapulta de huesos
+Cecchino spettrale,Cecchino spettrale,Spectral sniper,Francotirador espectral
+Negromante minore,Negromante minore,Lesser necromancer,Nigromante menor
+Stregone della peste,Stregone della peste,Plague warlock,Brujo de la peste
+Lich,Lich,Lich,Liche
+Banshee,Banshee,Banshee,Banshee
+Totem d'ossa,Totem d'ossa,Bone totem,Tótem de huesos
+Golem di ossa,Golem di ossa,Bone golem,Gólem de huesos
+Mietitore,Mietitore,Reaper,Segador
+Muro d'ossa,Muro d'ossa,Bone wall,Muro de huesos
+Carcassa esplosiva,Carcassa esplosiva,Exploding carcass,Cadáver explosivo
+Soldato umano,Soldato umano,Human soldier,Soldado humano
+Arciere umano,Arciere umano,Human archer,Arquero humano
+Umano gigante,Umano gigante,Human giant,Gigante humano
+Mago umano,Mago umano,Human mage,Mago humano
+"Fanteria di base: tanti, economici, tengono la linea.","Fanteria di base: tanti, economici, tengono la linea.","Basic infantry: many, cheap, they hold the line.","Infantería básica: muchos, baratos, aguantan la línea."
+Tira frecce da lontano. Fragile: proteggilo.,Tira frecce da lontano. Fragile: proteggilo.,Shoots arrows from afar. Fragile: protect it.,Dispara flechas desde lejos. Frágil: protégelo.
+Un muro di ossa con tanta vita e colpi pesanti.,Un muro di ossa con tanta vita e colpi pesanti.,A wall of bones with lots of health and heavy blows.,Un muro de huesos con mucha vida y golpes pesados.
+Sfere magiche che esplodono e colpiscono un'area.,Sfere magiche che esplodono e colpiscono un'area.,Magic orbs that explode and hit an area.,Esferas mágicas que explotan y golpean un área.
+Colpisce da più lontano e trafigge anche il nemico dietro (60%).,Colpisce da più lontano e trafigge anche il nemico dietro (60%).,Hits from farther away and also pierces the enemy behind (60%).,Golpea desde más lejos y atraviesa también al enemigo de detrás (60%).
+"Più è ferito, più colpisce forte e veloce (fino al doppio).","Più è ferito, più colpisce forte e veloce (fino al doppio).","The more wounded, the harder and faster it hits (up to double).","Cuanto más herido, más fuerte y rápido golpea (hasta el doble)."
+Carica da lontano: il primo colpo dopo una corsa fa danno doppio.,Carica da lontano: il primo colpo dopo una corsa fa danno doppio.,Charges from afar: the first hit after a run deals double damage.,Carga desde lejos: el primer golpe tras una carrera hace el doble de daño.
+Attira su di sé i nemici vicini e subisce il 30% di danni in meno.,Attira su di sé i nemici vicini e subisce il 30% di danni in meno.,Draws nearby enemies to itself and takes 30% less damage.,Atrae a los enemigos cercanos y recibe un 30% menos de daño.
+Dardi pesanti: un secondo dardo colpisce il nemico dietro (60%).,Dardi pesanti: un secondo dardo colpisce il nemico dietro (60%).,Heavy bolts: a second bolt hits the enemy behind (60%).,Virotes pesados: un segundo virote golpea al enemigo de detrás (60%).
+"Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino.","Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino.","Hurls skulls very far with area damage, but can't hit anyone too close.","Lanza cráneos muy lejos con daño en área, pero no alcanza a quien está demasiado cerca."
+Gittata enorme: mira sempre il nemico con più vita.,Gittata enorme: mira sempre il nemico con più vita.,Huge range: always aims at the enemy with the most health.,Alcance enorme: siempre apunta al enemigo con más vida.
+"Quando un nemico muore vicino a lui, lo rialza come scheletro per 14 secondi (max 3).","Quando un nemico muore vicino a lui, lo rialza come scheletro per 14 secondi (max 3).","When an enemy dies nearby, it raises it as a skeleton for 14 seconds (max 3).","Cuando un enemigo muere cerca, lo alza como esqueleto durante 14 segundos (máx. 3)."
+Lascia nubi di peste che avvelenano e rallentano i nemici.,Lascia nubi di peste che avvelenano e rallentano i nemici.,Leaves plague clouds that poison and slow enemies.,Deja nubes de peste que envenenan y ralentizan a los enemigos.
+Magie ad area che maledicono: i nemici colpiti subiscono +30% danni da tutti.,Magie ad area che maledicono: i nemici colpiti subiscono +30% danni da tutti.,Cursing area spells: hit enemies take +30% damage from everyone.,Hechizos de área que maldicen: los enemigos alcanzados reciben +30% de daño de todos.
+Un urlo che ferisce e stordisce per un attimo tutti i nemici vicini.,Un urlo che ferisce e stordisce per un attimo tutti i nemici vicini.,A scream that hurts and briefly stuns all nearby enemies.,Un grito que hiere y aturde un momento a todos los enemigos cercanos.
+Non attacca: gli scheletri vicini fanno +25% danni e attaccano più veloce.,Non attacca: gli scheletri vicini fanno +25% danni e attaccano più veloce.,Doesn't attack: nearby skeletons deal +25% damage and attack faster.,No ataca: los esqueletos cercanos hacen +25% de daño y atacan más rápido.
+Enorme. Ogni colpo fa tremare il terreno e ferisce anche chi è attorno.,Enorme. Ogni colpo fa tremare il terreno e ferisce anche chi è attorno.,Huge. Every blow shakes the ground and also hurts those around.,Enorme. Cada golpe hace temblar el suelo y hiere también a los de alrededor.
+La falce colpisce tutti i vicini e finisce all'istante chi ha meno del 20% di vita.,La falce colpisce tutti i vicini e finisce all'istante chi ha meno del 20% di vita.,The scythe hits everyone nearby and instantly finishes anyone under 20% health.,La guadaña golpea a todos los cercanos y remata al instante a quien tenga menos del 20% de vida.
+"Una barricata: non attacca, ma i nemici vicini devono abbatterla per passare.","Una barricata: non attacca, ma i nemici vicini devono abbatterla per passare.","A barricade: it doesn't attack, but nearby enemies must break it to pass.","Una barricada: no ataca, pero los enemigos cercanos deben derribarla para pasar."
+"Corre contro i nemici ed esplode, colpendo un'area. Rinasce a fine ondata.","Corre contro i nemici ed esplode, colpendo un'area. Rinasce a fine ondata.","Runs into enemies and explodes, hitting an area. Respawns after the wave.","Corre contra los enemigos y explota, golpeando un área. Renace al final de la oleada."
+Palla di fuoco,Palla di fuoco,Fireball,Bola de fuego
+Area curativa,Area curativa,Healing area,Área curativa
+Saetta,Saetta,Lightning,Rayo
+Corpo a corpo,Corpo a corpo,Melee,Cuerpo a cuerpo
+A distanza,A distanza,Ranged,A distancia
+Magia,Magia,Magic,Magia
+Supporto,Supporto,Support,Apoyo
+Base,Base,Basic,Básica
+Comune,Comune,Common,Común
+Raro,Raro,Rare,Rara
+Epico,Epico,Epic,Épica
+Leggendario,Leggendario,Legendary,Legendaria
+SOLDATO,SOLDATO,SOLDIER,SOLDADO
+ARCIERE,ARCIERE,ARCHER,ARQUERO
+MAGO,MAGO,MAGE,MAGO
+GIGANTE,GIGANTE,GIANT,GIGANTE
+LANCIERE,LANCIERE,SPEARMAN,LANCERO
+SCUDIERO,SCUDIERO,SHIELD,ESCUDERO
+BALESTRIERE,BALESTRIERE,CROSSBOW,BALLESTERO
+BERSERKER,BERSERKER,BERSERKER,BERSERKER
+CAVALIERE,CAVALIERE,KNIGHT,CABALLERO
+CATAPULTA,CATAPULTA,CATAPULT,CATAPULTA
+TOTEM,TOTEM,TOTEM,TÓTEM
+MURO,MURO,WALL,MURO
+CARCASSA,CARCASSA,CARCASS,CADÁVER
+NEGROMANTE,NEGROMANTE,ACOLYTE,ACÓLITO
+PESTE,PESTE,PLAGUE,PESTE
+BANSHEE,BANSHEE,BANSHEE,BANSHEE
+CECCHINO,CECCHINO,SNIPER,TIRADOR
+LICH,LICH,LICH,LICHE
+GOLEM,GOLEM,GOLEM,GÓLEM
+MIETITORE,MIETITORE,REAPER,SEGADOR
+NECROMANTE,NECROMANTE,NECROMANCER,NIGROMANTE
+EVOCAZIONI,EVOCAZIONI,SUMMONS,INVOCACIONES
+ARCANO,ARCANO,ARCANE,ARCANO
+Mura rinforzate,Mura rinforzate,Reinforced walls,Muros reforzados
+Occhio della notte,Occhio della notte,Eye of the night,Ojo de la noche
+Rito rapido,Rito rapido,Quick rite,Rito rápido
+Saggezza proibita,Saggezza proibita,Forbidden wisdom,Sabiduría prohibida
+Lame d'osso,Lame d'osso,Bone blades,Hojas de hueso
+Disciplina d'osso,Disciplina d'osso,Bone discipline,Disciplina de hueso
+Mira spettrale,Mira spettrale,Spectral aim,Puntería espectral
+Arti occulte,Arti occulte,Occult arts,Artes ocultas
+Legione,Legione,Legion,Legión
+Potere arcano,Potere arcano,Arcane power,Poder arcano
+Concentrazione,Concentrazione,Focus,Concentración
+Vita della torre +20 per livello.,Vita della torre +20 per livello.,Tower health +20 per level.,Vida de la torre +20 por nivel.
+Danno del necromante +10% per livello.,Danno del necromante +10% per livello.,Necromancer damage +10% per level.,Daño del nigromante +10% por nivel.
+Gittata del necromante +10% per livello.,Gittata del necromante +10% per livello.,Necromancer range +10% per level.,Alcance del nigromante +10% por nivel.
+Velocità d'attacco del necromante +8% per livello.,Velocità d'attacco del necromante +8% per livello.,Necromancer attack speed +8% per level.,Velocidad de ataque del nigromante +8% por nivel.
+Esperienza guadagnata +10% per livello: sali di livello prima.,Esperienza guadagnata +10% per livello: sali di livello prima.,Experience gained +10% per level: you level up sooner.,Experiencia ganada +10% por nivel: subes de nivel antes.
+Danno delle unità scheletro +10% per livello.,Danno delle unità scheletro +10% per livello.,Skeleton unit damage +10% per level.,Daño de las unidades esqueleto +10% por nivel.
+Vita delle unità scheletro +10% per livello.,Vita delle unità scheletro +10% per livello.,Skeleton unit health +10% per level.,Vida de las unidades esqueleto +10% por nivel.
+Vita delle unità corpo a corpo +12% per livello.,Vita delle unità corpo a corpo +12% per livello.,Melee unit health +12% per level.,Vida de las unidades cuerpo a cuerpo +12% por nivel.
+Danno delle unità a distanza +12% per livello.,Danno delle unità a distanza +12% per livello.,Ranged unit damage +12% per level.,Daño de las unidades a distancia +12% por nivel.
+Danno delle unità magiche +12% per livello.,Danno delle unità magiche +12% per livello.,Magic unit damage +12% per level.,Daño de las unidades mágicas +12% por nivel.
+Squadre schierabili a inizio partita +1 per livello.,Squadre schierabili a inizio partita +1 per livello.,Squads deployable at the start +1 per level.,Escuadrones desplegables al empezar +1 por nivel.
+Sblocca l'abilità Palla di fuoco: danni alti in un'area media.,Sblocca l'abilità Palla di fuoco: danni alti in un'area media.,Unlocks the Fireball ability: high damage in a medium area.,Desbloquea la habilidad Bola de fuego: mucho daño en un área media.
+Sblocca l'abilità Area curativa: cura gli scheletri in un'area ampia.,Sblocca l'abilità Area curativa: cura gli scheletri in un'area ampia.,Unlocks the Healing area ability: heals skeletons in a wide area.,Desbloquea la habilidad Área curativa: cura a los esqueletos en un área amplia.
+Sblocca l'abilità Saetta: danni altissimi in un'area piccola.,Sblocca l'abilità Saetta: danni altissimi in un'area piccola.,Unlocks the Lightning ability: very high damage in a small area.,Desbloquea la habilidad Rayo: daño altísimo en un área pequeña.
+Potenza delle abilità +15% per livello.,Potenza delle abilità +15% per livello.,Ability power +15% per level.,Poder de las habilidades +15% por nivel.
+Tempo di ricarica delle abilità -10% per livello.,Tempo di ricarica delle abilità -10% per livello.,Ability cooldown -10% per level.,Tiempo de recarga de las habilidades -10% por nivel.
+RICERCA,RICERCA,RESEARCH,INVESTIGAR
+NEGOZIO,NEGOZIO,SHOP,TIENDA
+AVVIA RUN,AVVIA RUN,START RUN,JUGAR
+-12%,-12%,-12%,-12%
+MIGLIORE,MIGLIORE,BEST,MEJOR
+VIP,VIP,VIP,VIP
+Pergamena,Pergamena,Scroll,Pergamino
+Fascio di pergamene,Fascio di pergamene,Bundle of scrolls,Fajo de pergaminos
+Scrigno del necromante,Scrigno del necromante,Necromancer's chest,Cofre del nigromante
+Pacchetto VIP,Pacchetto VIP,VIP pack,Paquete VIP
+Una pergamena da aprire nel portale per evocare un'unità.,Una pergamena da aprire nel portale per evocare un'unità.,A scroll to open in the portal to summon a unit.,Un pergamino para abrir en el portal e invocar una unidad.
+5 pergamene legate con il nastro del mercante.,5 pergamene legate con il nastro del mercante.,5 scrolls tied with the merchant's ribbon.,5 pergaminos atados con la cinta del mercader.
+10 pergamene: con la garanzia ogni 10 esce almeno un epico.,10 pergamene: con la garanzia ogni 10 esce almeno un epico.,10 scrolls: the guarantee gives at least one epic every 10.,10 pergaminos: con la garantía sale al menos una épica cada 10.
+Sblocca per sempre la velocità di gioco x3 e regala 5 pergamene.,Sblocca per sempre la velocità di gioco x3 e regala 5 pergamene.,Unlocks game speed x3 forever and gives 5 scrolls.,Desbloquea para siempre la velocidad x3 y regala 5 pergaminos.
+"Benvenuto, necromante.
+Ossa in cambio di pergamene!","Benvenuto, necromante.
+Ossa in cambio di pergamene!","Welcome, necromancer.
+Bones in exchange for scrolls!","Bienvenido, nigromante.
+¡Huesos a cambio de pergaminos!"
+Oh! Un nuovo apprendista. Finalmente!,Oh! Un nuovo apprendista. Finalmente!,Oh! A new apprentice. At last!,¡Oh! Un nuevo aprendiz. ¡Por fin!
+"Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","I am the Necromancer, lord of this tower and of every bone around it.","Soy el Nigromante, señor de esta torre y de cada hueso que la rodea."
+"Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","The kingdom's heroes want to tear it down. They will come in waves: a hundred, each stronger than the last.","Los héroes del reino quieren derribarla. Llegarán en oleadas: cien, cada una más fuerte que la anterior."
+"Il piano è semplice: io colpisco dall'alto della torre, tu comandi i miei scheletri sul campo.","Il piano è semplice: io colpisco dall'alto della torre, tu comandi i miei scheletri sul campo.","The plan is simple: I strike from the top of the tower, you command my skeletons on the field.",El plan es sencillo: yo ataco desde lo alto de la torre y tú diriges a mis esqueletos en el campo.
+Questo è il cortile del castello. Sotto la torre c'è AVVIA RUN: da lì si parte per la battaglia.,Questo è il cortile del castello. Sotto la torre c'è AVVIA RUN: da lì si parte per la battaglia.,This is the castle courtyard. Below the tower is START RUN: that's where battles begin.,Este es el patio del castillo. Bajo la torre está JUGAR: desde ahí se parte a la batalla.
+Il libro della RICERCA dà potenziamenti che restano per sempre. Si pagano con i punti guadagnati in ogni partita.,Il libro della RICERCA dà potenziamenti che restano per sempre. Si pagano con i punti guadagnati in ogni partita.,The RESEARCH book gives upgrades that last forever. You pay for them with the points earned in every run.,El libro de INVESTIGAR da mejoras para siempre. Se pagan con los puntos que ganas en cada partida.
+Nel portale dell'EVOCAZIONE le pergamene diventano nuovi scheletri. Ne ottieni una ogni dieci ondate superate.,Nel portale dell'EVOCAZIONE le pergamene diventano nuovi scheletri. Ne ottieni una ogni dieci ondate superate.,"In the SUMMON portal, scrolls become new skeletons. You get one every ten waves you clear.",En el portal de INVOCAR los pergaminos se convierten en nuevos esqueletos. Consigues uno cada diez oleadas superadas.
+E il mercante del NEGOZIO vende pergamene in cambio di monete d'osso.,E il mercante del NEGOZIO vende pergamene in cambio di monete d'osso.,And the merchant in the SHOP sells scrolls in exchange for bone coins.,Y el mercader de la TIENDA vende pergaminos a cambio de monedas de hueso.
+Basta chiacchiere. Clicca su AVVIA RUN e mostrami di cosa sei capace!,Basta chiacchiere. Clicca su AVVIA RUN e mostrami di cosa sei capace!,Enough talk. Click START RUN and show me what you can do!,Basta de charla. ¡Haz clic en JUGAR y muéstrame de lo que eres capaz!
+Prima di ogni partita si sceglie la squadra: quattro tipi di scheletri che potrai evocare per tutta la run.,Prima di ogni partita si sceglie la squadra: quattro tipi di scheletri che potrai evocare per tutta la run.,Before every run you pick your squad: four kinds of skeletons you can summon for the whole run.,Antes de cada partida eliges el escuadrón: cuatro tipos de esqueletos que podrás invocar durante toda la partida.
+"Clicca un altare, poi un'unità della collezione per metterla lì. Con il tasto destro svuoti un altare.","Clicca un altare, poi un'unità della collezione per metterla lì. Con il tasto destro svuoti un altare.","Click an altar, then a unit from the collection to place it there. Right-click empties an altar.",Haz clic en un altar y luego en una unidad de la colección para ponerla ahí. Con el clic derecho vacías un altar.
+"Mescola i ruoli: chi combatte corpo a corpo sta davanti e ferma gli eroi, chi tira o fa magie colpisce da dietro.","Mescola i ruoli: chi combatte corpo a corpo sta davanti e ferma gli eroi, chi tira o fa magie colpisce da dietro.","Mix the roles: melee fighters stand in front and stop the heroes, archers and mages strike from behind.","Mezcla los roles: los de cuerpo a cuerpo van delante y frenan a los héroes, los que disparan o hacen magia atacan desde atrás."
+"Quando sei pronto, premi INIZIA LA RUN.","Quando sei pronto, premi INIZIA LA RUN.","When you're ready, press START THE RUN.","Cuando estés listo, pulsa EMPEZAR PARTIDA."
+Ecco il campo di battaglia. Gli eroi arrivano da destra e marciano verso la mia torre.,Ecco il campo di battaglia. Gli eroi arrivano da destra e marciano verso la mia torre.,Here is the battlefield. The heroes come from the right and march towards my tower.,Este es el campo de batalla. Los héroes llegan por la derecha y marchan hacia mi torre.
+Clicca una casella della griglia per evocare una squadra. All'inizio ne puoi schierare poche: le altre arrivano salendo di livello.,Clicca una casella della griglia per evocare una squadra. All'inizio ne puoi schierare poche: le altre arrivano salendo di livello.,Click a grid square to summon a squad. At first you can only deploy a few: more come as you level up.,Haz clic en una casilla para invocar un escuadrón. Al principio puedes desplegar pocos: los demás llegan al subir de nivel.
+Quando sei pronto premi INIZIA ONDATE. Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,Quando sei pronto premi INIZIA ONDATE. Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,When you're ready press START WAVES. I shoot from the tower on my own: you take care of your skeletons.,Cuando estés listo pulsa EMPEZAR OLEADAS. Yo disparo solo desde la torre: tú ocúpate de tus esqueletos.
+Ogni eroe ucciso mi dà esperienza. A ogni livello scegli un dono tra tre lapidi.,Ogni eroe ucciso mi dà esperienza. A ogni livello scegli un dono tra tre lapidi.,Every hero killed gives me experience. At every level you pick a gift from three tombstones.,Cada héroe eliminado me da experiencia. En cada nivel eliges un don entre tres lápidas.
+"In basso ci sono le mie magie: clicca un'icona (o premi 1, 2, 3) e poi il punto del campo dove lanciarla. Prima vanno sbloccate nelle ricerche.","In basso ci sono le mie magie: clicca un'icona (o premi 1, 2, 3) e poi il punto del campo dove lanciarla. Prima vanno sbloccate nelle ricerche.","At the bottom are my spells: click an icon (or press 1, 2, 3), then the spot on the field to cast it. They must be unlocked in research first.","Abajo están mis hechizos: haz clic en un icono (o pulsa 1, 2, 3) y luego en el punto del campo donde lanzarlo. Antes hay que desbloquearlos en la investigación."
+"Se gli eroi distruggono la torre, la partita è finita. Non deludermi.","Se gli eroi distruggono la torre, la partita è finita. Non deludermi.","If the heroes destroy the tower, the run is over. Don't disappoint me.","Si los héroes destruyen la torre, la partida termina. No me decepciones."
+Benvenuto nel mio grimorio: l'albero delle ricerche.,Benvenuto nel mio grimorio: l'albero delle ricerche.,Welcome to my grimoire: the research tree.,Bienvenido a mi grimorio: el árbol de investigación.
+"Ogni partita ti dà punti progresso: più ondate superi e più nemici uccidi, più punti ricevi.","Ogni partita ti dà punti progresso: più ondate superi e più nemici uccidi, più punti ricevi.","Every run gives you progress points: the more waves you clear and enemies you kill, the more you get.","Cada partida te da puntos de progreso: cuantas más oleadas superes y más enemigos elimines, más puntos recibes."
+"Qui li spendi per potenziamenti che restano per sempre: vita della torre, danno, le mie magie...","Qui li spendi per potenziamenti che restano per sempre: vita della torre, danno, le mie magie...","Here you spend them on upgrades that last forever: tower health, damage, my spells...","Aquí los gastas en mejoras que duran para siempre: vida de la torre, daño, mis hechizos..."
+"Alcune ricerche ne richiedono altre prima. E se cambi idea, puoi azzerarle e riavere tutti i punti.","Alcune ricerche ne richiedono altre prima. E se cambi idea, puoi azzerarle e riavere tutti i punti.","Some research needs others first. And if you change your mind, you can reset it and get all your points back.","Algunas investigaciones necesitan otras antes. Y si cambias de idea, puedes reiniciarlas y recuperar todos los puntos."
+Il portale delle anime! Qui le pergamene diventano scheletri.,Il portale delle anime! Qui le pergamene diventano scheletri.,The portal of souls! Here scrolls become skeletons.,¡El portal de las almas! Aquí los pergaminos se convierten en esqueletos.
+"Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove.","Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove.","Each scroll summons a random unit: common, rare, epic or legendary. Until the collection is complete you only get new units.","Cada pergamino invoca una unidad al azar: común, rara, épica o legendaria. Hasta completar la colección solo salen unidades nuevas."
+"Se esce un'unità che hai già, sale di rango: più vita e più danno.","Se esce un'unità che hai già, sale di rango: più vita e più danno.","If you get a unit you already have, it ranks up: more health and more damage.","Si sale una unidad que ya tienes, sube de rango: más vida y más daño."
+Ogni dieci pergamene è garantita almeno un'unità epica. E con dieci pergamene puoi aprirle tutte insieme.,Ogni dieci pergamene è garantita almeno un'unità epica. E con dieci pergamene puoi aprirle tutte insieme.,Every ten scrolls at least one epic unit is guaranteed. And with ten scrolls you can open them all at once.,Cada diez pergaminos está garantizada al menos una unidad épica. Y con diez pergaminos puedes abrirlos todos a la vez.
+Il vecchio mercante... meglio non chiedergli da dove arrivi la sua merce.,Il vecchio mercante... meglio non chiedergli da dove arrivi la sua merce.,The old merchant... better not ask him where his goods come from.,El viejo mercader... mejor no preguntarle de dónde saca su mercancía.
+"Accetta solo monete d'osso. Le guadagni in ogni partita: più ondate superi, più ne ricevi.","Accetta solo monete d'osso. Le guadagni in ogni partita: più ondate superi, più ne ricevi.","He only accepts bone coins. You earn them in every run: the more waves you clear, the more you get.","Solo acepta monedas de hueso. Las ganas en cada partida: cuantas más oleadas superes, más recibes."
+Con le monete compri pergamene da aprire nel portale. Fasci e scrigni convengono di più.,Con le monete compri pergamene da aprire nel portale. Fasci e scrigni convengono di più.,With coins you buy scrolls to open in the portal. Bundles and chests are better deals.,Con las monedas compras pergaminos para abrir en el portal. Los fajos y los cofres salen más a cuenta.
+Il pacchetto VIP sblocca la velocità di gioco x3. Per i necromanti impazienti.,Il pacchetto VIP sblocca la velocità di gioco x3. Per i necromanti impazienti.,The VIP pack unlocks game speed x3. For impatient necromancers.,El paquete VIP desbloquea la velocidad x3. Para nigromantes impacientes.

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://drqg0pinsrawp"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_6weyi"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_5weyt"]
+
+[sub_resource type="Resource" id="Resource_a1j3k"]
+script = ExtResource("1_6weyi")
+testo = "Il vecchio mercante... meglio non chiedergli da dove arrivi la sua merce."
+espressione = 3
+
+[sub_resource type="Resource" id="Resource_7vx51"]
+script = ExtResource("1_6weyi")
+testo = "Accetta solo monete d'osso. Le guadagni in ogni partita: più ondate superi, più ne ricevi."
+
+[sub_resource type="Resource" id="Resource_bx5y2"]
+script = ExtResource("1_6weyi")
+testo = "Con le monete compri pergamene da aprire nel portale. Fasci e scrigni convengono di più."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_xp2x4"]
+script = ExtResource("1_6weyi")
+testo = "Il pacchetto VIP sblocca la velocità di gioco x3. Per i necromanti impazienti."
+
+[resource]
+script = ExtResource("2_5weyt")
+id = "negozio"
+battute = Array[ExtResource("1_6weyi")]([SubResource("Resource_a1j3k"), SubResource("Resource_7vx51"), SubResource("Resource_bx5y2"), SubResource("Resource_xp2x4")])

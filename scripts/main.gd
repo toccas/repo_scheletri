@@ -18,6 +18,8 @@ extends Node2D
 ##   x = distanza lungo la corsia, y = profondità (0 = fila in fondo)
 
 const Data := preload("res://scripts/game_data.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Research := preload("res://scripts/research_data.gd")
 const UnitScript := preload("res://scripts/unit.gd")
 const ProjectileScript := preload("res://scripts/projectile.gd")
@@ -42,6 +44,10 @@ const TEX_TOWER_MERLI := preload("res://assets/campo/torre_merli.png")
 const TEX_PILLAR := preload("res://assets/campo/pilastro.png")
 
 enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/battaglia.tres")
 
 @export_group("Griglia di schieramento")
 ## Lunghezza della griglia: numero di caselle lungo la corsia.
@@ -206,6 +212,9 @@ var bats: Array = []
 var marchers: Array = []  # eroi lontani che marciano verso il portale
 var embers: Array = []
 
+var dev_invincibile := false  # pannello dev (Ctrl+Shift+D): la torre non perde vita
+var dev_senza_ricarica := false  # pannello dev: le magie si ricaricano subito
+var dev_x5 := false  # pannello dev: il pulsante della velocità arriva fino a x5
 var remains_root: Node2D
 var remains: Array = []  # resti per terra (scripts/resti.gd)
 var shake_t := 0.0
@@ -294,6 +303,11 @@ func _ready() -> void:
 	Engine.time_scale = 1.0
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
+	Lingua.setup()
+	if OS.is_debug_build():  # x5 scelto nel pannello dev resta attivo tra una partita e l'altra
+		var dcfg := ConfigFile.new()
+		dcfg.load(SAVE_PATH)
+		dev_x5 = bool(dcfg.get_value("dev", "velocita_x5", false))
 	_compute_layout()
 	_apply_research()
 	for r in rows:
@@ -333,6 +347,7 @@ func _ready() -> void:
 	next_queue = Data.build_wave(1)
 	next_queue_wave = 1
 	_build_ui()
+	Dialoghi.avvia(self, dialogo_tutorial)
 	_show_deploy_hint()
 	if "--autotest" in OS.get_cmdline_user_args():
 		_start_autotest()
@@ -572,12 +587,12 @@ func _process_waves(delta: float) -> void:
 			_revive_squads()
 			_absorb_remains()
 			Suoni.play("ondata_superata")
-			set_hint("Ondata %d superata! Il necromante rianima i caduti." % wave, 2.5)
+			set_hint(tr("Ondata %d superata! Il necromante rianima i caduti.") % wave, 2.5)
 			if wave % Data.WAVES_PER_SCROLL == 0:
 				scrolls_earned += 1
 				if not autotest:
 					Collezione.add_scrolls(1)
-				set_hint("Ondata %d superata: hai ottenuto una PERGAMENA! Aprila nel portale." % wave, 4.0)
+				set_hint(tr("Ondata %d superata: hai ottenuto una PERGAMENA! Aprila nel portale.") % wave, 4.0)
 	else:
 		next_wave_timer -= delta
 		if next_wave_timer <= 0.0:
@@ -593,9 +608,9 @@ func _start_wave(n: int) -> void:
 	wave_running = true
 	Suoni.play("ondata", 0.85 if n % Data.BOSS_EVERY == 0 else 1.0)
 	if n % Data.BOSS_EVERY == 0:
-		set_hint("Ondata %d: arriva un campione degli eroi!" % n, 3.0)
+		set_hint(tr("Ondata %d: arriva un campione degli eroi!") % n, 3.0)
 	else:
-		set_hint("Ondata %d" % n, 1.5)
+		set_hint(tr("Ondata %d") % n, 1.5)
 	if autotest and n % 5 == 0:
 		print("[autotest] ondata %d | torre %.0f/%.0f | livello %d | uccisioni %d | scheletri vivi %d" % [
 			n, tower_hp, tower_max_hp, necro_level, kills, _alive_count(allies_root)])
@@ -730,7 +745,7 @@ func spawn_ground_fx(g: Vector2, fx_radius: float, color: Color, life: float, ki
 
 
 func damage_tower(amount: float) -> void:
-	if state != State.PLAYING:
+	if state != State.PLAYING or dev_invincibile:
 		return
 	tower_hp -= amount
 	tower_flash = 0.15
@@ -1000,10 +1015,10 @@ func _draw_unit_tomb(b: Button, k: String, i: int) -> void:
 	Pietra.tomb(b, r, Color("8a8a8a") if hot else (C3 if locked else C4), hot)
 	b.draw_texture_rect_region(Data.ally_texture(k), Rect2(Vector2(r.get_center().x - 24, r.position.y + 10), Vector2(48, 48)),
 		Data.ally_region(k), Color(1, 1, 1, 0.35 if locked else 1.0))
-	var label := k.to_upper()
+	var label := Data.nome_breve(k)
 	var fs := 16 if ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= r.size.x - 10 else 12
-	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 60 + (16 - fs) / 2, label, fs, C5 if locked else C6)
-	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 79, "ricerca" if locked else "[%d]" % (i + 1), 16, C1, false)
+	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 60 + (16 - fs) / 2.0, label, fs, C5 if locked else C6)
+	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 79, tr("ricerca") if locked else "[%d]" % (i + 1), 16, C1, false)
 	if locked:  # catene incrociate e lucchetto
 		var a := r.position + Vector2(10, 14)
 		var z := r.position + Vector2(r.size.x - 10, 54)
@@ -1025,22 +1040,22 @@ func _draw_picker_tip() -> void:
 	if tomb == null:
 		return
 	var d: Dictionary = Data.UNITS[picker_hover]
-	var lines: Array = ["%s x%d" % [d["ally_name"].to_upper(), unit_count(picker_hover)]]
+	var lines: Array = ["%s x%d" % [Data.nome(picker_hover).to_upper(), unit_count(picker_hover)]]
 	if picker_hover in unlocked_units:
 		var st := ally_stats(picker_hover)
-		var l2 := "Vita %d" % int(st["hp"])
+		var l2 := tr("Vita %d") % int(st["hp"])
 		if st["dmg"] > 0.0:
-			l2 += " · Attacco %d" % int(st["dmg"])
+			l2 += tr(" · Attacco %d") % int(st["dmg"])
 		if st["rank"] > 1:
-			l2 += " · rango %d" % st["rank"]
+			l2 += tr(" · rango %d") % st["rank"]
 		lines.append(l2)
-		var l3: String = Data.ROLE_NAMES.get(d["role"], "")
+		var l3: String = Data.ruolo(d["role"])
 		if is_ranged(picker_hover):
-			l3 += " · gittata %d" % int(st["range"])
+			l3 += tr(" · gittata %d") % int(st["range"])
 		lines.append(l3)
 	else:
-		lines.append("Sbloccalo nell'albero")
-		lines.append("delle ricerche")
+		lines.append(tr("Sbloccalo nell'albero"))
+		lines.append(tr("delle ricerche"))
 	var w := 0.0
 	for l in lines:
 		w = maxf(w, ui_font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)
@@ -1073,9 +1088,9 @@ func _pick_unit(idx: int, kind: String) -> void:
 func _show_deploy_hint() -> void:
 	var n := deployed_count()
 	if n < max_deploy:
-		set_hint("Clicca una casella della griglia per evocare un'unità (%d/%d). Tasto destro per rimuoverla." % [n, max_deploy])
+		set_hint(tr("Clicca una casella della griglia per evocare un'unità (%d/%d). Tasto destro per rimuoverla.") % [n, max_deploy])
 	else:
-		set_hint("Schieramento completo: premi \"Inizia ondate\".")
+		set_hint(tr("Schieramento completo: premi \"Inizia ondate\"."))
 	if start_button:
 		start_button.disabled = n == 0
 
@@ -1086,29 +1101,29 @@ func _on_start_pressed() -> void:
 	state = State.PLAYING
 	start_button.hide()
 	next_wave_timer = 1.0
-	set_hint("Arrivano gli eroi!", 2.0)
+	set_hint(tr("Arrivano gli eroi!"), 2.0)
 
 
 # --- Level-up ----------------------------------------------------------------
 
 func _level_up_options() -> Array:
 	var pool := [
-		{"title": "Furia oscura", "icon": R_IC_STAR, "text": "Attacco necromante +25%", "fn": func(): necro_dmg *= 1.25},
-		{"title": "Mano rapida", "icon": R_IC_HOURGLASS, "text": "Velocità d'attacco necromante +20%", "fn": func(): necro_cooldown /= 1.2},
-		{"title": "Mura d'ossa", "icon": R_IC_HEART, "text": "Vita torre +25 (massima e attuale)", "fn": func():
+		{"title": tr("Furia oscura"), "icon": R_IC_STAR, "text": tr("Attacco necromante +25%"), "fn": func(): necro_dmg *= 1.25},
+		{"title": tr("Mano rapida"), "icon": R_IC_HOURGLASS, "text": tr("Velocità d'attacco necromante +20%"), "fn": func(): necro_cooldown /= 1.2},
+		{"title": tr("Mura d'ossa"), "icon": R_IC_HEART, "text": tr("Vita torre +25 (massima e attuale)"), "fn": func():
 			tower_max_hp += 25.0
 			tower_hp += 25.0},
-		{"title": "Lame affilate", "icon": R_IC_SWORD, "text": "Attacco unità +20%", "fn": func(): mods["ally_dmg"] *= 1.2},
-		{"title": "Ossa leggere", "icon": R_IC_FAST, "text": "Velocità d'attacco unità +15%", "fn": func(): mods["ally_rate"] *= 1.15},
-		{"title": "Ossa robuste", "icon": R_IC_HEAL, "text": "Vita unità +20%", "fn": func(): _scale_hp(allies_root, "ally_hp", 1.2)},
-		{"title": "Nebbia gelida", "icon": R_IC_EYE, "text": "Nemici: velocità -10%", "fn": func(): mods["enemy_speed"] *= 0.9},
-		{"title": "Peste", "icon": R_IC_EYE, "text": "Nemici: vita -10%", "fn": func(): _scale_hp(enemies_root, "enemy_hp", 0.9)},
-		{"title": "Terrore", "icon": R_IC_EYE, "text": "Nemici: attacco -10%", "fn": func(): mods["enemy_dmg"] *= 0.9},
+		{"title": tr("Lame affilate"), "icon": R_IC_SWORD, "text": tr("Attacco unità +20%"), "fn": func(): mods["ally_dmg"] *= 1.2},
+		{"title": tr("Ossa leggere"), "icon": R_IC_FAST, "text": tr("Velocità d'attacco unità +15%"), "fn": func(): mods["ally_rate"] *= 1.15},
+		{"title": tr("Ossa robuste"), "icon": R_IC_HEAL, "text": tr("Vita unità +20%"), "fn": func(): _scale_hp(allies_root, "ally_hp", 1.2)},
+		{"title": tr("Nebbia gelida"), "icon": R_IC_EYE, "text": tr("Nemici: velocità -10%"), "fn": func(): mods["enemy_speed"] *= 0.9},
+		{"title": tr("Peste"), "icon": R_IC_EYE, "text": tr("Nemici: vita -10%"), "fn": func(): _scale_hp(enemies_root, "enemy_hp", 0.9)},
+		{"title": tr("Terrore"), "icon": R_IC_EYE, "text": tr("Nemici: attacco -10%"), "fn": func(): mods["enemy_dmg"] *= 0.9},
 	]
 	if free_slot_count() > 0:
 		for k in unlocked_units:
 			var d: Dictionary = Data.UNITS[k]
-			pool.append({"title": "Evocazione", "text": "Evoca: %s (x%d)" % [d["ally_name"], unit_count(k)], "summon": k})
+			pool.append({"title": tr("Evocazione"), "text": tr("Evoca: %s (x%d)") % [Data.nome(k), unit_count(k)], "summon": k})
 	return pool
 
 
@@ -1162,15 +1177,15 @@ func _draw_levelup_bg() -> void:
 	levelup.draw_rect(Rect2(Vector2.ZERO, vp), Color(0.05, 0.05, 0.05, 0.66))
 	var br := Rect2(vp.x / 2.0 - 240, 45, 480, 124)
 	Pietra.banner(levelup, br)
-	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 62, "IL NECROMANTE SALE", 24, C0, false)
-	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 94, "AL LIVELLO %d" % necro_level, 32, C0, false)
+	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 62, tr("IL NECROMANTE SALE"), 24, C0, false)
+	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 94, tr("AL LIVELLO %d") % necro_level, 32, C0, false)
 	# terra smossa ai piedi delle lapidi
 	levelup.draw_rect(Rect2(150, 534, vp.x - 300, 18), C1)
 	levelup.draw_rect(Rect2(150, 534, vp.x - 300, 3), C3)
 	for i in 9:
 		var x := 176.0 + i * 112.0 + (i % 3) * 17.0
 		levelup.draw_rect(Rect2(x, 527 + (i % 2) * 2, 12 + (i % 3) * 3, 9), C3 if i % 2 else C4)
-	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 590, "Scegli un dono · tasti 1 2 3", 16, C5)
+	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 590, tr("Scegli un dono · tasti 1 2 3"), 16, C5)
 
 
 func _draw_levelup_card(b: Button, i: int) -> void:
@@ -1185,7 +1200,11 @@ func _draw_levelup_card(b: Button, i: int) -> void:
 		b.draw_texture_rect_region(Data.ally_texture(o["summon"]), icon_rect, Data.ally_region(o["summon"]))
 	else:
 		b.draw_texture_rect_region(ATLAS, icon_rect, o["icon"])
-	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 150, String(o["title"]).to_upper(), 24, C6)
+	var title := String(o["title"]).to_upper()
+	var ts := 24  # i titoli lunghi (inglese, spagnolo) si rimpiccioliscono per stare nella lapide
+	while ts > 14 and ui_font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, ts).x > r.size.x - 36.0:
+		ts -= 1
+	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 150 + (24 - ts) / 2.0, title, ts, C6)
 	Pietra.text_block(b, ui_font, Vector2(22, r.position.y + 192), r.size.x - 44, o["text"], 16, C6)
 	Pietra.text_c(b, ui_font, r.get_center().x, r.end.y - 40, "[%d]" % (i + 1), 16, C1, false)
 
@@ -1201,7 +1220,7 @@ func _choose_level_up(o: Dictionary) -> void:
 			pending_summon = ""
 		else:
 			state = State.PLACING
-			set_hint("Clicca una casella libera della griglia per evocare: %s" % Data.UNITS[pending_summon]["ally_name"])
+			set_hint(tr("Clicca una casella libera della griglia per evocare: %s") % Data.nome(pending_summon))
 			return
 	else:
 		o["fn"].call()
@@ -1222,13 +1241,13 @@ func _select_ability(key: String) -> void:
 	if not is_running() or ability_cd[key] > 0.0:
 		return
 	if not key in unlocked_abilities:
-		set_hint("%s non è ancora sbloccata: cercala nell'albero delle ricerche." % Data.ABILITIES[key]["name"], 2.5)
+		set_hint(tr("%s non è ancora sbloccata: cercala nell'albero delle ricerche.") % Data.nome_abilita(key), 2.5)
 		return
 	selected_ability = "" if selected_ability == key else key
 	if selected_ability != "" and not get_viewport().gui_get_hovered_control() is BaseButton:
 		Suoni.play("click")  # dalla tastiera (i pulsanti fanno già click da soli)
 	if selected_ability != "":
-		set_hint("Clicca sul campo per lanciare %s (tasto destro: annulla)" % Data.ABILITIES[key]["name"])
+		set_hint(tr("Clicca sul campo per lanciare %s (tasto destro: annulla)") % Data.nome_abilita(key))
 	else:
 		set_hint("", 0.0)
 
@@ -1237,7 +1256,7 @@ func _select_ability(key: String) -> void:
 func _cast(key: String, g: Vector2) -> void:
 	var a: Dictionary = Data.ABILITIES[key]
 	var power: float = a["power"] * necro_dmg / Data.NECRO_DMG * ability_power_mult
-	ability_cd[key] = a["cooldown"] * ability_cd_mult
+	ability_cd[key] = 0.0 if dev_senza_ricarica else a["cooldown"] * ability_cd_mult
 	selected_ability = ""
 	set_hint("", 0.0)
 	match key:
@@ -1310,7 +1329,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					_open_unit_picker(idx)
 				else:
 					Suoni.play("errore")
-					set_hint("Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up." % max_deploy, 4.0)
+					set_hint(tr("Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up.") % max_deploy, 4.0)
 		State.PLACING:
 			if idx >= 0 and slots[idx]["kind"] == "":
 				Suoni.play("conferma")
@@ -1323,12 +1342,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _cycle_speed() -> void:
-	var next := Engine.time_scale + 1.0
-	if next > 3.0:
+	# x1 -> x2 -> x3 (VIP) -> x5 (solo modalità dev) -> x1
+	var speeds: Array[float] = [1.0, 2.0, 3.0]
+	if dev_x5:
+		speeds.append(5.0)
+	var i := speeds.find(Engine.time_scale)
+	var next: float = speeds[(i + 1) % speeds.size()] if i >= 0 else 1.0
+	if next == 3.0 and not Portafoglio.has_vip() and not dev_x5:
 		next = 1.0
-	elif next > 2.0 and not Portafoglio.has_vip():
-		next = 1.0
-		set_hint("La velocità x3 si sblocca con il PACCHETTO VIP del negozio.", 3.0)
+		set_hint(tr("La velocità x3 si sblocca con il PACCHETTO VIP del negozio."), 3.0)
 	Engine.time_scale = next
 
 
@@ -1364,16 +1386,16 @@ func _end_run(won: bool) -> void:
 		get_tree().quit()
 		return
 
-	var title := "Hai resistito alle 100 ondate!" if won else "La torre è caduta"
-	var body := "Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d" % [
+	var title := tr("Hai resistito alle 100 ondate!") if won else tr("La torre è caduta")
+	var body := tr("Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d") % [
 		wave, kills, earned, total, best]
-	body += "\nMonete d'osso guadagnate: %d  ·  spendile nel negozio" % coins
+	body += "\n" + tr("Monete d'osso guadagnate: %d  ·  spendile nel negozio") % coins
 	if scrolls_earned > 0:
-		body += "\nPergamene ottenute: %d  ·  aprile nel portale del menu" % scrolls_earned
+		body += "\n" + tr("Pergamene ottenute: %d  ·  aprile nel portale del menu") % scrolls_earned
 	_show_modal(title, body, [
-		["Nuova partita", _restart_game],
-		["Cambia squadra", func(): get_tree().change_scene_to_file("res://scenes/preparazione.tscn")],
-		["Torna al menu", _go_to_menu],
+		[tr("Nuova partita"), _restart_game],
+		[tr("Cambia squadra"), func(): get_tree().change_scene_to_file("res://scenes/preparazione.tscn")],
+		[tr("Torna al menu"), _go_to_menu],
 	])
 
 
@@ -1491,7 +1513,7 @@ func _build_ui() -> void:
 	speed_button = _flat_button()
 	speed_button.position = Vector2(vpw - 16 - 56 - 8 - 64, 16)
 	speed_button.size = Vector2(64, 56)
-	speed_button.tooltip_text = "Velocità (Spazio)"
+	speed_button.tooltip_text = tr("Velocità (Spazio)")
 	speed_button.pressed.connect(_cycle_speed)
 	speed_button.mouse_entered.connect(speed_button.queue_redraw)
 	speed_button.mouse_exited.connect(speed_button.queue_redraw)
@@ -1500,7 +1522,7 @@ func _build_ui() -> void:
 	pause_button = _flat_button()
 	pause_button.position = Vector2(vpw - 16 - 56, 16)
 	pause_button.size = Vector2(56, 56)
-	pause_button.tooltip_text = "Pausa (Esc)"
+	pause_button.tooltip_text = tr("Pausa (Esc)")
 	pause_button.pressed.connect(toggle_pause)
 	pause_button.mouse_entered.connect(pause_button.queue_redraw)
 	pause_button.mouse_exited.connect(pause_button.queue_redraw)
@@ -1519,7 +1541,7 @@ func _build_ui() -> void:
 
 	# Pulsante grande in basso al centro, visibile solo durante lo schieramento.
 	start_button = Button.new()
-	start_button.text = "Inizia ondate"
+	start_button.text = tr("Inizia ondate")
 	start_button.add_theme_font_size_override("font_size", 22)
 	start_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	start_button.offset_left = -130
@@ -1625,14 +1647,14 @@ func _build_pause_overlay() -> Control:
 	box.add_theme_constant_override("separation", 12)
 	panel.add_child(box)
 	var title := Label.new()
-	title.text = "PAUSA"
+	title.text = tr("PAUSA")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 30)
 	box.add_child(title)
 	for opt in [
-		["Riprendi", toggle_pause],
-		["Ricomincia partita", _restart_game],
-		["Torna al menu", _go_to_menu],
+		[tr("Riprendi"), toggle_pause],
+		[tr("Ricomincia partita"), _restart_game],
+		[tr("Torna al menu"), _go_to_menu],
 	]:
 		var btn := Button.new()
 		btn.text = opt[0]
@@ -1745,7 +1767,7 @@ func _draw_soul_orb() -> void:
 			n.draw_rect(Rect2(c.x - half, y, half * 2.0, 3), col)
 	if orb_flash > 0.0:
 		n.draw_circle(c, r + 8.0 + (1.0 - orb_flash) * 14.0, Color(1, 1, 1, 0.35 * orb_flash))
-	Pietra.text_c(n, ui_font, c.x, c.y - 20, "LIV", 16, C6)
+	Pietra.text_c(n, ui_font, c.x, c.y - 20, tr("LIV"), 16, C6)
 	Pietra.text_c(n, ui_font, c.x, c.y - 4, "%d" % necro_level, 24, C6)
 	# filo d'anima verso il bastone del necromante
 	var dots := [Vector2(-18, 33), Vector2(-24, 40), Vector2(-29, 47)]
@@ -1754,7 +1776,7 @@ func _draw_soul_orb() -> void:
 		n.draw_rect(Rect2((c + dots[i]).round(), Vector2(3, 3)), Color(C5, a))
 	# vita della torre, solo con il mouse sopra
 	if _hovering_tower():
-		var label := "TORRE %d/%d" % [ceili(tower_hp), int(tower_max_hp)]
+		var label := tr("TORRE %d/%d") % [ceili(tower_hp), int(tower_max_hp)]
 		var w := ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 24
 		var base := (origin + Vector2(wall_x, tower_base_y)) * px
 		var box := Rect2(Vector2(base.x - TOWER_W * px / 2.0 - w / 2.0, base.y + 12), Vector2(w, 32))
@@ -1777,9 +1799,9 @@ func _draw_spell_slot(b: Button, k: String) -> void:
 	Pietra.text(b, ui_font, Vector2(8, 4), a["key"], 16, C6 if ready else C5)
 	if cd > 0.0 and not locked:
 		Pietra.text_c(b, ui_font, icon.get_center().x, 16, "%d" % ceili(cd), 16, C6)
-	Pietra.text(b, ui_font, Vector2(54, 7), String(a["name"]).to_upper(), 16, C6 if ready or aiming else C5)
+	Pietra.text(b, ui_font, Vector2(54, 7), Data.nome_abilita(k).to_upper(), 16, C6 if ready or aiming else C5)
 	if locked:
-		Pietra.text(b, ui_font, Vector2(54, 28), "bloccata", 16, C3, false)
+		Pietra.text(b, ui_font, Vector2(54, 28), tr("bloccata"), 16, C3, false)
 		return
 	var bar := Rect2(54, 32, r.size.x - 64, 8)
 	b.draw_rect(bar, C1)
@@ -1815,7 +1837,7 @@ func _draw_wave_banner() -> void:
 	var w := 80.0
 	var h := 74.0 + counts.size() * 36.0 + 28.0
 	Pietra.banner(n, Rect2(Vector2.ZERO, Vector2(w, h)))
-	var title := "ONDATA" if wave_running or wave == 0 else "PROSSIMA"
+	var title := tr("ONDATA") if wave_running or wave == 0 else tr("PROSSIMA")
 	var ts := 16 if ui_font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= w - 8 else 12
 	Pietra.text_c(n, ui_font, w / 2.0, 12, title, ts, C0, false)
 	var num := wave if wave_running else wave + 1

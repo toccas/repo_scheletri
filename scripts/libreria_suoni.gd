@@ -61,3 +61,7 @@ extends Resource
 @export var evoca_rivela: VoceSuono
 ## Una carta si gira (apertura di 10 pergamene).
 @export var carta: VoceSuono
+
+@export_group("Dialoghi")
+## Voce del necromante mentre scrive il fumetto (un "bip" ogni poche lettere).
+@export var voce: VoceSuono

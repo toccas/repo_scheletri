@@ -17,6 +17,8 @@ extends Control
 ## level-up si applicano sopra questi valori.
 
 const Data := preload("res://scripts/game_data.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
@@ -26,6 +28,10 @@ const TEX_GROUND := preload("res://assets/campo/terreno.png")
 const GAME_SCENE := "res://scenes/main.tscn"
 const MENU_SCENE := "res://scenes/menu.tscn"
 const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/preparazione.tres")
 
 ## Il tuo tema (per il font). Vuoto = font predefinito.
 @export var tema: Theme
@@ -151,6 +157,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
+	Lingua.setup()
+	Dialoghi.avvia(self, dialogo_tutorial)
 	if tema:
 		theme = tema
 	font = get_theme_default_font()
@@ -261,7 +269,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _place(kind: String) -> void:
 	if not st["owned"].has(kind):
 		Suoni.play("errore")
-		_say("Non hai ancora questa unità: aprila con una pergamena nel portale.")
+		_say(tr("Non hai ancora questa unità: aprila con una pergamena nel portale."))
 		return
 	Suoni.play("conferma")
 	var squad: Array = st["squad"]
@@ -284,7 +292,7 @@ func _press(id: String) -> void:
 		"start":
 			if _squad().is_empty():
 				Suoni.play("errore")
-				_say("Metti almeno un'unità sugli altari.")
+				_say(tr("Metti almeno un'unità sugli altari."))
 				return
 			Suoni.play("conferma")
 			_save()
@@ -319,18 +327,25 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.05, 0.05, 0.05, 0.55))
 
 	Pietra.banner(self, Rect2(vp.x / 2.0 - 220, 18, 440, 74))
-	Pietra.text_c(self, font, vp.x / 2.0, 34, "PREPARA LA LEGIONE", 24, C0, false)
+	Pietra.text_c(self, font, vp.x / 2.0, 34, tr("PREPARA LA LEGIONE"), 24, C0, false)
 
 	# collezione
 	var panel := Rect2(24, 112, 616, 520)
 	Pietra.stone(self, panel, C2)
-	Pietra.text(self, font, panel.position + Vector2(26, 14), "COLLEZIONE  %d/%d" % [st["owned"].size(), Data.ALLY_ORDER.size()], 16, C6)
+	Pietra.text(self, font, panel.position + Vector2(26, 14), tr("COLLEZIONE  %d/%d") % [st["owned"].size(), Data.ALLY_ORDER.size()], 16, C6)
 	for k in Data.ALLY_ORDER:
 		_draw_card(k, card_rects[k])
 
 	# altari della squadra
-	Pietra.text(self, font, Vector2(672, 116), "SQUADRA DELLA RUN", 16, C6)
-	Pietra.text(self, font, Vector2(900, 116), "clicca un altare, poi un'unità", 16, C4, false)
+	var head := tr("SQUADRA DELLA RUN")
+	Pietra.text(self, font, Vector2(672, 116), head, 16, C6)
+	# il suggerimento va dopo il titolo e si rimpicciolisce se non c'è spazio
+	var hx := maxf(900.0, 672.0 + font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 24.0)
+	var hint := tr("clicca un altare, poi un'unità")
+	var hs := 16
+	while hs > 10 and hx + font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x > size.x - 24.0:
+		hs -= 1
+	Pietra.text(self, font, Vector2(hx, 116 + (16 - hs) / 2.0), hint, hs, C4, false)
 	for i in altar_rects.size():
 		_draw_altar(i, altar_rects[i])
 
@@ -347,14 +362,14 @@ func _draw() -> void:
 	# pulsanti in basso
 	var hb: String = hover.get("id", "") if hover.get("type", "") == "button" else ""
 	Pietra.stone(self, back_rect, C3, hb == "back")
-	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, "< BACK", 16, C6)
+	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, tr("< BACK"), 16, C6)
 	Pietra.stone(self, portal_rect, C3, hb == "portal")
-	var sc_label := "PERGAMENE: %d  · PORTALE" % st["scrolls"]
+	var sc_label := tr("PERGAMENE: %d  · PORTALE") % st["scrolls"]
 	Pietra.text_c(self, font, portal_rect.get_center().x, portal_rect.position.y + 15, sc_label, 16, C6 if st["scrolls"] > 0 else C5)
 	var ready := not _squad().is_empty()
 	Pietra.stone(self, start_rect, C4 if ready else C2, hb == "start" and ready)
-	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 8, "INIZIA LA RUN", 24, C6 if ready else C4)
-	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 36, "Invio", 16, C1, false)
+	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 8, tr("INIZIA LA RUN"), 24, C6 if ready else C4)
+	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 36, tr("Invio"), 16, C1, false)
 
 	if message_t > 0.0:
 		var a := clampf(message_t, 0.0, 1.0)
@@ -388,9 +403,9 @@ func _draw_card(k: String, r: Rect2) -> void:
 	var icon := Rect2(Vector2(rr.get_center().x - 24, rr.position.y + 12), Vector2(48, 48))
 	if owned:
 		draw_texture_rect_region(Data.ally_texture(k), icon, Data.ally_region(k), Color(1, 1, 1, 0.55 if in_squad >= 0 else 1.0))
-		var label := k.to_upper()
+		var label := Data.nome_breve(k)
 		var fs := 16 if font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= rr.size.x - 10 else 12
-		Pietra.text_c(self, font, rr.get_center().x, rr.position.y + 64 + (16 - fs) / 2, label, fs, C6)
+		Pietra.text_c(self, font, rr.get_center().x, rr.position.y + 64 + (16 - fs) / 2.0, label, fs, C6)
 		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], C6)
 		var rank: int = st["owned"][k]
 		if rank > 1:
@@ -429,11 +444,11 @@ func _draw_altar(i: int, r: Rect2) -> void:
 		var spr := Rect2(Vector2(r.get_center().x - 32, r.position.y + 68 + bob), Vector2(64, 64))
 		draw_rect(Rect2(r.get_center().x - 18, r.position.y + 130, 36, 3), Color(0, 0, 0, 0.5))
 		draw_texture_rect_region(Data.ally_texture(k), spr, Data.ally_region(k, int(t * 3.0 + i) % 2))
-		var lbl := k.to_upper()
+		var lbl := Data.nome_breve(k)
 		var fs := 16 if font.get_string_size(lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= r.size.x else 12
 		Pietra.text_c(self, font, r.get_center().x, r.position.y + 204, lbl, fs, C6)
 	else:
-		Pietra.text_c(self, font, r.get_center().x, r.position.y + 96, "vuoto", 16, C4, false)
+		Pietra.text_c(self, font, r.get_center().x, r.position.y + 96, tr("vuoto"), 16, C4, false)
 	if sel:  # frecce che indicano l'altare selezionato
 		var k2 := roundf(absf(sin(t * 5.0)) * 3.0)
 		Pietra.text_c(self, font, r.get_center().x, r.position.y + 10 + k2, "v", 16, C6)
@@ -442,7 +457,7 @@ func _draw_altar(i: int, r: Rect2) -> void:
 func _draw_info(r: Rect2, k: String) -> void:
 	Pietra.stone(self, r, C2)
 	if k == "":
-		Pietra.text_c(self, font, r.get_center().x, r.get_center().y - 8, "Scegli un'unità dalla collezione", 16, C4, false)
+		Pietra.text_c(self, font, r.get_center().x, r.get_center().y - 8, tr("Scegli un'unità dalla collezione"), 16, C4, false)
 		return
 	var d: Dictionary = Data.UNITS[k]
 	var owned: bool = st["owned"].has(k)
@@ -452,22 +467,22 @@ func _draw_info(r: Rect2, k: String) -> void:
 	var x := r.position.x + 140
 	var y := r.position.y + 18
 	if not owned:
-		Pietra.text(self, font, Vector2(x, y), "UNITÀ SCONOSCIUTA", 24, C5)
-		Pietra.text(self, font, Vector2(x, y + 38), "%s · %s" % [Data.RARITY_NAMES[d["rarity"]], Data.ROLE_NAMES[d["role"]]], 16, C4)
-		Pietra.text(self, font, Vector2(x, y + 70), "Trovala aprendo le pergamene nel portale.", 16, C4, false)
+		Pietra.text(self, font, Vector2(x, y), tr("UNITÀ SCONOSCIUTA"), 24, C5)
+		Pietra.text(self, font, Vector2(x, y + 38), "%s · %s" % [Data.rarita(d["rarity"]), Data.ruolo(d["role"])], 16, C4)
+		Pietra.text(self, font, Vector2(x, y + 70), tr("Trovala aprendo le pergamene nel portale."), 16, C4, false)
 		return
 	var rank: int = st["owned"][k]
-	Pietra.text(self, font, Vector2(x, y), String(d["ally_name"]).to_upper(), 24, C6)
-	var sub := "%s · %s" % [Data.RARITY_NAMES[d["rarity"]], Data.ROLE_NAMES[d["role"]]]
+	Pietra.text(self, font, Vector2(x, y), Data.nome(k).to_upper(), 24, C6)
+	var sub := "%s · %s" % [Data.rarita(d["rarity"]), Data.ruolo(d["role"])]
 	if rank > 1:
-		sub += " · rango %d (+%d%%)" % [rank, int(round((Collezione.rank_mult(rank) - 1.0) * 100.0))]
+		sub += tr(" · rango %d (+%d%%)") % [rank, int(round((Collezione.rank_mult(rank) - 1.0) * 100.0))]
 	Pietra.text(self, font, Vector2(x, y + 34), sub, 16, C5)
 	var rm := Collezione.rank_mult(rank)
 	var ss := stats_for(k)
-	var line := "x%d per squadra · Vita %d" % [ss["count"], int(ss["hp"] * rm)]
+	var line := tr("x%d per squadra · Vita %d") % [ss["count"], int(ss["hp"] * rm)]
 	if ss["dmg"] > 0.0:
-		line += " · Attacco %d" % int(ss["dmg"] * rm)
+		line += tr(" · Attacco %d") % int(ss["dmg"] * rm)
 	if not d["melee"]:
-		line += " · Gittata %d" % int(ss["range"])
+		line += tr(" · Gittata %d") % int(ss["range"])
 	Pietra.text(self, font, Vector2(x, y + 62), line, 16, C6)
-	Pietra.text_block_left(self, font, Vector2(x, y + 96), r.end.x - x - 20, d["desc"], 16, C5)
+	Pietra.text_block_left(self, font, Vector2(x, y + 96), r.end.x - x - 20, Data.descrizione(k), 16, C5)

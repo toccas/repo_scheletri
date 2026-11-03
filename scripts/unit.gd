@@ -77,6 +77,7 @@ var life_left := -1.0  # scheletri rianimati: spariscono quando arriva a 0
 var summoner = null  # chi ha rianimato questo scheletro
 var run_dist := 0.0  # carica: strada percorsa dall'ultimo colpo
 var pulse_t := 0.0  # aura del totem: ogni tanto un'onda visiva
+var shot_t := 0.0  # catapulta: secondi in cui mostra il braccio scattato (frame 1)
 
 var ground := Vector2.ZERO  # posizione sul terreno (vedi sopra)
 var home := Vector2.ZERO  # posizione di guardia sul terreno (alleati)
@@ -281,6 +282,12 @@ func _process(delta: float) -> void:
 
 
 func _animate_walk(moving: bool, delta: float) -> void:
+	if shot_t > 0.0:  # la catapulta ha appena tirato: braccio in alto, coppa vuota
+		shot_t -= delta
+		if frame != 1:
+			frame = 1
+			_update_frame()
+		return
 	if moving:
 		frame_timer += delta
 		if frame_timer >= FRAME_TIME:
@@ -496,6 +503,7 @@ func _special_attack(t) -> void:
 				game.spawn_projectile(team, ground, muzzle_height(), b, false, dmg * 0.6, 0.0, false, "", self)
 		"catapulta":
 			lunge = -2.0
+			shot_t = 0.7
 			game.spawn_projectile(team, ground, muzzle_height() + 4.0, t, false, dmg, splash, true, "", self)
 		"cecchino":
 			lunge = -1.5

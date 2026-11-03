@@ -147,9 +147,14 @@ func footprint() -> Rect2:
 	return Rect2(position.x - w / 2.0, position.y - 18.0, w, 22.0)
 
 
+## Etichetta nella lingua scelta (la traduzione sta in lingue/testi.csv).
+func _testo() -> String:
+	return etichetta if Engine.is_editor_hint() else tr(etichetta)
+
+
 ## Rettangolo del testo (senza la targa), in coordinate locali.
 func _label_rect() -> Rect2:
-	var w := PixelFont.text_width(etichetta, 1.0)
+	var w := PixelFont.text_width(_testo(), 1.0)
 	var h := PixelFont.text_height(1.0)
 	if lato_etichetta == Lato.MANUALE:
 		var m := get_node_or_null(LABEL_NODE) as Node2D
@@ -208,8 +213,8 @@ func _draw_label() -> void:
 	l.draw_rect(plate.grow(1), C6 if hovered else C0)
 	l.draw_rect(plate, Color("1c1c1c"))
 	l.draw_rect(Rect2(plate.position, Vector2(plate.size.x, 1)), C2)
-	PixelFont.draw_text(l, etichetta, r.position + Vector2(1, 1), 1.0, C0)
-	PixelFont.draw_text(l, etichetta, r.position, 1.0, C6 if hovered else C5)
+	PixelFont.draw_text(l, _testo(), r.position + Vector2(1, 1), 1.0, C0)
+	PixelFont.draw_text(l, _testo(), r.position, 1.0, C6 if hovered else C5)
 	if hovered:
 		var k := roundf(absf(sin(t * 5.0)))  # le frecce si avvicinano e si allontanano
 		PixelFont.draw_text(l, ">", Vector2(plate.position.x - 8 - k, r.position.y), 1.0, C6)

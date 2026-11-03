@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3]
+
+[ext_resource type="Script" path="res://scripts/battuta_dialogo.gd" id="1_4fr5p"]
+[ext_resource type="Script" path="res://scripts/dialogo.gd" id="2_pbi25"]
+
+[sub_resource type="Resource" id="Resource_3rlbp"]
+script = ExtResource("1_4fr5p")
+testo = "Benvenuto nel mio grimorio: l'albero delle ricerche."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_m0xwq"]
+script = ExtResource("1_4fr5p")
+testo = "Ogni partita ti dà punti progresso: più ondate superi e più nemici uccidi, più punti ricevi."
+
+[sub_resource type="Resource" id="Resource_0lg5y"]
+script = ExtResource("1_4fr5p")
+testo = "Qui li spendi per potenziamenti che restano per sempre: vita della torre, danno, le mie magie..."
+
+[sub_resource type="Resource" id="Resource_tv5cv"]
+script = ExtResource("1_4fr5p")
+testo = "Alcune ricerche ne richiedono altre prima. E se cambi idea, puoi azzerarle e riavere tutti i punti."
+espressione = 3
+
+[resource]
+script = ExtResource("2_pbi25")
+id = "ricerca"
+battute = Array[ExtResource("1_4fr5p")]([SubResource("Resource_3rlbp"), SubResource("Resource_m0xwq"), SubResource("Resource_0lg5y"), SubResource("Resource_tv5cv")])

@@ -44,5 +44,7 @@ enum Valuta { MONETE_D_OSSO, EURO }
 ## Prezzo da mostrare: "60" oppure "1,99 €".
 func prezzo_testo() -> String:
 	if valuta == Valuta.EURO:
+		if not Engine.is_editor_hint() and TranslationServer.get_locale().begins_with("en"):
+			return "€%.2f" % prezzo
 		return ("%.2f €" % prezzo).replace(".", ",")
 	return "%d" % int(prezzo)

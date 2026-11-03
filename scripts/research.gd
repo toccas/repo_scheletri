@@ -17,6 +17,8 @@ extends Node2D
 ## Se un nodo manca, quell'elemento torna alla posizione di partenza.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Research := preload("res://scripts/research_data.gd")
 const ATLAS := preload("res://assets/sprites.png")
@@ -38,6 +40,10 @@ const PANEL_TOP := 486.0
 const PANEL_H := 210.0
 const PANEL_PAD := 24.0  # quanto il riquadro dei dettagli sporge ai lati dell'albero
 const ICON_SCALE := 3.0
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/ricerca.tres")
 
 var st: Dictionary
 var t := 0.0
@@ -66,6 +72,8 @@ var stars: Array = []
 func _ready() -> void:
 	st = Research.load_state()
 	Suoni.install()
+	Lingua.setup()
+	Dialoghi.avvia(self, dialogo_tutorial)
 	if Engine.is_editor_hint():
 		fade = 0.0
 	var vp := _screen_size()
@@ -200,14 +208,14 @@ func _buy() -> void:
 	if Research.buy(st, selected):
 		Suoni.play("livello", 1.2, -3.0)
 		flash[selected] = 0.6
-		message = "%s %s!" % [Research.NODES[selected]["name"], "SBLOCCATO" if lv_before == 0 else "POTENZIATO"]
+		message = "%s %s!" % [tr(Research.NODES[selected]["name"]), tr("SBLOCCATO") if lv_before == 0 else tr("POTENZIATO")]
 		message_t = 2.0
 	elif Research.next_cost(st, selected) >= 0:
 		Suoni.play("errore")
 		if not Research.requirements_met(st, selected):
-			message = "PRIMA SBLOCCA LA RICERCA RICHIESTA"
+			message = tr("PRIMA SBLOCCA LA RICERCA RICHIESTA")
 		else:
-			message = "PUNTI INSUFFICIENTI"
+			message = tr("PUNTI INSUFFICIENTI")
 		message_t = 2.0
 
 
@@ -215,7 +223,7 @@ func _reset() -> void:
 	if reset_armed > 0.0:
 		Research.refund_all(st)
 		reset_armed = 0.0
-		message = "RICERCHE AZZERATE: PUNTI RESTITUITI"
+		message = tr("RICERCHE AZZERATE: PUNTI RESTITUITI")
 		message_t = 2.5
 	else:
 		reset_armed = 3.0
@@ -228,13 +236,13 @@ func _draw() -> void:
 	_draw_background(vp)
 
 	# intestazione
-	PixelFont.draw_centered(self, "RICERCHE", title_pos.x, title_pos.y, 7.0, C6, C0)
-	back_rect = Rect2(back_pos, Vector2(PixelFont.text_width("< MENU", 4.0), PixelFont.text_height(4.0)))
-	PixelFont.draw_text(self, "< MENU", back_rect.position, 4.0, C6 if back_rect.grow(8).has_point(get_local_mouse_position()) else C5)
-	var pts := "PUNTI: %d" % st["points"]
+	PixelFont.draw_centered(self, tr("RICERCHE"), title_pos.x, title_pos.y, 7.0, C6, C0)
+	back_rect = Rect2(back_pos, Vector2(PixelFont.text_width(tr("< MENU"), 4.0), PixelFont.text_height(4.0)))
+	PixelFont.draw_text(self, tr("< MENU"), back_rect.position, 4.0, C6 if back_rect.grow(8).has_point(get_local_mouse_position()) else C5)
+	var pts := tr("PUNTI: %d") % st["points"]
 	var pw := PixelFont.text_width(pts, 4.0)
 	PixelFont.draw_text(self, pts, Vector2(points_pos.x - pw, points_pos.y), 4.0, C6)
-	var rtxt := "CONFERMI? CLICCA ANCORA" if reset_armed > 0.0 else "AZZERA RICERCHE"
+	var rtxt := tr("CONFERMI? CLICCA ANCORA") if reset_armed > 0.0 else tr("AZZERA RICERCHE")
 	var rw := PixelFont.text_width(rtxt, 2.0)
 	reset_rect = Rect2(Vector2(points_pos.x - rw, points_pos.y + 38), Vector2(rw, PixelFont.text_height(2.0)))
 	PixelFont.draw_text(self, rtxt, reset_rect.position, 2.0, C6 if reset_armed > 0.0 else C4)
@@ -243,7 +251,7 @@ func _draw() -> void:
 	for b in Research.BRANCHES:
 		var cols: Array = b["cols"]
 		var cx: float = grid_left + (cols[0] + cols[cols.size() - 1]) * COL_STEP / 2.0 + NODE / 2.0
-		PixelFont.draw_centered(self, b["name"], cx, grid_top - 44, 4.0, C5, C0)
+		PixelFont.draw_centered(self, tr(b["name"]), cx, grid_top - 44, 4.0, C5, C0)
 		var w: float = (cols[cols.size() - 1] - cols[0]) * COL_STEP + NODE + 24.0
 		draw_rect(Rect2(cx - w / 2.0, grid_top - 16, w, 2), C3)
 
@@ -365,12 +373,22 @@ func _draw_panel(vp: Vector2) -> void:
 	draw_texture_rect_region(ATLAS, Rect2(x + 8, y + 8, 80, 80), Rect2(n["icon"], Vector2(16, 16)))
 	x += 124
 
-	PixelFont.draw_text(self, n["name"], Vector2(x, y), 5.0, C6)
-	var branch_name: String = Research.BRANCHES[n["branch"]]["name"]
-	PixelFont.draw_text(self, "%s  -  LIVELLO %d/%d" % [branch_name, lv, m], Vector2(x, y + 48), 3.0, C4)
-	var lines := _wrap(n["desc"], 33)
+	# spazio fino al pulsante: i testi lunghi (inglese, spagnolo) si rimpiccioliscono
+	var avail := box.end.x - 28.0 - 260.0 - 24.0 - x
+	var title: String = tr(n["name"])
+	var ts := 5.0
+	while ts > 3.0 and PixelFont.text_width(title, ts) > avail:
+		ts -= 1.0
+	PixelFont.draw_text(self, title, Vector2(x, y), ts, C6)
+	var branch_name: String = tr(Research.BRANCHES[n["branch"]]["name"])
+	PixelFont.draw_text(self, tr("%s  -  LIVELLO %d/%d") % [branch_name, lv, m], Vector2(x, y + 48), 3.0, C4)
+	var ds := 3.0
+	var lines := _wrap(tr(n["desc"]), int(avail / (6.0 * ds)))
+	if lines.size() > 3:
+		ds = 2.0
+		lines = _wrap(tr(n["desc"]), int(avail / (6.0 * ds)))
 	for i in lines.size():
-		PixelFont.draw_text(self, lines[i], Vector2(x, y + 84 + i * 30), 3.0, C5)
+		PixelFont.draw_text(self, lines[i], Vector2(x, y + 84 + i * (10.0 * ds)), ds, C5)
 
 
 	# pulsante di acquisto
@@ -379,24 +397,27 @@ func _draw_panel(vp: Vector2) -> void:
 	var bx := box.end.x - 28 - bw
 	if cost < 0:
 		buy_rect = Rect2()
-		PixelFont.draw_centered(self, "MASSIMO", bx + bw / 2.0, y + 40, 5.0, C6)
-		PixelFont.draw_centered(self, "RAGGIUNTO", bx + bw / 2.0, y + 86, 5.0, C6)
+		PixelFont.draw_centered(self, tr("MASSIMO"), bx + bw / 2.0, y + 40, 5.0, C6)
+		PixelFont.draw_centered(self, tr("RAGGIUNTO"), bx + bw / 2.0, y + 86, 5.0, C6)
 		return
-	PixelFont.draw_centered(self, "COSTO: %d PUNTI" % cost, bx + bw / 2.0, y + 6, 3.0, C5)
+	PixelFont.draw_centered(self, tr("COSTO: %d PUNTI") % cost, bx + bw / 2.0, y + 6, 3.0, C5)
 	buy_rect = Rect2(bx, y + 44, bw, 64)
 	var can := Research.can_buy(st, selected)
 	var hover := buy_rect.has_point(get_local_mouse_position())
 	draw_rect(buy_rect, C3 if can and hover else (C2 if can else C1))
 	_border(buy_rect, 4.0, C6 if can else C3)
-	var label := "SBLOCCA" if lv == 0 else "POTENZIA"
-	PixelFont.draw_centered(self, label, buy_rect.get_center().x, buy_rect.position.y + 18, 4.0, C6 if can else C3)
+	var label := tr("SBLOCCA") if lv == 0 else tr("POTENZIA")
+	var ls := 4.0
+	while ls > 2.0 and PixelFont.text_width(label, ls) > buy_rect.size.x - 24.0:
+		ls -= 1.0
+	PixelFont.draw_centered(self, label, buy_rect.get_center().x, buy_rect.get_center().y - PixelFont.text_height(ls) / 2.0, ls, C6 if can else C3)
 	var req: Array = n["requires"]
 	if not Research.requirements_met(st, selected):
-		var rn: String = Research.NODES[req[0]]["name"]
-		PixelFont.draw_centered(self, "RICHIEDE: %s" % rn, buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C6)
-		PixelFont.draw_centered(self, "LIVELLO %d" % req[1], buy_rect.get_center().x, buy_rect.end.y + 34, 2.0, C6)
+		var rn: String = tr(Research.NODES[req[0]]["name"])
+		PixelFont.draw_centered(self, tr("RICHIEDE: %s") % rn, buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C6)
+		PixelFont.draw_centered(self, tr("LIVELLO %d") % req[1], buy_rect.get_center().x, buy_rect.end.y + 34, 2.0, C6)
 	elif not can:
-		PixelFont.draw_centered(self, "PUNTI INSUFFICIENTI", buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C4)
+		PixelFont.draw_centered(self, tr("PUNTI INSUFFICIENTI"), buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C4)
 
 
 ## Spezza il testo in righe di al massimo `width` caratteri.

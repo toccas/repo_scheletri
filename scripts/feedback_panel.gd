@@ -64,13 +64,13 @@ func _ready() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "BUG E CONSIGLI"
+	title.text = tr("BUG E CONSIGLI")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
 	box.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "Hai trovato un problema o hai un'idea? Scrivimi!"
+	sub.text = tr("Hai trovato un problema o hai un'idea? Scrivimi!")
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_color_override("font_color", C5)
 	box.add_child(sub)
@@ -80,22 +80,22 @@ func _ready() -> void:
 	kinds.alignment = BoxContainer.ALIGNMENT_CENTER
 	kinds.add_theme_constant_override("separation", 12)
 	var group := ButtonGroup.new()
-	bug_button = _toggle("Bug", group)
-	idea_button = _toggle("Consiglio", group)
+	bug_button = _toggle(tr("Bug"), group)
+	idea_button = _toggle(tr("Consiglio"), group)
 	bug_button.button_pressed = true
 	kinds.add_child(bug_button)
 	kinds.add_child(idea_button)
 	box.add_child(kinds)
 
 	text_edit = TextEdit.new()
-	text_edit.placeholder_text = "Cosa è successo? Cosa stavi facendo? (oppure: la tua idea)"
+	text_edit.placeholder_text = tr("Cosa è successo? Cosa stavi facendo? (oppure: la tua idea)")
 	text_edit.custom_minimum_size = Vector2(560, 170)
 	text_edit.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	text_edit.text_changed.connect(_on_text_changed)
 	box.add_child(text_edit)
 
 	contact_edit = LineEdit.new()
-	contact_edit.placeholder_text = "La tua email (facoltativa, se vuoi una risposta)"
+	contact_edit.placeholder_text = tr("La tua email (facoltativa, se vuoi una risposta)")
 	contact_edit.max_length = 120
 	box.add_child(contact_edit)
 
@@ -109,12 +109,12 @@ func _ready() -> void:
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 12)
-	var cancel := _button("Chiudi")
+	var cancel := _button(tr("Chiudi"))
 	cancel.pressed.connect(close)
-	mail_button = _button("Apri email")
+	mail_button = _button(tr("Apri email"))
 	mail_button.pressed.connect(_open_mail)
 	mail_button.visible = false
-	send_button = _button("Invia")
+	send_button = _button(tr("Invia"))
 	send_button.pressed.connect(_send)
 	buttons.add_child(cancel)
 	buttons.add_child(mail_button)
@@ -127,7 +127,7 @@ func _ready() -> void:
 	add_child(http)
 
 	if send_url == "":
-		status_label.text = "Premendo Invia si apre la tua app email con il messaggio pronto."
+		status_label.text = tr("Premendo Invia si apre la tua app email con il messaggio pronto.")
 	text_edit.grab_focus.call_deferred()
 
 
@@ -184,7 +184,7 @@ func _on_text_changed() -> void:
 
 func _send() -> void:
 	if text_edit.text.strip_edges().length() < 5:
-		status_label.text = "Scrivi almeno qualche parola prima di inviare."
+		status_label.text = tr("Scrivi almeno qualche parola prima di inviare.")
 		return
 	if send_url == "":
 		_open_mail()
@@ -199,40 +199,40 @@ func _send() -> void:
 	var headers := ["Content-Type: application/json", "Accept: application/json"]
 	var err := http.request(send_url, headers, HTTPClient.METHOD_POST, JSON.stringify(data))
 	if err != OK:
-		_failed("non riesco a contattare il server (errore %d)" % err)
+		_failed(tr("non riesco a contattare il server (errore %d)") % err)
 		return
 	send_button.disabled = true
-	status_label.text = "Invio in corso..."
+	status_label.text = tr("Invio in corso...")
 
 
 func _on_request_completed(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
 	send_button.disabled = false
 	if result == HTTPRequest.RESULT_SUCCESS and code >= 200 and code < 300:
-		status_label.text = "Grazie! Il tuo messaggio è stato inviato."
+		status_label.text = tr("Grazie! Il tuo messaggio è stato inviato.")
 		send_button.disabled = true
 		_close_timer = 2.0
 	elif result != HTTPRequest.RESULT_SUCCESS:
-		_failed("connessione non riuscita: controlla Internet")
+		_failed(tr("connessione non riuscita: controlla Internet"))
 	else:
-		_failed("il server ha risposto con l'errore %d" % code)
+		_failed(tr("il server ha risposto con l'errore %d") % code)
 
 
 func _failed(reason: String) -> void:
-	status_label.text = "Invio non riuscito: %s. Puoi mandarlo per email con il pulsante qui sotto." % reason
+	status_label.text = tr("Invio non riuscito: %s. Puoi mandarlo per email con il pulsante qui sotto.") % reason
 	mail_button.visible = email_to != ""
 
 
 func _open_mail() -> void:
 	if email_to == "" or email_to.contains("esempio"):
-		status_label.text = "Indirizzo email per i feedback non ancora configurato."
+		status_label.text = tr("Indirizzo email per i feedback non ancora configurato.")
 		push_warning("Imposta 'Email Feedback' nell'Inspector del nodo Menu.")
 		return
 	var url := "mailto:%s?subject=%s&body=%s" % [email_to, _subject().uri_encode(), _full_body().uri_encode()]
 	var err := OS.shell_open(url)
 	if err == OK:
-		status_label.text = "Si è aperta la tua app email: premi Invia lì per mandarmi il messaggio."
+		status_label.text = tr("Si è aperta la tua app email: premi Invia lì per mandarmi il messaggio.")
 	else:
-		status_label.text = "Non trovo un'app email. Scrivimi a: %s" % email_to
+		status_label.text = tr("Non trovo un'app email. Scrivimi a: %s") % email_to
 
 
 # --- Stile -------------------------------------------------------------------

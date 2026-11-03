@@ -9,12 +9,18 @@ extends Control
 ## Tasti: Spazio/Invio = apri una o continua, 0 = apri 10, Esc = torna al menu.
 
 const Data := preload("res://scripts/game_data.gd")
+const Lingua := preload("res://scripts/lingua.gd")
+const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const MENU_SCENE := "res://scenes/menu.tscn"
 const PREP_SCENE := "res://scenes/preparazione.tscn"
+
+## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
+## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
+@export var dialogo_tutorial: Dialogo = preload("res://dialoghi/evocazione.tres")
 
 ## Il tuo tema (per il font). Vuoto = font predefinito.
 @export var tema: Theme
@@ -68,6 +74,8 @@ func _ready() -> void:
 	st = Collezione.load_state()
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
+	Lingua.setup()
+	Dialoghi.avvia(self, dialogo_tutorial)
 
 
 func _process(delta: float) -> void:
@@ -206,7 +214,7 @@ func _draw() -> void:
 		draw_rect(Rect2((s["p"] as Vector2).round(), Vector2(3, 3)), Color(1, 1, 1, clampf(s["life"], 0.0, 1.0)))
 
 	Pietra.banner(self, Rect2(vp.x / 2.0 - 170, 18, 340, 64))
-	Pietra.text_c(self, font, vp.x / 2.0, 32, "EVOCAZIONE", 24, C0, false)
+	Pietra.text_c(self, font, vp.x / 2.0, 32, tr("EVOCAZIONE"), 24, C0, false)
 
 	if fase == Fase.RIVELA:
 		_draw_reveal()
@@ -214,27 +222,27 @@ func _draw() -> void:
 		_draw_multi()
 	else:
 		var n: int = st["scrolls"]
-		Pietra.text_c(self, font, vp.x / 2.0, 408, "PERGAMENE: %d" % n, 24, C6)
+		Pietra.text_c(self, font, vp.x / 2.0, 408, tr("PERGAMENE: %d") % n, 24, C6)
 		var can := n > 0 and fase == Fase.ATTESA
 		Pietra.stone(self, open_rect, C4 if can else C2, hover == "open" and can)
-		Pietra.text_c(self, font, open_rect.get_center().x, open_rect.position.y + 10, "APRI 1", 24, C6 if can else C4)
-		Pietra.text_c(self, font, open_rect.get_center().x, open_rect.position.y + 38, "Spazio", 16, C1, false)
+		Pietra.text_c(self, font, open_rect.get_center().x, open_rect.position.y + 10, tr("APRI 1"), 24, C6 if can else C4)
+		Pietra.text_c(self, font, open_rect.get_center().x, open_rect.position.y + 38, tr("Spazio"), 16, C1, false)
 		var can_multi := n >= apertura_multipla and fase == Fase.ATTESA
 		Pietra.stone(self, multi_rect, C4 if can_multi else C2, hover == "multi" and can_multi)
-		Pietra.text_c(self, font, multi_rect.get_center().x, multi_rect.position.y + 10, "APRI %d" % apertura_multipla, 24, C6 if can_multi else C4)
-		var sub := "tasto 0" if n >= apertura_multipla else "ne servono %d" % apertura_multipla
+		Pietra.text_c(self, font, multi_rect.get_center().x, multi_rect.position.y + 10, tr("APRI %d") % apertura_multipla, 24, C6 if can_multi else C4)
+		var sub := tr("tasto 0") if n >= apertura_multipla else tr("ne servono %d") % apertura_multipla
 		Pietra.text_c(self, font, multi_rect.get_center().x, multi_rect.position.y + 38, sub, 16, C1 if can_multi else C3, false)
 		var left: int = Data.PITY_EVERY - st["pity"]
-		var note := "Epica o leggendaria garantita entro %d pergamene" % left
+		var note := tr("Epica o leggendaria garantita entro %d pergamene") % left
 		if n == 0:
-			note = "Supera le ondate 10, 20, 30... per ottenere pergamene"
+			note = tr("Supera le ondate 10, 20, 30... per ottenere pergamene")
 		Pietra.text_c(self, font, vp.x / 2.0, 526, note, 16, C4, false)
 
 	_draw_collection_strip()
 	Pietra.stone(self, back_rect, C3, hover == "back")
-	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, "< BACK", 16, C6)
+	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, tr("< BACK"), 16, C6)
 	Pietra.stone(self, prep_rect, C3, hover == "prep")
-	Pietra.text_c(self, font, prep_rect.get_center().x, prep_rect.position.y + 15, "PREPARA LA SQUADRA >", 16, C6)
+	Pietra.text_c(self, font, prep_rect.get_center().x, prep_rect.position.y + 15, tr("PREPARA LA SQUADRA >"), 16, C6)
 	if fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(C0, fade))
 
@@ -293,13 +301,13 @@ func _draw_reveal() -> void:
 	# rarità, nome e risultato
 	var rr := Rect2(vp.x / 2.0 - 140, 352, 280, 44)
 	Pietra.stone(self, rr, C4 if result["rarity"] in ["epico", "leggendario"] else C3, result["rarity"] == "leggendario")
-	Pietra.text_c(self, font, vp.x / 2.0, 362, Data.RARITY_NAMES[result["rarity"]].to_upper(), 24, C6)
-	Pietra.text_c(self, font, vp.x / 2.0, 410, String(d["ally_name"]).to_upper(), 32, C6)
-	var res := "NUOVA UNITÀ!" if result["new"] else "RANGO %d  (+%d%% vita e danno)" % [result["rank"], int(round((Collezione.rank_mult(result["rank"]) - 1.0) * 100.0))]
+	Pietra.text_c(self, font, vp.x / 2.0, 362, Data.rarita(result["rarity"]).to_upper(), 24, C6)
+	Pietra.text_c(self, font, vp.x / 2.0, 410, Data.nome(k).to_upper(), 32, C6)
+	var res := tr("NUOVA UNITÀ!") if result["new"] else tr("RANGO %d  (+%d%% vita e danno)") % [result["rank"], int(round((Collezione.rank_mult(result["rank"]) - 1.0) * 100.0))]
 	Pietra.text_c(self, font, vp.x / 2.0, 452, res, 24, C5)
-	Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600, d["desc"], 16, C5)
+	Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600, Data.descrizione(k), 16, C5)
 	if fase_t > 0.5:
-		Pietra.text_c(self, font, vp.x / 2.0, 532, "clicca o premi Spazio per continuare", 16, C4, false)
+		Pietra.text_c(self, font, vp.x / 2.0, 532, tr("clicca o premi Spazio per continuare"), 16, C4, false)
 
 
 ## Tutte le unità in fila: quelle trovate chiare, quelle mancanti come sagome.
@@ -309,7 +317,7 @@ func _draw_collection_strip() -> void:
 	var x0 := roundf((size.x - n * step) / 2.0)
 	var y := 578.0
 	var hidden := _not_yet_revealed()
-	Pietra.text_c(self, font, size.x / 2.0, y - 22, "COLLEZIONE  %d/%d" % [st["owned"].size() - hidden.size(), n], 16, C5)
+	Pietra.text_c(self, font, size.x / 2.0, y - 22, tr("COLLEZIONE  %d/%d") % [st["owned"].size() - hidden.size(), n], 16, C5)
 	for i in n:
 		var k: String = Data.ALLY_ORDER[i]
 		var r := Rect2(x0 + i * step, y, 40, 40)
@@ -337,7 +345,7 @@ func _card_rect(i: int) -> Rect2:
 	var w := per_row * CARD.x + (per_row - 1) * CARD_GAP
 	var h := rows * CARD.y + (rows - 1) * CARD_GAP
 	var o := Vector2(roundf((size.x - w) / 2.0), roundf(316.0 - h / 2.0))
-	return Rect2(o + Vector2(i % per_row, i / per_row) * (CARD + Vector2.ONE * CARD_GAP), CARD)
+	return Rect2(o + Vector2(i % per_row, floori(i / float(per_row))) * (CARD + Vector2.ONE * CARD_GAP), CARD)
 
 
 ## Apertura multipla: le carte si girano una dopo l'altra.
@@ -367,9 +375,9 @@ func _draw_multi() -> void:
 			Pietra.text_c(self, font, 0.0, 30.0, "?", 32, C4)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var all_done := _card_time(results.size() - 1) + FLIP
-	var line := "Unità nuove: %d   ·   Doppioni: %d" % [news, shown - news]
+	var line := tr("Unità nuove: %d   ·   Doppioni: %d") % [news, shown - news]
 	Pietra.text_c(self, font, vp.x / 2.0, 522, line, 16, C5, false)
-	var hint := "clicca o premi Spazio per continuare" if fase_t >= all_done else "clicca per girarle tutte"
+	var hint := tr("clicca o premi Spazio per continuare") if fase_t >= all_done else tr("clicca per girarle tutte")
 	Pietra.text_c(self, font, vp.x / 2.0, 98, hint, 16, C4, false)
 
 
@@ -385,21 +393,21 @@ func _draw_card_front(r: Rect2, res: Dictionary, i: int) -> void:
 	Pietra.stone(self, r, base, top)
 	var tag := Rect2(r.position.x + 10, r.position.y + 10, r.size.x - 20, 22)
 	draw_rect(tag, C6 if top else C1)
-	Pietra.text_c(self, font, 0.0, tag.position.y + 4, Data.RARITY_NAMES[rar].to_upper(), 13, C0 if top else C5, false)
+	Pietra.text_c(self, font, 0.0, tag.position.y + 4, Data.rarita(rar).to_upper(), 13, C0 if top else C5, false)
 	# l'unità, che ondeggia appena
 	var bob := roundf(sin(t * 2.5 + i) * 2.0)
 	var spr := Rect2(Vector2(-40, r.position.y + 40 + bob), Vector2(80, 80))
 	draw_rect(Rect2(-36, r.position.y + 124, 72, 4), Color(0, 0, 0, 0.35))
 	draw_texture_rect_region(Data.ally_texture(k), spr, Data.ally_region(k, int(t * 3.0 + i) % 2))
-	var title := String(Data.UNITS[k]["ally_name"]).to_upper()
+	var title := Data.nome(k).to_upper()
 	var fs := 15
 	while fs > 9 and font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 14:
 		fs -= 1
 	Pietra.text_c(self, font, 0.0, r.position.y + 132 + (15 - fs) / 2.0, title, fs, C6)
 	if res["new"]:
-		Pietra.text_c(self, font, 0.0, r.position.y + 158, "NUOVA!", 16, C6)
+		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("NUOVA!"), 16, C6)
 	else:
-		Pietra.text_c(self, font, 0.0, r.position.y + 158, "RANGO %d" % res["rank"], 16, C5)
+		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("RANGO %d") % res["rank"], 16, C5)
 
 
 ## Unità nuove appena evocate ma non ancora mostrate (restano sagome nella collezione).

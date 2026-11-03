@@ -1,9 +1,9 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ci5ub0stp8xms"]
 
-[ext_resource type="Script" path="res://scripts/menu_building.gd" id="1_building"]
-[ext_resource type="Texture2D" path="res://assets/menu/negozio.png" id="2_negozio"]
+[ext_resource type="Script" uid="uid://cp41pfk3wcr2x" path="res://scripts/menu_building.gd" id="1_building"]
+[ext_resource type="Texture2D" uid="uid://bpor5qbk21rkj" path="res://assets/menu/negozio.png" id="2_negozio"]
 
-[node name="Negozio" type="Sprite2D"]
+[node name="Negozio" type="Sprite2D" unique_id=1096314982]
 position = Vector2(100, 118)
 texture = ExtResource("2_negozio")
 centered = false
