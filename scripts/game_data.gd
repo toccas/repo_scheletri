@@ -322,7 +322,9 @@ static func xp_to_next(level: int) -> int:
 ## Composizione di un'ondata: lista di {kind, boss}.
 static func build_wave(wave: int) -> Array:
 	var queue: Array = []
-	var count := mini(3 + int(wave * 1.3), 60)
+	# oltre l'ondata finale (modalità infinita) le ondate continuano a crescere
+	var extra := maxi(0, wave - FINAL_WAVE)
+	var count := mini(3 + int(wave * 1.3), 60 + mini(30, floori(extra / 4.0)))
 	for i in count:
 		var r := randf()
 		var kind := "soldato"
@@ -334,5 +336,7 @@ static func build_wave(wave: int) -> Array:
 			kind = "gigante"
 		queue.append({"kind": kind, "boss": false})
 	if wave % BOSS_EVERY == 0:
-		queue.append({"kind": "gigante", "boss": true})
+		# un campione in più ogni 30 ondate oltre la finale
+		for _b in 1 + floori(extra / 30.0):
+			queue.append({"kind": "gigante", "boss": true})
 	return queue

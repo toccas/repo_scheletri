@@ -54,6 +54,7 @@ var st: Dictionary
 ## Lo sfondo è quello del livello scelto.
 var sfondo_cielo: Texture2D = TEX_SKY
 var sfondo_terreno: Texture2D = TEX_GROUND
+var livello_nome := ""
 var font: Font
 var selected := 0  # altare selezionato
 var hover := {}  # {"type": "card"/"altar"/"button", "id": ...}
@@ -333,7 +334,18 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.05, 0.05, 0.05, 0.55))
 
 	Pietra.banner(self, Rect2(vp.x / 2.0 - 220, 18, 440, 74))
-	Pietra.text_c(self, font, vp.x / 2.0, 34, tr("PREPARA LA LEGIONE"), 24, C0, false)
+	if livello_nome == "":
+		Pietra.text_c(self, font, vp.x / 2.0, 34, tr("PREPARA LA LEGIONE"), 24, C0, false)
+	else:  # sotto il titolo: livello scelto e modalità
+		Pietra.text_c(self, font, vp.x / 2.0, 26, tr("PREPARA LA LEGIONE"), 24, C0, false)
+		var inf := Livelli.modalita_infinita()
+		var sub := tr(livello_nome).to_upper() + "  ·  " + (tr("INFINITA") if inf else tr("%d ONDATE") % Data.FINAL_WAVE)
+		var fs := 16 if font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x < 380 else 12
+		var sw := font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var sx := vp.x / 2.0 - sw / 2.0 + (16.0 if inf else 0.0)
+		if inf:
+			Livelli.disegna_infinito(self, Vector2(sx - 34, 62), 3.0, C1, false)
+		Pietra.text(self, font, Vector2(sx, 58 if fs == 16 else 60), sub, fs, C1, false)
 
 	# collezione
 	var panel := Rect2(24, 112, 616, 520)
@@ -498,6 +510,8 @@ func _draw_info(r: Rect2, k: String) -> void:
 func _sfondo_livello() -> void:
 	var id := Livelli.scelto()
 	for info in Livelli.elenco():
+		if info.id == id:
+			livello_nome = info.nome
 		if info.id == id and info.bioma != null:
 			if info.bioma.cielo:
 				sfondo_cielo = info.bioma.cielo

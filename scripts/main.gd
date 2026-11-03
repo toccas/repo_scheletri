@@ -64,6 +64,9 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export var file_bloccate: PackedInt32Array = []
 ## Caselle con un ostacolo (x = colonna, y = fila, da 0): nessuno ci passa e non ci si schiera.
 @export var ostacoli: Array[Vector2i] = []
+## Avviando direttamente questa scena (F6) gioca in modalità infinita.
+## Nel gioco vero la modalità la sceglie il giocatore nella schermata dei livelli.
+@export var prova_modalita_infinita := false
 
 @export_group("Griglia di schieramento")
 ## Lunghezza della griglia: numero di caselle lungo la corsia.
@@ -281,6 +284,11 @@ var unit_ranks := {}  # rango di ogni unità della collezione
 var role_bonus := {}  # bonus delle ricerche per ruolo: {"dmg_corpo": 0.12, ...}
 var clouds: Array = []  # nubi di peste: {p, t, dps}
 var scrolls_earned := 0
+## Modalità infinita: niente fine all'ondata finale, la corsa entra in classifica.
+var infinita := false
+## Ondate e uccisioni già premiate (quando continui dopo aver vinto, non si pagano due volte).
+var ondate_pagate := 0
+var uccisioni_pagate := 0
 var unit_overrides := {}  # statistiche base dall'Inspector della preparazione
 var unlocked_abilities: Array = []
 var xp_mult := 1.0
@@ -330,6 +338,7 @@ func _ready() -> void:
 	Suoni.install()
 	Lingua.setup()
 	_apply_bioma()
+	infinita = prova_modalita_infinita or (Livelli.modalita_infinita() and Livelli.scelto() == id_livello)
 	if OS.is_debug_build():  # x5 scelto nel pannello dev resta attivo tra una partita e l'altra
 		var dcfg := ConfigFile.new()
 		dcfg.load(SAVE_PATH)
@@ -711,14 +720,17 @@ func _process_waves(delta: float) -> void:
 				spawn_timer = maxf(0.25, 0.8 - wave * 0.006)
 		elif _alive_count(enemies_root) == 0:
 			wave_running = false
-			if wave >= ondate_totali:
+			if wave >= ondate_totali and not infinita:
 				_end_run(true)
 				return
 			next_wave_timer = 3.0
 			_revive_squads()
 			_absorb_remains()
 			Suoni.play("ondata_superata")
-			set_hint(tr("Ondata %d superata! Il necromante rianima i caduti.") % wave, 2.5)
+			if infinita and wave == ondate_totali:
+				set_hint(tr("Ondata %d superata! Da qui ogni ondata vale per la classifica.") % wave, 4.0)
+			else:
+				set_hint(tr("Ondata %d superata! Il necromante rianima i caduti.") % wave, 2.5)
 			if wave % Data.WAVES_PER_SCROLL == 0:
 				scrolls_earned += 1
 				if not autotest:
@@ -1504,7 +1516,8 @@ func _end_run(won: bool) -> void:
 		Suoni.play("assorbimento", 0.6, 4.0)
 		Suoni.play("torre_colpita", 0.7)
 	var cleared := wave if won else maxi(0, wave - 1)
-	var earned := cleared + int(kills / 20.0) + (50 if won else 0)
+	# solo la parte non ancora premiata (se hai continuato dopo la vittoria)
+	var earned := (cleared - ondate_pagate) + int((kills - uccisioni_pagate) / 20.0) + (50 if won else 0)
 	var cfg := ConfigFile.new()
 	cfg.load(SAVE_PATH)  # se non esiste ancora parte da zero
 	var total: int = cfg.get_value("progressi", "punti", 0) + earned
@@ -1521,8 +1534,15 @@ func _end_run(won: bool) -> void:
 				if lista[i].id == id_livello and not Livelli.finito(id_livello):
 					nuovo_livello = lista[i + 1].nome
 			Livelli.segna_finito(id_livello)  # sblocca il livello successivo
-	var coins := cleared * Data.MONETE_PER_ONDATA + (Data.MONETE_VITTORIA if won else 0)
+	var coins := (cleared - ondate_pagate) * Data.MONETE_PER_ONDATA + (Data.MONETE_VITTORIA if won else 0)
 	Portafoglio.add_monete(coins)
+	ondate_pagate = cleared
+	uccisioni_pagate = kills
+	var posto := -1
+	if infinita and not autotest:
+		posto = Livelli.aggiungi_classifica(id_livello, {
+			"ondata": wave, "uccisioni": kills, "livello": necro_level,
+			"data": Time.get_date_string_from_system(), "squadra": unlocked_units.duplicate()})
 
 	if autotest:
 		print("[autotest] fine partita: %s all'ondata %d | livello %d | uccisioni %d | punti %d" % [
@@ -1539,12 +1559,43 @@ func _end_run(won: bool) -> void:
 		body += "\n" + tr("Pergamene ottenute: %d  ·  aprile nel portale del menu") % scrolls_earned
 	if nuovo_livello != "":
 		body += "\n" + tr("Nuovo livello sbloccato: %s!") % tr(nuovo_livello)
-	_show_modal(title, body, [
+	var scelte: Array = []
+	if won:
+		body += "\n\n" + tr("Ora questo livello si gioca anche in modalità infinita.")
+		scelte.append([tr("Continua in modalità infinita"), _continua_infinita])
+	if infinita:
+		title = tr("Fine della corsa infinita")
+		body += "\n\n" + _testo_classifica(posto)
+	scelte.append_array([
 		[tr("Nuova partita"), _restart_game],
 		[tr("Cambia squadra"), func(): get_tree().change_scene_to_file("res://scenes/preparazione.tscn")],
 		[tr("Cambia livello"), func(): get_tree().change_scene_to_file("res://scenes/selezione_livello.tscn")],
 		[tr("Torna al menu"), _go_to_menu],
 	])
+	_show_modal(title, body, scelte)
+
+
+## Dopo la vittoria: la stessa corsa continua senza fine e poi entra in classifica.
+func _continua_infinita() -> void:
+	infinita = true
+	_close_modal()
+	state = State.PLAYING
+	Livelli.scegli_modalita(true, id_livello, scene_file_path)
+	next_wave_timer = 3.0
+	_revive_squads()
+	_absorb_remains()
+	set_hint(tr("Modalità infinita! Resisti più che puoi: la corsa entra in classifica."), 4.0)
+
+
+## Posizione in classifica e le prime 5 corse del livello.
+func _testo_classifica(posto: int) -> String:
+	var s := tr("NUOVO RECORD!") if posto == 0 else (tr("Posizione in classifica: %d") % (posto + 1) if posto > 0 else tr("Non sei entrato tra le 10 corse migliori"))
+	var c := Livelli.classifica(id_livello)
+	for i in mini(5, c.size()):
+		var v: Dictionary = c[i]
+		s += "\n%s%d. %s %d  ·  %s %d" % ["> " if i == posto else "", i + 1, tr("ondata"), int(v.get("ondata", 0)),
+			tr("uccisioni"), int(v.get("uccisioni", 0))]
+	return s
 
 
 # --- Autotest (solo da riga di comando: godot -- --autotest) -------------------
@@ -1996,8 +2047,12 @@ func _draw_wave_banner() -> void:
 	var ts := 16 if ui_font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= w - 8 else 12
 	Pietra.text_c(n, ui_font, w / 2.0, 12, title, ts, C0, false)
 	var num := wave if wave_running else wave + 1
-	Pietra.text_c(n, ui_font, w / 2.0, 32, "%d" % mini(num, ondate_totali), 24, C0, false)
-	Pietra.text_c(n, ui_font, w / 2.0, 56, "/ %d" % ondate_totali, 12, C2, false)
+	if infinita:
+		Pietra.text_c(n, ui_font, w / 2.0, 32, "%d" % num, 24 if num < 1000 else 16, C0, false)
+		Livelli.disegna_infinito(n, Vector2(w / 2.0 - 13.5, 58), 3.0, C2, false)
+	else:
+		Pietra.text_c(n, ui_font, w / 2.0, 32, "%d" % mini(num, ondate_totali), 24, C0, false)
+		Pietra.text_c(n, ui_font, w / 2.0, 56, "/ %d" % ondate_totali, 12, C2, false)
 	for i in counts.size():
 		var e: Array = counts[i]
 		var y := 74.0 + i * 36.0

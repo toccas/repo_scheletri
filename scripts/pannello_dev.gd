@@ -307,7 +307,7 @@ func _tab_partita() -> Control:
 		_msg("Nemici eliminati.")))
 	var wave_sp := SpinBox.new()
 	wave_sp.min_value = 1
-	wave_sp.max_value = Data.FINAL_WAVE
+	wave_sp.max_value = 999
 	wave_sp.value = maxi(1, m.wave + 1)
 	wave_sp.prefix = "ondata"
 	wave_sp.custom_minimum_size.x = 170
@@ -322,6 +322,14 @@ func _tab_partita() -> Control:
 		if m.state == m.State.DEPLOY:
 			m._on_start_pressed()
 		_msg("La prossima ondata sarà la %d (chiudi il pannello per farla partire)." % n)))
+	var inf_cb := CheckBox.new()
+	inf_cb.text = "Modalità infinita"
+	inf_cb.focus_mode = Control.FOCUS_NONE
+	inf_cb.button_pressed = m.infinita
+	inf_cb.toggled.connect(func(on: bool) -> void:
+		m.infinita = on
+		_msg("Modalità infinita %s per questa partita." % ("attiva" if on else "spenta")))
+	r1.add_child(inf_cb)
 	var r2 := HBoxContainer.new()
 	page.add_child(r2)
 	r2.add_child(_btn("+1 livello del necromante", func() -> void:
@@ -401,22 +409,27 @@ func _tab_livelli() -> Control:
 		for c in checks:
 			c.button_pressed = false
 		_msg("Livelli di nuovo bloccati (resta giocabile solo il primo).")))
+	row.add_child(_btn("Azzera classifiche", func() -> void:
+		Livelli.azzera_classifica()
+		for f in page.get_meta("aggiorna", []):
+			(f as Callable).call()
+		_msg("Classifiche della modalità infinita azzerate.")))
 	var grid := GridContainer.new()
 	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("h_separation", 18)
 	grid.add_theme_constant_override("v_separation", 8)
 	page.add_child(grid)
 	for i in lista.size():
 		var info: InfoLivello = lista[i]
 		var l := Label.new()
 		l.text = "%d. %s" % [i + 1, tr(info.nome)]
-		l.custom_minimum_size.x = 320
+		l.custom_minimum_size.x = 270
 		grid.add_child(l)
 		var stato := Label.new()
-		stato.custom_minimum_size.x = 170
+		stato.custom_minimum_size.x = 250
 		stato.add_theme_color_override("font_color", C5)
 		var aggiorna := func() -> void:
-			stato.text = ("sbloccato" if Livelli.sbloccato(lista, i) else "bloccato") + "  ·  record %d" % Livelli.record(info.id)
+			stato.text = ("sbloccato" if Livelli.sbloccato(lista, i) else "bloccato") + "  ·  record %d  ·  inf %d" % [Livelli.record(info.id), Livelli.record_infinito(info.id)]
 		aggiorna.call()
 		var cb := CheckBox.new()
 		cb.text = "completato"
@@ -429,20 +442,23 @@ func _tab_livelli() -> Control:
 		checks.append(cb)
 		grid.add_child(cb)
 		grid.add_child(stato)
-		grid.add_child(_btn("Gioca", func() -> void:
-			if info.scena == "" or not ResourceLoader.exists(info.scena):
-				_msg("Scena del livello non trovata: " + info.scena)
-				return
-			Livelli.scegli(info)
-			chiudi()
-			get_tree().change_scene_to_file(info.scena)))
+		var gioca := HBoxContainer.new()
+		for inf: bool in [false, true]:
+			gioca.add_child(_btn("Gioca infinita" if inf else "Gioca", func() -> void:
+				if info.scena == "" or not ResourceLoader.exists(info.scena):
+					_msg("Scena del livello non trovata: " + info.scena)
+					return
+				Livelli.scegli(info, inf)
+				chiudi()
+				get_tree().change_scene_to_file(info.scena)))
+		grid.add_child(gioca)
 		var fs: Array = page.get_meta("aggiorna", [])
 		fs.append(aggiorna)
 		page.set_meta("aggiorna", fs)
 	var nota := Label.new()
 	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nota.add_theme_color_override("font_color", C4)
-	nota.text = "\"completato\" sblocca il livello dopo. \"Gioca\" parte subito con la squadra salvata (senza preparazione). I livelli si modificano in livelli/elenco_livelli.tres e scenes/livelli/."
+	nota.text = "\"completato\" sblocca il livello dopo e la sua modalità infinita. \"Gioca\" / \"Gioca infinita\" partono subito con la squadra salvata (senza preparazione). I livelli si modificano in livelli/elenco_livelli.tres e scenes/livelli/."
 	page.add_child(nota)
 	return page
 

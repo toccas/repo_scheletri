@@ -311,6 +311,30 @@ Supera tutte le ondate di un campo di battaglia e si aprirà il successivo.,Supe
 Hai resistito alle %d ondate!,Hai resistito alle %d ondate!,You held out for %d waves!,¡Has resistido %d oleadas!
 Nuovo livello sbloccato: %s!,Nuovo livello sbloccato: %s!,New level unlocked: %s!,¡Nuevo nivel desbloqueado: %s!
 Cambia livello,Cambia livello,Change level,Cambiar nivel
+Ondata %d superata! Da qui ogni ondata vale per la classifica.,Ondata %d superata! Da qui ogni ondata vale per la classifica.,Wave %d cleared! From now on every wave counts for the leaderboard.,¡Oleada %d superada! Desde aquí cada oleada cuenta para la clasificación.
+Ora questo livello si gioca anche in modalità infinita.,Ora questo livello si gioca anche in modalità infinita.,This level is now also playable in endless mode.,Ahora este nivel también se juega en modo infinito.
+Continua in modalità infinita,Continua in modalità infinita,Continue in endless mode,Continuar en modo infinito
+Fine della corsa infinita,Fine della corsa infinita,End of the endless run,Fin de la partida infinita
+Modalità infinita! Resisti più che puoi: la corsa entra in classifica.,Modalità infinita! Resisti più che puoi: la corsa entra in classifica.,Endless mode! Hold out as long as you can: the run goes on the leaderboard.,¡Modo infinito! Resiste todo lo que puedas: la partida entra en la clasificación.
+NUOVO RECORD!,NUOVO RECORD!,NEW RECORD!,¡NUEVO RÉCORD!
+Posizione in classifica: %d,Posizione in classifica: %d,Leaderboard position: %d,Puesto en la clasificación: %d
+Non sei entrato tra le 10 corse migliori,Non sei entrato tra le 10 corse migliori,You didn't make the top 10 runs,No has entrado entre las 10 mejores partidas
+ondata,ondata,wave,oleada
+uccisioni,uccisioni,kills,bajas
+frecce per scegliere · Invio per giocare · C classifica,frecce per scegliere · Invio per giocare · C classifica,arrows to choose · Enter to play · C leaderboard,flechas para elegir · Intro para jugar · C clasificación
+Infinita: mai giocata,Infinita: mai giocata,Endless: never played,Infinito: nunca jugado
+CLASSIFICA,CLASSIFICA,LEADERBOARD,CLASIFICACIÓN
+STORIA,STORIA,STORY,HISTORIA
+INFINITA,INFINITA,ENDLESS,INFINITO
+UCCISIONI,UCCISIONI,KILLS,BAJAS
+LIV.,LIV.,LV.,NIV.
+SQUADRA,SQUADRA,SQUAD,ESCUADRA
+DATA,DATA,DATE,FECHA
+Nessuna corsa: gioca in modalità infinita!,Nessuna corsa: gioca in modalità infinita!,No runs yet: play endless mode!,Ninguna partida: ¡juega en modo infinito!
+Finisci il livello per sbloccare la modalità infinita.,Finisci il livello per sbloccare la modalità infinita.,Finish the level to unlock endless mode.,Termina el nivel para desbloquear el modo infinito.
+frecce: cambia livello · Esc: chiudi,frecce: cambia livello · Esc: chiudi,arrows: change level · Esc: close,flechas: cambiar nivel · Esc: cerrar
+%d ONDATE,%d ONDATE,%d WAVES,%d OLEADAS
+Un campo finito si può rigiocare in modalità infinita: ondate senza fine e una classifica delle tue corse migliori.,Un campo finito si può rigiocare in modalità infinita: ondate senza fine e una classifica delle tue corse migliori.,A finished field can be replayed in endless mode: never-ending waves and a leaderboard of your best runs.,Un campo terminado se puede volver a jugar en modo infinito: oleadas sin fin y una clasificación de tus mejores partidas.
 Oh! Un nuovo apprendista. Finalmente!,Oh! Un nuovo apprendista. Finalmente!,Oh! A new apprentice. At last!,¡Oh! Un nuevo aprendiz. ¡Por fin!
 "Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","I am the Necromancer, lord of this tower and of every bone around it.","Soy el Nigromante, señor de esta torre y de cada hueso que la rodea."
 "Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","The kingdom's heroes want to tear it down. They will come in waves: a hundred, each stronger than the last.","Los héroes del reino quieren derribarla. Llegarán en oleadas: cien, cada una más fuerte que la anterior."
