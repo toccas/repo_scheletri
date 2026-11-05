@@ -335,6 +335,231 @@ Finisci il livello per sbloccare la modalità infinita.,Finisci il livello per s
 frecce: cambia livello · Esc: chiudi,frecce: cambia livello · Esc: chiudi,arrows: change level · Esc: close,flechas: cambiar nivel · Esc: cerrar
 %d ONDATE,%d ONDATE,%d WAVES,%d OLEADAS
 Un campo finito si può rigiocare in modalità infinita: ondate senza fine e una classifica delle tue corse migliori.,Un campo finito si può rigiocare in modalità infinita: ondate senza fine e una classifica delle tue corse migliori.,A finished field can be replayed in endless mode: never-ending waves and a leaderboard of your best runs.,Un campo terminado se puede volver a jugar en modo infinito: oleadas sin fin y una clasificación de tus mejores partidas.
+Legionario,Legionario,Legionary,Legionario
+Spadaccino,Spadaccino,Swordsman,Espadachín
+Veterano,Veterano,Veteran,Veterano
+Lama insanguinata,Lama insanguinata,Bloodied blade,Hoja sangrienta
+Arciere di fuoco,Arciere di fuoco,Fire archer,Arquero de fuego
+Tiro multiplo,Tiro multiplo,Multishot,Disparo múltiple
+Arciere del gelo,Arciere del gelo,Frost archer,Arquero de hielo
+Occhio di falco,Occhio di falco,Hawkeye,Ojo de halcón
+Piromante,Piromante,Pyromancer,Piromante
+Mago delle tempeste,Mago delle tempeste,Storm mage,Mago de las tormentas
+Criomante,Criomante,Cryomancer,Criomante
+Arcimago,Arcimago,Archmage,Archimago
+Sfondatore,Sfondatore,Breaker,Rompedor
+Gigante corazzato,Gigante corazzato,Armored giant,Gigante acorazado
+Titano,Titano,Titan,Titán
+Gigante spinato,Gigante spinato,Spiked giant,Gigante espinoso
+Falange,Falange,Phalanx,Falange
+Picchiere,Picchiere,Pikeman,Piquero
+Lancia avvelenata,Lancia avvelenata,Poisoned spear,Lanza envenenada
+Ammazzagiganti,Ammazzagiganti,Giant slayer,Matagigantes
+Scudo di spine,Scudo di spine,Thorn shield,Escudo de espinas
+Bastione,Bastione,Bulwark,Bastión
+Guardiano sacro,Guardiano sacro,Holy guardian,Guardián sagrado
+Scudo stordente,Scudo stordente,Stunning shield,Escudo aturdidor
+Dardi esplosivi,Dardi esplosivi,Explosive bolts,Virotes explosivos
+Ricarica rapida,Ricarica rapida,Quick reload,Recarga rápida
+Dardi perforanti,Dardi perforanti,Piercing bolts,Virotes perforantes
+Dardi gelati,Dardi gelati,Frozen bolts,Virotes helados
+Sete di sangue,Sete di sangue,Bloodthirst,Sed de sangre
+Furia cieca,Furia cieca,Blind fury,Furia ciega
+Doppie asce,Doppie asce,Twin axes,Hachas dobles
+Instancabile,Instancabile,Relentless,Incansable
+Lancia da torneo,Lancia da torneo,Jousting lance,Lanza de torneo
+Cavaliere nero,Cavaliere nero,Black knight,Caballero negro
+Travolgente,Travolgente,Trampler,Arrollador
+Paladino d'ossa,Paladino d'ossa,Bone paladin,Paladín de hueso
+Teschi infuocati,Teschi infuocati,Flaming skulls,Cráneos en llamas
+Catapulta pesante,Catapulta pesante,Heavy catapult,Catapulta pesada
+Bombardamento,Bombardamento,Barrage,Bombardeo
+Teschi stordenti,Teschi stordenti,Stunning skulls,Cráneos aturdidores
+Colpo mortale,Colpo mortale,Deadly shot,Disparo mortal
+Dardo spettrale,Dardo spettrale,Spectral bolt,Virote espectral
+Cacciatore di campioni,Cacciatore di campioni,Champion hunter,Cazador de campeones
+Raffica,Raffica,Volley,Ráfaga
+Signore dei morti,Signore dei morti,Lord of the dead,Señor de los muertos
+Patto oscuro,Patto oscuro,Dark pact,Pacto oscuro
+Maledettore,Maledettore,Hexer,Maldecidor
+Congrega,Congrega,Coven,Aquelarre
+Nube densa,Nube densa,Dense cloud,Nube densa
+Morbo lento,Morbo lento,Sluggish blight,Morbo lento
+Contagio,Contagio,Contagion,Contagio
+Nubi gemelle,Nubi gemelle,Twin clouds,Nubes gemelas
+Urlo agghiacciante,Urlo agghiacciante,Chilling scream,Grito escalofriante
+Lamento lontano,Lamento lontano,Distant wail,Lamento lejano
+Urlo straziante,Urlo straziante,Harrowing scream,Grito desgarrador
+Urlo gelido,Urlo gelido,Icy scream,Grito helado
+Lich del gelo,Lich del gelo,Frost lich,Liche de hielo
+Lich della tempesta,Lich della tempesta,Storm lich,Liche de la tormenta
+Maledizione eterna,Maledizione eterna,Eternal curse,Maldición eterna
+Filatterio,Filatterio,Phylactery,Filacteria
+Totem di guerra,Totem di guerra,War totem,Tótem de guerra
+Totem della vita,Totem della vita,Life totem,Tótem de la vida
+Grande totem,Grande totem,Great totem,Gran tótem
+Totem del gelo,Totem del gelo,Frost totem,Tótem de hielo
+Golem di pietra,Golem di pietra,Stone golem,Gólem de piedra
+Golem tellurico,Golem tellurico,Quake golem,Gólem telúrico
+Golem di lava,Golem di lava,Lava golem,Gólem de lava
+Golem sismico,Golem sismico,Seismic golem,Gólem sísmico
+Mietitore d'anime,Mietitore d'anime,Soul reaper,Segador de almas
+Falce insanguinata,Falce insanguinata,Bloody scythe,Guadaña sangrienta
+Danza della morte,Danza della morte,Dance of death,Danza de la muerte
+Falce maledetta,Falce maledetta,Cursed scythe,Guadaña maldita
+Muro spinato,Muro spinato,Spiked wall,Muro de púas
+Ossa antiche,Ossa antiche,Ancient bones,Huesos antiguos
+Muro vivente,Muro vivente,Living wall,Muro viviente
+Muro gelido,Muro gelido,Frozen wall,Muro helado
+Carcassa incendiaria,Carcassa incendiaria,Incendiary carcass,Cadáver incendiario
+Carcasse gemelle,Carcasse gemelle,Twin carcasses,Cadáveres gemelos
+Grande botto,Grande botto,Big bang,Gran estallido
+Carcassa infetta,Carcassa infetta,Infected carcass,Cadáver infectado
++%d%% vita,+%d%% vita,+%d%% health,+%d%% vida
+-%d%% vita,-%d%% vita,-%d%% health,-%d%% vida
++%d%% danno,+%d%% danno,+%d%% damage,+%d%% daño
+-%d%% danno,-%d%% danno,-%d%% damage,-%d%% daño
+attacca il %d%% più spesso,attacca il %d%% più spesso,attacks %d%% more often,ataca un %d%% más a menudo
+attacca il %d%% più lentamente,attacca il %d%% più lentamente,attacks %d%% slower,ataca un %d%% más lento
++%d%% gittata,+%d%% gittata,+%d%% range,+%d%% alcance
+-%d%% gittata,-%d%% gittata,-%d%% range,-%d%% alcance
++%d%% velocità,+%d%% velocità,+%d%% speed,+%d%% velocidad
+-%d%% velocità,-%d%% velocità,-%d%% speed,-%d%% velocidad
++%d%% area,+%d%% area,+%d%% area,+%d%% área
+-%d%% area,-%d%% area,-%d%% area,-%d%% área
++%d unità in ogni squadra,+%d unità in ogni squadra,+%d units in every squad,+%d unidades en cada escuadra
+colpisce anche altri %d nemici (%d%% del danno),colpisce anche altri %d nemici (%d%% del danno),also hits %d more enemies (%d%% damage),golpea también a otros %d enemigos (%d%% del daño)
+il colpo rimbalza su altri %d nemici (%d%%),il colpo rimbalza su altri %d nemici (%d%%),the hit chains to %d more enemies (%d%%),el golpe rebota en otros %d enemigos (%d%%)
+%d%% di colpo critico (danno x%s),%d%% di colpo critico (danno x%s),%d%% critical hit chance (x%s damage),%d%% de golpe crítico (daño x%s)
+danno continuo: %d%% del colpo al secondo per %s s,danno continuo: %d%% del colpo al secondo per %s s,damage over time: %d%% of the hit per second for %s s,daño continuo: %d%% del golpe por segundo durante %s s
+rallenta del %d%% per %s s,rallenta del %d%% per %s s,slows by %d%% for %s s,ralentiza un %d%% durante %s s
+%d%% di stordire per %s s,%d%% di stordire per %s s,%d%% chance to stun for %s s,%d%% de aturdir durante %s s
+maledice per %s s (+30%% danni subiti),maledice per %s s (+30%% danni subiti),curses for %s s (+30%% damage taken),maldice durante %s s (+30%% daño recibido)
+si cura del %d%% del danno inflitto,si cura del %d%% del danno inflitto,heals for %d%% of damage dealt,se cura un %d%% del daño infligido
+i colpi esplodono attorno al bersaglio (%d%% del danno),i colpi esplodono attorno al bersaglio (%d%% del danno),hits explode around the target (%d%% damage),los golpes explotan alrededor del objetivo (%d%% del daño)
++%d%% danno ai campioni,+%d%% danno ai campioni,+%d%% damage to champions,+%d%% daño a los campeones
+finisce i nemici sotto il %d%% di vita,finisce i nemici sotto il %d%% di vita,finishes off enemies below %d%% health,remata a los enemigos por debajo del %d%% de vida
+respinge indietro i nemici colpiti,respinge indietro i nemici colpiti,knocks back enemies it hits,empuja hacia atrás a los enemigos golpeados
+-%d%% danni subiti,-%d%% danni subiti,-%d%% damage taken,-%d%% daño recibido
+rimanda il %d%% dei danni corpo a corpo,rimanda il %d%% dei danni corpo a corpo,reflects %d%% of melee damage,devuelve el %d%% del daño cuerpo a cuerpo
+rigenera il %s%% della vita al secondo,rigenera il %s%% della vita al secondo,regenerates %s%% health per second,regenera un %s%% de vida por segundo
+%d%% di schivare i colpi,%d%% di schivare i colpi,%d%% chance to dodge,%d%% de esquivar los golpes
+esplode quando muore,esplode quando muore,explodes when it dies,explota al morir
+abilità speciale più forte (+%d%%),abilità speciale più forte (+%d%%),stronger special ability (+%d%%),habilidad especial más fuerte (+%d%%)
+cura gli scheletri vicini del %s%% della vita al secondo,cura gli scheletri vicini del %s%% della vita al secondo,heals nearby skeletons for %s%% health per second,cura a los esqueletos cercanos un %s%% de vida por segundo
+rallenta del %d%% i nemici vicini,rallenta del %d%% i nemici vicini,slows nearby enemies by %d%%,ralentiza un %d%% a los enemigos cercanos
++%d scheletri rianimati alla volta,+%d scheletri rianimati alla volta,+%d raised skeletons at a time,+%d esqueletos reanimados a la vez
+Nuove specializzazioni da scegliere: clicca la stella sulle carte!,Nuove specializzazioni da scegliere: clicca la stella sulle carte!,New specializations to choose: click the star on the cards!,¡Nuevas especializaciones por elegir: haz clic en la estrella de las cartas!
+Rango %d: scegli la specializzazione (stella sulla carta),Rango %d: scegli la specializzazione (stella sulla carta),Rank %d: choose the specialization (star on the card),Rango %d: elige la especialización (estrella de la carta)
+Specializzazioni: %s,Specializzazioni: %s,Specializations: %s,Especializaciones: %s
+Al rango 3 sceglierai una specializzazione,Al rango 3 sceglierai una specializzazione,At rank 3 you will choose a specialization,En el rango 3 elegirás una especialización
+Serve il rango %d: trova altri doppioni nelle pergamene.,Serve il rango %d: trova altri doppioni nelle pergamene.,Rank %d needed: find more duplicates in the scrolls.,Hace falta el rango %d: encuentra más duplicados en los pergaminos.
+SPECIALIZZAZIONI,SPECIALIZZAZIONI,SPECIALIZATIONS,ESPECIALIZACIONES
+rango attuale: %d / %d,rango attuale: %d / %d,current rank: %d / %d,rango actual: %d / %d
+bloccato,bloccato,locked,bloqueado
+Serve il rango %d,Serve il rango %d,Rank %d needed,Hace falta el rango %d
+CHIUDI,CHIUDI,CLOSE,CERRAR
+"Puoi cambiare scelta quando vuoi, fuori dalla battaglia.","Puoi cambiare scelta quando vuoi, fuori dalla battaglia.","You can change your choice any time, outside of battle.","Puedes cambiar tu elección cuando quieras, fuera de la batalla."
+SCELTA,SCELTA,CHOSEN,ELEGIDA
+clicca per scegliere,clicca per scegliere,click to choose,haz clic para elegir
+NUOVA SPECIALIZZAZIONE! Sceglila in preparazione (stella sulla carta).,NUOVA SPECIALIZZAZIONE! Sceglila in preparazione (stella sulla carta).,NEW SPECIALIZATION! Choose it in preparation (star on the card).,¡NUEVA ESPECIALIZACIÓN! Elígela en la preparación (estrella de la carta).
+"Quando uno scheletro arriva al rango 3, e poi al rango 5, può prendere una strada tutta sua.","Quando uno scheletro arriva al rango 3, e poi al rango 5, può prendere una strada tutta sua.","When a skeleton reaches rank 3, and then rank 5, it can take a path all of its own.","Cuando un esqueleto llega al rango 3, y luego al rango 5, puede tomar un camino propio."
+"Scegli uno dei due rami: frecce infuocate o tiro multiplo, scudi spinati o muri di ossa... I rami dei due ranghi si sommano.","Scegli uno dei due rami: frecce infuocate o tiro multiplo, scudi spinati o muri di ossa... I rami dei due ranghi si sommano.","Pick one of two branches: flaming arrows or multishot, thorned shields or walls of bone... The branches of both ranks stack.","Elige una de las dos ramas: flechas en llamas o disparo múltiple, escudos de espinas o muros de hueso... Las ramas de los dos rangos se suman."
+Non temere di sbagliare: qui in preparazione puoi cambiare idea quando vuoi.,Non temere di sbagliare: qui in preparazione puoi cambiare idea quando vuoi.,Don't be afraid to get it wrong: here in preparation you can change your mind whenever you like.,No temas equivocarte: aquí en la preparación puedes cambiar de idea cuando quieras.
+Grido di battaglia,Grido di battaglia,Battle cry,Grito de batalla
+Colpo di scudo,Colpo di scudo,Shield bash,Golpe de escudo
+Chiamata della guardia,Chiamata della guardia,Call the guard,Llamada de la guardia
+Il Capitano della Guardia,Il Capitano della Guardia,The Captain of the Guard,El Capitán de la Guardia
+Primo scudo del Re,Primo scudo del Re,The King's first shield,Primer escudo del Rey
+In nome del Re: ossa a terra!,In nome del Re: ossa a terra!,In the King's name: bones to the ground!,¡En nombre del Rey: huesos al suelo!
+Guardie! A me!,Guardie! A me!,Guards! To me!,¡Guardias! ¡A mí!
+Rogo,Rogo,Pyre,Hoguera
+Pioggia di braci,Pioggia di braci,Rain of embers,Lluvia de brasas
+Fede incrollabile,Fede incrollabile,Unshakable faith,Fe inquebrantable
+L'Inquisitore,L'Inquisitore,The Inquisitor,El Inquisidor
+Fiamma che purifica,Fiamma che purifica,The purifying flame,Llama que purifica
+Le vostre ossa bruceranno sul rogo.,Le vostre ossa bruceranno sul rogo.,Your bones will burn at the stake.,Vuestros huesos arderán en la hoguera.
+Che il fuoco vi divori tutti!,Che il fuoco vi divori tutti!,Let the fire devour you all!,¡Que el fuego os devore a todos!
+Martello del giudizio,Martello del giudizio,Hammer of judgement,Martillo del juicio
+Aura sacra,Aura sacra,Holy aura,Aura sagrada
+Scudo divino,Scudo divino,Divine shield,Escudo divino
+Il Gran Paladino,Il Gran Paladino,The Grand Paladin,El Gran Paladín
+Martello della Luce,Martello della Luce,Hammer of the Light,Martillo de la Luz
+La Luce non conosce pietà per i morti.,La Luce non conosce pietà per i morti.,The Light knows no mercy for the dead.,La Luz no tiene piedad de los muertos.
+Scudo divino!,Scudo divino!,Divine shield!,¡Escudo divino!
+Carica regale,Carica regale,Royal charge,Carga real
+Stendardo della regina,Stendardo della regina,Queen's banner,Estandarte de la reina
+Chiamata alle armi,Chiamata alle armi,Call to arms,Llamada a las armas
+La Regina Crociata,La Regina Crociata,The Crusader Queen,La Reina Cruzada
+Stendardo del Regno,Stendardo del Regno,Banner of the Realm,Estandarte del Reino
+Per il Regno! Nessun morto resterà in piedi!,Per il Regno! Nessun morto resterà in piedi!,For the Realm! No dead shall stand!,¡Por el Reino! ¡Ningún muerto quedará en pie!
+"Cavalieri, caricate!","Cavalieri, caricate!","Knights, charge!","¡Caballeros, a la carga!"
+Pioggia di frecce,Pioggia di frecce,Rain of arrows,Lluvia de flechas
+Freccia perforante,Freccia perforante,Piercing arrow,Flecha perforante
+Allievi,Allievi,Apprentices,Aprendices
+Il Gran Cacciatore,Il Gran Cacciatore,The Grand Huntsman,El Gran Cazador
+Flagello dei non morti,Flagello dei non morti,Scourge of the undead,Azote de los no muertos
+Ho cacciato cose peggiori di voi.,Ho cacciato cose peggiori di voi.,I have hunted worse things than you.,He cazado cosas peores que vosotros.
+Nessuno sfugge alla mia freccia!,Nessuno sfugge alla mia freccia!,None escape my arrow!,¡Nadie escapa de mi flecha!
+Meteora,Meteora,Meteor,Meteoro
+Passo dimensionale,Passo dimensionale,Dimension step,Paso dimensional
+Barriera arcana,Barriera arcana,Arcane barrier,Barrera arcana
+Sciame di stelle,Sciame di stelle,Swarm of stars,Enjambre de estrellas
+L'Arcimago dell'Alba,L'Arcimago dell'Alba,The Archmage of Dawn,El Archimago del Alba
+Signore del sole nascente,Signore del sole nascente,Lord of the rising sun,Señor del sol naciente
+"Il sole sorge, e voi tornerete polvere.","Il sole sorge, e voi tornerete polvere.","The sun rises, and you shall return to dust.","Sale el sol, y volveréis al polvo."
+Mezzogiorno! Bruciate!,Mezzogiorno! Bruciate!,High noon! Burn!,¡Mediodía! ¡Arded!
+Carica del colosso,Carica del colosso,Colossus charge,Carga del coloso
+Terremoto,Terremoto,Earthquake,Terremoto
+Pelle di bronzo,Pelle di bronzo,Bronze skin,Piel de bronce
+Il Colosso di Bronzo,Il Colosso di Bronzo,The Bronze Colossus,El Coloso de Bronce
+Il muro che cammina,Il muro che cammina,The walking wall,El muro que camina
+Il bronzo si arroventa!,Il bronzo si arroventa!,The bronze glows red-hot!,¡El bronce se pone al rojo!
+Risurrezione,Risurrezione,Resurrection,Resurrección
+Preghiera,Preghiera,Prayer,Plegaria
+Luce accecante,Luce accecante,Blinding light,Luz cegadora
+La Santa Martire,La Santa Martire,The Martyr Saint,La Santa Mártir
+Colei che non muore,Colei che non muore,She who does not die,La que no muere
+Ogni eroe caduto si rialzerà con me.,Ogni eroe caduto si rialzerà con me.,Every fallen hero shall rise with me.,Cada héroe caído se alzará conmigo.
+Il mio sangue è la loro forza!,Il mio sangue è la loro forza!,My blood is their strength!,¡Mi sangre es su fuerza!
+Fendente di fiamma,Fendente di fiamma,Flame slash,Tajo de llamas
+Assalto del Gran Maestro,Assalto del Gran Maestro,Grand Master's assault,Asalto del Gran Maestre
+Giuramento dell'Ordine,Giuramento dell'Ordine,Oath of the Order,Juramento de la Orden
+Campioni dell'Ordine,Campioni dell'Ordine,Champions of the Order,Campeones de la Orden
+Il Gran Maestro dell'Ordine,Il Gran Maestro dell'Ordine,The Grand Master of the Order,El Gran Maestre de la Orden
+Spada fiammeggiante,Spada fiammeggiante,Flaming sword,Espada flamígera
+L'Ordine ha giurato: nessun necromante vedrà l'alba.,L'Ordine ha giurato: nessun necromante vedrà l'alba.,The Order has sworn: no necromancer shall see the dawn.,La Orden lo ha jurado: ningún nigromante verá el alba.
+Per il giuramento!,Per il giuramento!,For the oath!,¡Por el juramento!
+Spada di luce,Spada di luce,Sword of light,Espada de luz
+Giudizio divino,Giudizio divino,Divine judgement,Juicio divino
+Gloria,Gloria,Glory,Gloria
+Schiere celesti,Schiere celesti,Heavenly hosts,Huestes celestiales
+Ali protettrici,Ali protettrici,Sheltering wings,Alas protectoras
+L'Arcangelo,L'Arcangelo,The Archangel,El Arcángel
+Ultimo giudizio,Ultimo giudizio,The last judgement,El juicio final
+"Il cielo stesso è sceso a fermarti, necromante.","Il cielo stesso è sceso a fermarti, necromante.","Heaven itself has come down to stop you, necromancer.","El cielo mismo ha bajado a detenerte, nigromante."
+Che sia fatta la volontà del cielo!,Che sia fatta la volontà del cielo!,Heaven's will be done!,¡Hágase la voluntad del cielo!
+Ondata %d · arriva un campione: %s,Ondata %d · arriva un campione: %s,Wave %d · a champion arrives: %s,Oleada %d · llega un campeón: %s
+%s si infuria!,%s si infuria!,%s is enraged!,¡%s se enfurece!
+Campione sconfitto: %s!,Campione sconfitto: %s!,Champion defeated: %s!,¡Campeón derrotado: %s!
+monete,monete,coins,monedas
+FURIA,FURIA,FURY,FURIA
+CAMPIONE DEGLI EROI · ONDATA %d,CAMPIONE DEGLI EROI · ONDATA %d,CHAMPION OF THE HEROES · WAVE %d,CAMPEÓN DE LOS HÉROES · OLEADA %d
+LA TORRE È CADUTA,LA TORRE È CADUTA,THE TOWER HAS FALLEN,LA TORRE HA CAÍDO
+LA NOTTE È TUA,LA NOTTE È TUA,THE NIGHT IS YOURS,LA NOCHE ES TUYA
+%d ONDATE  ·  %d EROI ABBATTUTI  ·  RECORD %d,%d ONDATE  ·  %d EROI ABBATTUTI  ·  RECORD %d,%d WAVES  ·  %d HEROES SLAIN  ·  BEST %d,%d OLEADAS  ·  %d HÉROES ABATIDOS  ·  RÉCORD %d
+%d ONDATE  ·  %d EROI ABBATTUTI,%d ONDATE  ·  %d EROI ABBATTUTI,%d WAVES  ·  %d HEROES SLAIN,%d OLEADAS  ·  %d HÉROES ABATIDOS
+POSTO %d IN CLASSIFICA,POSTO %d IN CLASSIFICA,#%d ON THE LEADERBOARD,PUESTO %d EN LA CLASIFICACIÓN
+FUORI CLASSIFICA,FUORI CLASSIFICA,NOT ON THE LEADERBOARD,FUERA DE LA CLASIFICACIÓN
+%d ONDATE · %d CAMPIONI · %d EROI,%d ONDATE · %d CAMPIONI · %d EROI,%d WAVES · %d CHAMPIONS · %d HEROES,%d OLEADAS · %d CAMPEONES · %d HÉROES
+PUNTI,PUNTI,POINTS,PUNTOS
+NUOVO: %s,NUOVO: %s,NEW: %s,NUEVO: %s
+Continua: la partita prosegue senza fine ed entra in classifica,Continua: la partita prosegue senza fine ed entra in classifica,Continue: the run goes on endlessly and enters the leaderboard,Continuar: la partida sigue sin fin y entra en la clasificación
+CONTINUA,CONTINUA,CONTINUE,CONTINUAR
+PROSSIMO CAMPO,PROSSIMO CAMPO,NEXT FIELD,SIGUIENTE CAMPO
+CAMPO,CAMPO,FIELD,CAMPO
+RIGIOCA,RIGIOCA,PLAY AGAIN,REPETIR
+RIPROVA,RIPROVA,RETRY,REINTENTAR
 Oh! Un nuovo apprendista. Finalmente!,Oh! Un nuovo apprendista. Finalmente!,Oh! A new apprentice. At last!,¡Oh! Un nuevo aprendiz. ¡Por fin!
 "Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","I am the Necromancer, lord of this tower and of every bone around it.","Soy el Nigromante, señor de esta torre y de cada hueso que la rodea."
 "Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","The kingdom's heroes want to tear it down. They will come in waves: a hundred, each stronger than the last.","Los héroes del reino quieren derribarla. Llegarán en oleadas: cien, cada una más fuerte que la anterior."

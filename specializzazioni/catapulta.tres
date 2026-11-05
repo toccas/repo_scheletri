@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="RamiUnita" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rami_unita.gd" id="1_rami"]
+[ext_resource type="Script" path="res://scripts/specializzazione.gd" id="2_spec"]
+
+[sub_resource type="Resource" id="Resource_3a"]
+script = ExtResource("2_spec")
+nome = "Teschi infuocati"
+danno_nel_tempo = 0.35
+durata_danno_nel_tempo = 3.0
+colore = Color(0.9098, 0.4627, 0.1725, 1)
+
+[sub_resource type="Resource" id="Resource_3b"]
+script = ExtResource("2_spec")
+nome = "Catapulta pesante"
+area = 1.4
+danno = 1.2
+cadenza = 0.8
+
+[sub_resource type="Resource" id="Resource_5a"]
+script = ExtResource("2_spec")
+nome = "Bombardamento"
+colpi_extra = 2
+danno_colpi_extra = 0.5
+
+[sub_resource type="Resource" id="Resource_5b"]
+script = ExtResource("2_spec")
+nome = "Teschi stordenti"
+stordisci = 0.5
+durata_stordisci = 1.0
+colore = Color(0.6588, 0.8627, 1, 1)
+
+[resource]
+script = ExtResource("1_rami")
+unita = "catapulta"
+rango_3_a = SubResource("Resource_3a")
+rango_3_b = SubResource("Resource_3b")
+rango_5_a = SubResource("Resource_5a")
+rango_5_b = SubResource("Resource_5b")

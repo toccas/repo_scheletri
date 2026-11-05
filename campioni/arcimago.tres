@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://cg86gsr40srjd"]
+
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://byw4yaccwolw0" path="res://assets/campioni/arcimago.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Meteora"
+tipo = 5
+ricarica = 9.0
+danno = 3.0
+raggio = 26.0
+ritardo = 1.5
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Passo dimensionale"
+tipo = 13
+ricarica = 10.0
+primo_uso = 6.0
+raggio = 50.0
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Barriera arcana"
+tipo = 8
+ricarica = 15.0
+primo_uso = 8.0
+durata = 5.0
+potenza = 0.6
+
+[sub_resource type="Resource" id="Resource_m3"]
+script = ExtResource("2_mossa")
+nome = "Sciame di stelle"
+tipo = 6
+primo_uso = 0.0
+solo_fase2 = true
+danno = 0.9
+raggio = 34.0
+numero = 8
+ritardo = 0.9
+
+[resource]
+script = ExtResource("1_camp")
+id = "arcimago"
+nome = "L'Arcimago dell'Alba"
+titolo = "Signore del sole nascente"
+frase = "Il sole sorge, e voi tornerete polvere."
+frase_fase2 = "Mezzogiorno! Bruciate!"
+ondata = 60
+sprite = ExtResource("3_spr")
+colore = Color(0.4706, 0.8863, 0.9176, 1)
+tipo_base = "mago"
+corpo_a_corpo = false
+vita = 1000.0
+danno = 24.0
+cadenza = 2.0
+gittata = 100.0
+velocita = 10.0
+raggio = 8.0
+area = 10.0
+altezza_colpo = 18.0
+esperienza = 90
+monete = 40
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2"), SubResource("Resource_m3")])

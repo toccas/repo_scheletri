@@ -305,7 +305,11 @@ func _draw_reveal() -> void:
 	Pietra.text_c(self, font, vp.x / 2.0, 410, Data.nome(k).to_upper(), 32, C6)
 	var res := tr("NUOVA UNITÀ!") if result["new"] else tr("RANGO %d  (+%d%% vita e danno)") % [result["rank"], int(round((Collezione.rank_mult(result["rank"]) - 1.0) * 100.0))]
 	Pietra.text_c(self, font, vp.x / 2.0, 452, res, 24, C5)
-	Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600, Data.descrizione(k), 16, C5)
+	if not result["new"] and int(result["rank"]) in [3, 5]:  # sblocca una specializzazione
+		Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600,
+			tr("NUOVA SPECIALIZZAZIONE! Sceglila in preparazione (stella sulla carta)."), 16, C6)
+	else:
+		Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600, Data.descrizione(k), 16, C5)
 	if fase_t > 0.5:
 		Pietra.text_c(self, font, vp.x / 2.0, 532, tr("clicca o premi Spazio per continuare"), 16, C4, false)
 
@@ -407,7 +411,8 @@ func _draw_card_front(r: Rect2, res: Dictionary, i: int) -> void:
 	if res["new"]:
 		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("NUOVA!"), 16, C6)
 	else:
-		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("RANGO %d") % res["rank"], 16, C5)
+		var ramo := int(res["rank"]) in [3, 5]  # sblocca una specializzazione
+		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("RANGO %d") % res["rank"] + (" !" if ramo else ""), 16, C6 if ramo else C5)
 
 
 ## Unità nuove appena evocate ma non ancora mostrate (restano sagome nella collezione).

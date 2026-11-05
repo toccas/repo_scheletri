@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://dwrrtygcufvt0"]
+
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://c0rjc7drik85o" path="res://assets/campioni/capitano.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Grido di battaglia"
+tipo = 0
+ricarica = 10.0
+primo_uso = 3.0
+raggio = 70.0
+durata = 5.0
+potenza = 0.4
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Colpo di scudo"
+ricarica = 6.0
+primo_uso = 2.0
+danno = 1.2
+raggio = 18.0
+durata = 1.0
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Chiamata della guardia"
+tipo = 1
+ricarica = 14.0
+primo_uso = 6.0
+
+[resource]
+script = ExtResource("1_camp")
+id = "capitano"
+nome = "Il Capitano della Guardia"
+titolo = "Primo scudo del Re"
+frase = "In nome del Re: ossa a terra!"
+frase_fase2 = "Guardie! A me!"
+sprite = ExtResource("3_spr")
+colore = Color(0.8392, 0.251, 0.2039, 1)
+cadenza = 1.2
+velocita = 14.0
+altezza_colpo = 18.0
+monete = 15
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

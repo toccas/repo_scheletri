@@ -152,6 +152,9 @@ func _tab_unita() -> Control:
 			spins[k][0].button_pressed = true
 			spins[k][1].value = Data.MAX_RANK
 		_msg("Tutte le unità al rango %d." % Data.MAX_RANK)))
+	row.add_child(_btn("Azzera specializzazioni", func() -> void:
+		preload("res://scripts/specializzazioni.gd").azzera()
+		_msg("Specializzazioni azzerate: si scelgono di nuovo in preparazione.")))
 	row.add_child(_btn("Solo quelle di base", func() -> void:
 		for k in spins:
 			if not k in Data.STARTING_UNITS:
@@ -330,6 +333,33 @@ func _tab_partita() -> Control:
 		m.infinita = on
 		_msg("Modalità infinita %s per questa partita." % ("attiva" if on else "spenta")))
 	r1.add_child(inf_cb)
+	# campioni degli eroi: evocane uno subito o salta alla sua ondata
+	if m.campioni != null and not m.campioni.campioni.is_empty():
+		var rc := HBoxContainer.new()
+		page.add_child(rc)
+		var scelta := OptionButton.new()
+		scelta.focus_mode = Control.FOCUS_NONE
+		for c in m.campioni.campioni:
+			if c != null:
+				scelta.add_item("%d · %s" % [c.ondata, tr(c.nome)])
+				scelta.set_item_metadata(scelta.item_count - 1, c)
+		rc.add_child(scelta)
+		rc.add_child(_btn("Evoca ora", func() -> void:
+			if m.state == m.State.DEPLOY:
+				m._on_start_pressed()
+			var c: Campione = scelta.get_item_metadata(scelta.selected)
+			m.evoca_campione(c)
+			_msg("%s è in campo (con la forza dell'ondata %d)." % [tr(c.nome), maxi(1, m.wave)])))
+		rc.add_child(_btn("Vai alla sua ondata", func() -> void:
+			var c: Campione = scelta.get_item_metadata(scelta.selected)
+			m.spawn_queue.clear()
+			_uccidi_tutti(m)
+			m.wave = c.ondata - 1
+			m.wave_running = false
+			m.next_wave_timer = 0.2
+			if m.state == m.State.DEPLOY:
+				m._on_start_pressed()
+			_msg("Prossima ondata: %d, con %s (chiudi il pannello)." % [c.ondata, tr(c.nome)])))
 	var r2 := HBoxContainer.new()
 	page.add_child(r2)
 	r2.add_child(_btn("+1 livello del necromante", func() -> void:

@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="RamiUnita" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rami_unita.gd" id="1_rami"]
+[ext_resource type="Script" path="res://scripts/specializzazione.gd" id="2_spec"]
+
+[sub_resource type="Resource" id="Resource_3a"]
+script = ExtResource("2_spec")
+nome = "Sfondatore"
+respingi = 10.0
+stordisci = 0.25
+durata_stordisci = 0.8
+
+[sub_resource type="Resource" id="Resource_3b"]
+script = ExtResource("2_spec")
+nome = "Gigante corazzato"
+riduzione_danni = 0.25
+velocita = 0.8
+colore = Color(0.7059, 0.7373, 0.7843, 1)
+
+[sub_resource type="Resource" id="Resource_5a"]
+script = ExtResource("2_spec")
+nome = "Titano"
+vita = 1.4
+esplosione = 10.0
+danno_esplosione = 0.5
+
+[sub_resource type="Resource" id="Resource_5b"]
+script = ExtResource("2_spec")
+nome = "Gigante spinato"
+spine = 0.4
+colore = Color(0.7216, 0.1569, 0.2275, 1)
+
+[resource]
+script = ExtResource("1_rami")
+unita = "gigante"
+rango_3_a = SubResource("Resource_3a")
+rango_3_b = SubResource("Resource_3b")
+rango_5_a = SubResource("Resource_5a")
+rango_5_b = SubResource("Resource_5b")

@@ -24,8 +24,11 @@ const Research := preload("res://scripts/research_data.gd")
 const UnitScript := preload("res://scripts/unit.gd")
 const ProjectileScript := preload("res://scripts/projectile.gd")
 const FxScript := preload("res://scripts/fx.gd")
+const CampioneScript := preload("res://scripts/campione_unita.gd")
+const FinePartitaScript := preload("res://scripts/fine_partita.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Collezione := preload("res://scripts/collezione.gd")
+const Specializzazioni := preload("res://scripts/specializzazioni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Livelli := preload("res://scripts/livelli.gd")
@@ -67,6 +70,12 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## Avviando direttamente questa scena (F6) gioca in modalità infinita.
 ## Nel gioco vero la modalità la sceglie il giocatore nella schermata dei livelli.
 @export var prova_modalita_infinita := false
+@export_group("Campioni degli eroi")
+## Un campione unico ogni 10 ondate (Capitano della Guardia, Inquisitore, ... Arcangelo).
+## Doppio clic per cambiare ondate e campioni; ogni campione è un file in campioni/.
+@export var campioni: ElencoCampioni = preload("res://campioni/elenco_campioni.tres")
+## Spento = come prima: nelle ondate dei campioni arriva un umano gigante potenziato.
+@export var campioni_attivi := true
 
 @export_group("Griglia di schieramento")
 ## Lunghezza della griglia: numero di caselle lungo la corsia.
@@ -82,6 +91,9 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export_group("Interfaccia")
 ## Il tuo tema (.tres). Se lo lasci vuoto si usa il tema in scala di grigi.
 @export var tema_ui: Theme
+## Fine partita a schermo intero (bande nere, cronaca delle ondate, pulsanti grandi
+## per il telefono). Spento = il vecchio pannello con l'elenco dei pulsanti.
+@export var schermata_finale_cinematica := true
 
 @export_group("Torre del necromante", "torre_")
 ## Attiva: la torre si mette da sola sul bordo sinistro della griglia (anche se
@@ -281,8 +293,28 @@ var autotest := false
 var max_deploy := MAX_DEPLOY
 var unlocked_units: Array = ["soldato"]  # la squadra della run (scelta in preparazione)
 var unit_ranks := {}  # rango di ogni unità della collezione
+## Effetti delle specializzazioni scelte (rango 3 e 5) per ogni unità, calcolati a inizio partita.
+var spec_cache := {}
+## Prove: "--rami=ab" sceglie il ramo a al rango 3 e b al rango 5 per tutte le unità.
+var spec_forza := {}
 var role_bonus := {}  # bonus delle ricerche per ruolo: {"dmg_corpo": 0.12, ...}
 var clouds: Array = []  # nubi di peste: {p, t, dps}
+## Campioni: quello in campo (per la barra in alto), presentazione e ultima mossa usata.
+var campione_attivo = null
+var intro_campione: Campione
+var intro_t := 0.0
+var mossa_testo := ""
+var mossa_t := 0.0
+var lampo_t := 0.0
+var boss_hud: Control
+var segnali_root: Node2D
+## Fuoco a terra delle mosse dei campioni (ROGO): {p, r, t, dps, col, fx}
+var zone_nemiche: Array = []
+## Eroi caduti di recente (per la RESURREZIONE): {kind, g}
+var eroi_caduti: Array = []
+## Campioni sconfitti in questa partita (id), per la cronaca di fine partita.
+var campioni_battuti: Array[String] = []
+var fine_node: Control
 var scrolls_earned := 0
 ## Modalità infinita: niente fine all'ondata finale, la corsa entra in classifica.
 var infinita := false
@@ -373,7 +405,7 @@ func _ready() -> void:
 	add_child(front_node)
 	_setup_scenery()
 	_build_obstacles()
-	for n in ["remains", "enemies", "allies", "projectiles", "fx"]:
+	for n in ["remains", "segnali", "enemies", "allies", "projectiles", "fx"]:
 		var node := Node2D.new()
 		node.name = n
 		add_child(node)
@@ -382,9 +414,10 @@ func _ready() -> void:
 	projectiles_root = $projectiles
 	fx_root = $fx
 	remains_root = $remains
+	segnali_root = $segnali
 	for k in Data.ABILITY_ORDER:
 		ability_cd[k] = 0.0
-	next_queue = Data.build_wave(1)
+	next_queue = _coda_ondata(1)
 	next_queue_wave = 1
 	_build_ui()
 	Dialoghi.avvia(self, dialogo_tutorial)
@@ -494,6 +527,11 @@ func _apply_research() -> void:
 		for a in args:
 			if a.begins_with("--squadra="):
 				unlocked_units = Array(a.substr(10).split(","))
+			if a.begins_with("--rango="):  # prove: tutte le unità a quel rango
+				for k in Data.ALLY_ORDER:
+					unit_ranks[k] = int(a.substr(8))
+			if a.begins_with("--rami=") and a.length() >= 9:  # prove: rami scelti (a/b)
+				spec_forza = {3: 0 if a[7] == "a" else 1, 5: 0 if a[8] == "a" else 1}
 	for k in b:
 		if k.begins_with("dmg_") or k.begins_with("hp_"):
 			role_bonus[k] = b[k]
@@ -526,9 +564,17 @@ func _load_unit_overrides() -> void:
 
 ## Quanti scheletri evoca una squadra di questo tipo.
 func unit_count(kind: String) -> int:
+	var extra := int(spec_effects(kind)["unita_extra"])  # specializzazioni
 	if unit_overrides.has(kind):
-		return maxi(1, int(unit_overrides[kind]["count"]))
-	return int(Data.UNITS[kind]["count"])
+		return maxi(1, int(unit_overrides[kind]["count"])) + extra
+	return int(Data.UNITS[kind]["count"]) + extra
+
+
+## Effetti delle specializzazioni scelte per un'unità (vedi scripts/specializzazioni.gd).
+func spec_effects(kind: String) -> Dictionary:
+	if not spec_cache.has(kind):
+		spec_cache[kind] = Specializzazioni.effetti(kind, int(unit_ranks.get(kind, 1)), spec_forza)
+	return spec_cache[kind]
 
 
 ## Profondità della base della torre quando è attaccata alla griglia
@@ -691,6 +737,11 @@ func _process(delta: float) -> void:
 		tower_flash -= delta
 	necro_flash = maxf(0.0, necro_flash - delta)
 	orb_flash = maxf(0.0, orb_flash - delta * 1.5)
+	intro_t = maxf(0.0, intro_t - delta)
+	mossa_t = maxf(0.0, mossa_t - delta)
+	lampo_t = maxf(0.0, lampo_t - delta)
+	if boss_hud != null:
+		boss_hud.queue_redraw()
 	if hint_timer > 0.0:
 		hint_timer -= delta
 		if hint_timer <= 0.0:
@@ -701,6 +752,7 @@ func _process(delta: float) -> void:
 		_process_waves(delta)
 		_process_necro(delta)
 		_update_clouds(delta)
+		_update_zone_nemiche(delta)
 		if autotest:
 			_autotest_cast()
 	_update_hud()
@@ -744,14 +796,16 @@ func _process_waves(delta: float) -> void:
 
 func _start_wave(n: int) -> void:
 	wave = n
-	spawn_queue = next_queue.duplicate() if next_queue_wave == n else Data.build_wave(n)
-	next_queue = Data.build_wave(n + 1)
+	spawn_queue = next_queue.duplicate() if next_queue_wave == n else _coda_ondata(n)
+	next_queue = _coda_ondata(n + 1)
 	next_queue_wave = n + 1
 	spawn_timer = 0.0
 	wave_running = true
 	Suoni.play("ondata", 0.85 if n % Data.BOSS_EVERY == 0 else 1.0)
-	if n % Data.BOSS_EVERY == 0:
+	if n % Data.BOSS_EVERY == 0 and not _campione_in_coda(spawn_queue):
 		set_hint(tr("Ondata %d: arriva un campione degli eroi!") % n, 3.0)
+	elif n % Data.BOSS_EVERY == 0:
+		set_hint(tr("Ondata %d · arriva un campione: %s") % [n, tr(_campione_in_coda(spawn_queue).nome)], 3.0)
 	else:
 		set_hint(tr("Ondata %d") % n, 1.5)
 	if autotest and n % 5 == 0:
@@ -760,9 +814,17 @@ func _start_wave(n: int) -> void:
 
 
 func _spawn_enemy(entry: Dictionary) -> void:
+	var hp_mult: float = Data.enemy_hp_mult(wave) * mods["enemy_hp"]
+	if entry.get("campione") is Campione:
+		var c := CampioneScript.new()
+		c.game = self
+		c.setup_campione(entry["campione"], hp_mult, Data.enemy_dmg_mult(wave))
+		c.ground = _spawn_point()
+		enemies_root.add_child(c)
+		_annuncia_campione(c)
+		return
 	var u := UnitScript.new()
 	u.game = self
-	var hp_mult: float = Data.enemy_hp_mult(wave) * mods["enemy_hp"]
 	u.setup_enemy(entry["kind"], hp_mult, Data.enemy_dmg_mult(wave), entry["boss"])
 	# punto qualsiasi della striscia di spawn
 	u.ground = _spawn_point()
@@ -877,6 +939,19 @@ func unit_icon(kind: String, size: int = 48) -> Texture2D:
 	return _icon_cache[key]
 
 
+## Fulmine tra due unità (specializzazioni con il colpo a catena).
+func spawn_zap(from_g: Vector2, from_h: float, to_g: Vector2, to_h: float, color: Color) -> void:
+	var f := FxScript.new()
+	f.kind = "zap"
+	f.color = color
+	f.life = 0.22
+	f.scale = Vector2.ONE * px
+	f.position = to_screen(from_g) - Vector2(0, roundf(from_h) * px)
+	f.to = (to_screen(to_g) - Vector2(0, roundf(to_h) * px) - f.position) / px
+	f.z_index = 3000
+	fx_root.add_child(f)
+
+
 ## Effetto disegnato sul terreno (onde, fulmini).
 func spawn_ground_fx(g: Vector2, fx_radius: float, color: Color, life: float, kind: String = "ring") -> void:
 	var f := FxScript.new()
@@ -904,6 +979,10 @@ func damage_tower(amount: float) -> void:
 
 func on_enemy_killed(u) -> void:
 	kills += 1
+	if not u.is_boss and u.visible:  # per la RESURREZIONE dei campioni
+		eroi_caduti.append({"kind": u.kind, "g": u.ground})
+		if eroi_caduti.size() > 30:
+			eroi_caduti.pop_front()
 	if u.is_boss:
 		shake(0.4, 2.0)
 	_try_raise(u)
@@ -1018,6 +1097,15 @@ func ally_stats(kind: String) -> Dictionary:
 	st["hp"] *= rm * (1.0 + role_bonus.get("hp_" + d["role"], 0.0))
 	st["dmg"] *= rm
 	st["rank"] = rank
+	# specializzazioni del rango 3 e 5
+	var e := spec_effects(kind)
+	st["hp"] *= e["vita"]
+	st["dmg"] *= e["danno"]
+	st["cooldown"] /= maxf(0.05, e["cadenza"])
+	st["range"] *= e["gittata"]
+	st["speed"] *= e["velocita"]
+	st["splash"] *= e["area"]
+	st["spec"] = e
 	return st
 
 
@@ -1031,8 +1119,8 @@ func aura_bonus(u) -> float:
 	if u.special == "aura":
 		return 1.0
 	for c in allies_root.get_children():
-		if c.special == "aura" and not c.dead and c.visible and c.ground.distance_to(u.ground) <= AURA_RADIUS:
-			return 1.25
+		if c.special == "aura" and not c.dead and c.visible and c.ground.distance_to(u.ground) <= AURA_RADIUS * c.sp("area", 1.0):
+			return 1.0 + 0.25 * c.sp("potenza_speciale", 1.0)
 	return 1.0
 
 
@@ -1053,18 +1141,20 @@ func nearest_taunter(from: Vector2, dist: float):
 
 
 ## Nube di peste: avvelena (danno nel tempo) e rallenta i nemici dentro.
-func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1) -> void:
-	clouds.append({"p": g, "t": 3.0, "dps": dps})
+func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1, raggio: float = 16.0, lento: float = 0.3, maledizione: float = 0.0) -> void:
+	clouds.append({"p": g, "t": 3.0, "dps": dps, "r": raggio, "slow": lento, "curse": maledizione})
 
 
 func _update_clouds(delta: float) -> void:
 	for cl in clouds:
 		cl["t"] -= delta
 		for c in enemies_root.get_children():
-			if not c.dead and c.ground.distance_to(cl["p"]) <= 16.0 + c.radius:
+			if not c.dead and c.ground.distance_to(cl["p"]) <= float(cl.get("r", 16.0)) + c.radius:
 				c.poison(cl["dps"] * delta)
-				c.slow_t = 0.4
-				c.slow_k = 0.3
+				c.slow_k = maxf(c.slow_k if c.slow_t > 0.0 else 0.0, float(cl.get("slow", 0.3)))
+				c.slow_t = maxf(c.slow_t, 0.4)
+				if float(cl.get("curse", 0.0)) > 0.0:
+					c.curse_t = maxf(c.curse_t, float(cl["curse"]))
 	clouds = clouds.filter(func(cl): return cl["t"] > 0.0)
 
 
@@ -1077,14 +1167,14 @@ func _try_raise(dead_enemy) -> void:
 		for m in allies_root.get_children():
 			if m.summoner == n and not m.dead:
 				active += 1
-		if active >= RAISE_MAX:
+		if active >= RAISE_MAX + int(n.sp("rianimati_extra")):
 			continue
 		var u := UnitScript.new()
 		u.game = self
 		u.setup_ally("soldato", mods["ally_hp"] * 0.6, ally_stats("soldato"))
 		u.ground = dead_enemy.ground
 		u.home = dead_enemy.ground
-		u.life_left = RAISE_LIFE
+		u.life_left = RAISE_LIFE * n.sp("potenza_speciale", 1.0)
 		u.summoner = n
 		allies_root.add_child(u)
 		spawn_ground_fx(u.ground, 6.0, n.accent(), 0.4)
@@ -1197,6 +1287,9 @@ func _draw_picker_tip() -> void:
 		if st["rank"] > 1:
 			l2 += tr(" · rango %d") % st["rank"]
 		lines.append(l2)
+		var rami := Specializzazioni.nomi_attivi(picker_hover, st["rank"])
+		if rami != "":
+			lines.append(rami)
 		var l3: String = Data.ruolo(d["role"])
 		if is_ranged(picker_hover):
 			l3 += tr(" · gittata %d") % int(st["range"])
@@ -1526,6 +1619,7 @@ func _end_run(won: bool) -> void:
 	cfg.set_value("progressi", "record_ondata", best)
 	cfg.save(SAVE_PATH)
 	var nuovo_livello := ""
+	var record_prima := Livelli.record(id_livello)
 	if not autotest:
 		Livelli.salva_record(id_livello, wave)
 		if won:
@@ -1551,6 +1645,9 @@ func _end_run(won: bool) -> void:
 		get_tree().quit()
 		return
 
+	if schermata_finale_cinematica:
+		_mostra_fine(won, earned, total, coins, record_prima, nuovo_livello, posto)
+		return
 	var title := tr("Hai resistito alle %d ondate!") % ondate_totali if won else tr("La torre è caduta")
 	var body := tr("Ondata raggiunta: %d   ·   Nemici uccisi: %d\nPunti progresso guadagnati: %d   (totale: %d)\nRecord: ondata %d") % [
 		wave, kills, earned, total, best]
@@ -1579,6 +1676,9 @@ func _end_run(won: bool) -> void:
 func _continua_infinita() -> void:
 	infinita = true
 	_close_modal()
+	if fine_node != null:
+		fine_node.queue_free()
+		fine_node = null
 	state = State.PLAYING
 	Livelli.scegli_modalita(true, id_livello, scene_file_path)
 	next_wave_timer = 3.0
@@ -1781,6 +1881,13 @@ func _build_ui() -> void:
 	modal_box.add_theme_constant_override("separation", 10)
 	modal.add_child(modal_box)
 	modal.hide()
+
+	# campione degli eroi: presentazione e barra della vita in alto
+	boss_hud = Control.new()
+	boss_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	boss_hud.draw.connect(_draw_boss_hud)
+	ui_root.add_child(boss_hud)
 
 	# stendardo degli eroi accanto al portale: ondata e nemici in arrivo
 	wave_banner = Control.new()
@@ -2020,19 +2127,28 @@ func _draw_spell_slot(b: Button, k: String) -> void:
 ## Nemici dell'ondata in corso (rimasti) o della prossima: [[tipo, quanti, capo]].
 func _wave_counts() -> Array:
 	var counts := {}
+	var champs := {}  # campioni: "@id" -> Campione
 	var src: Array = spawn_queue if wave_running else next_queue
 	for e in src:
 		var key: String = e["kind"] + ("!" if e["boss"] else "")
+		if e.get("campione") is Campione:
+			key = "@" + e["campione"].id
+			champs[key] = e["campione"]
 		counts[key] = counts.get(key, 0) + 1
 	if wave_running:
 		for u in enemies_root.get_children():
 			if not u.dead:
 				var key: String = u.kind + ("!" if u.is_boss else "")
+				if "dati" in u and u.dati != null:
+					key = "@" + u.dati.id
+					champs[key] = u.dati
 				counts[key] = counts.get(key, 0) + 1
 	var out := []
 	for k in ["soldato", "arciere", "mago", "gigante", "soldato!", "arciere!", "mago!", "gigante!"]:
 		if counts.has(k):
-			out.append([k.trim_suffix("!"), counts[k], k.ends_with("!")])
+			out.append([k.trim_suffix("!"), counts[k], k.ends_with("!"), null])
+	for k in champs:
+		out.append([champs[k].tipo_base, counts[k], true, champs[k]])
 	return out
 
 
@@ -2057,7 +2173,14 @@ func _draw_wave_banner() -> void:
 		var e: Array = counts[i]
 		var y := 74.0 + i * 36.0
 		var col: int = UnitScript.ATLAS_COL[e[0]]
-		n.draw_texture_rect_region(ATLAS, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 16, 16, 16))
+		var camp: Campione = e[3]
+		if camp != null and camp.sprite != null:  # il campione con la sua sprite (girata verso sinistra)
+			var fs := camp.sprite.get_height()
+			n.draw_set_transform(Vector2(40, y - 4), 0.0, Vector2(-1, 1))  # girato verso sinistra
+			n.draw_texture_rect_region(camp.sprite, Rect2(Vector2.ZERO, Vector2(36, 36)), Rect2(0, 0, fs, fs))
+			n.draw_set_transform(Vector2.ZERO)
+		else:
+			n.draw_texture_rect_region(ATLAS, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 16, 16, 16))
 		if e[2]:  # corona del campione
 			n.draw_rect(Rect2(14, y - 4, 16, 4), C0)
 			n.draw_rect(Rect2(14, y - 8, 4, 4), C0)
@@ -2731,3 +2854,236 @@ func _draw_weather_front(n: CanvasItem, t: float) -> void:
 			for f in weather:
 				var a := 0.25 + 0.25 * sin(t * 2.0 + f["ph"])
 				n.draw_rect(Rect2((f["p"] as Vector2).round(), Vector2.ONE), Color(1.0, 0.95, 0.8, a))
+
+
+# --- Campioni degli eroi ------------------------------------------------------------
+
+## Ondata da Data.build_wave, con il campione dell'ondata al posto del primo boss.
+func _coda_ondata(n: int) -> Array:
+	var q := Data.build_wave(n)
+	if not campioni_attivi or campioni == null or n % Data.BOSS_EVERY != 0:
+		return q
+	var c := campioni.per_ondata(n)
+	if c == null:
+		return q
+	for i in q.size():
+		if q[i]["boss"]:
+			q[i] = {"kind": c.tipo_base, "boss": true, "campione": c}
+			break
+	return q
+
+
+func _campione_in_coda(q: Array) -> Campione:
+	for e in q:
+		if e.get("campione") is Campione:
+			return e["campione"]
+	return null
+
+
+## Evoca subito un campione (dev tool): con la forza dell'ondata attuale.
+func evoca_campione(c: Campione) -> void:
+	_spawn_enemy({"kind": c.tipo_base, "boss": true, "campione": c})
+
+
+func _annuncia_campione(u) -> void:
+	campione_attivo = u
+	intro_campione = u.dati
+	intro_t = 3.5
+	Suoni.play("ondata", 0.6)
+	shake(0.5, 1.5)
+	spawn_ground_fx(u.ground, 24.0, u.accent(), 0.8)
+
+
+func campione_mossa(u, m: MossaCampione) -> void:
+	mossa_testo = tr(m.nome).to_upper()
+	mossa_t = 1.8
+	var suono := {MossaCampione.Tipo.GRIDO: "ondata", MossaCampione.Tipo.EVOCA: "ondata", MossaCampione.Tipo.METEORA: "palla_di_fuoco",
+		MossaCampione.Tipo.ROGO: "palla_di_fuoco", MossaCampione.Tipo.COLONNE: "saetta", MossaCampione.Tipo.RAGGIO: "saetta",
+		MossaCampione.Tipo.LUCE: "saetta", MossaCampione.Tipo.CURA: "area_curativa", MossaCampione.Tipo.RESURREZIONE: "area_curativa",
+		MossaCampione.Tipo.SCHIANTO: "spada", MossaCampione.Tipo.CARICA: "spada"}
+	Suoni.play(suono.get(m.tipo, "magia"), 0.75)
+	if u != campione_attivo and is_instance_valid(u):
+		campione_attivo = u
+
+
+func campione_fase2(u) -> void:
+	intro_campione = u.dati
+	mossa_testo = tr(u.dati.frase_fase2) if u.dati.frase_fase2 != "" else tr("%s si infuria!") % tr(u.dati.nome)
+	mossa_t = 3.0
+	shake(0.4, 2.0)
+	lampo_schermo(0.3)
+	spawn_ground_fx(u.ground, 30.0, u.accent(), 0.8)
+	Suoni.play("ondata", 0.5)
+
+
+func on_campione_sconfitto(u) -> void:
+	var c: Campione = u.dati
+	if not c.id in campioni_battuti:
+		campioni_battuti.append(c.id)
+	shake(0.6, 3.0)
+	lampo_schermo(0.4)
+	spawn_ground_fx(u.ground, 40.0, u.accent(), 1.0)
+	spawn_ground_fx(u.ground, 26.0, C6, 0.8)
+	if c.monete > 0 and not autotest:
+		Portafoglio.add_monete(c.monete)
+	set_hint(tr("Campione sconfitto: %s!") % tr(c.nome) + ("  +%d %s" % [c.monete, tr("monete")] if c.monete > 0 else ""), 4.0)
+	if campione_attivo == u:
+		campione_attivo = null
+
+
+## Un lampo bianco su tutto lo schermo (luce dei campioni).
+func lampo_schermo(dur: float) -> void:
+	lampo_t = maxf(lampo_t, dur)
+
+
+## Un eroe in più in un punto del campo (EVOCA dei campioni).
+func spawn_enemy_at(kind: String, g: Vector2, boss: bool = false):
+	var u := UnitScript.new()
+	u.game = self
+	u.setup_enemy(kind, Data.enemy_hp_mult(wave) * mods["enemy_hp"], Data.enemy_dmg_mult(wave), boss)
+	u.ground = Vector2(clampf(g.x, 20.0, lane_len + SPAWN_W), clampf(g.y, 2.0, depth - 2.0))
+	u.ground = constrain(u.ground, u.radius)
+	enemies_root.add_child(u)
+	spawn_ground_fx(u.ground, 8.0, C6, 0.4)
+	return u
+
+
+## RESURREZIONE: rialza fino a `n` eroi caduti entro `r`. Restituisce quanti.
+func resuscita_eroi(centro: Vector2, r: float, n: int) -> int:
+	var fatti := 0
+	for i in range(eroi_caduti.size() - 1, -1, -1):
+		if fatti >= n:
+			break
+		var e: Dictionary = eroi_caduti[i]
+		if (e["g"] as Vector2).distance_to(centro) > r:
+			continue
+		eroi_caduti.remove_at(i)
+		var u = spawn_enemy_at(e["kind"], e["g"])
+		u.hp = u.max_hp * 0.6
+		spawn_ground_fx(e["g"], 10.0, C6, 0.6, "heal")
+		fatti += 1
+	return fatti
+
+
+## ROGO: fuoco a terra che brucia gli scheletri che ci stanno sopra.
+func add_zona_nemica(g: Vector2, r: float, dps: float, durata: float, col: Color) -> void:
+	zone_nemiche.append({"p": g, "r": r, "t": durata, "dps": dps, "col": col, "fx": 0.0})
+
+
+func _update_zone_nemiche(delta: float) -> void:
+	for z in zone_nemiche:
+		z["t"] -= delta
+		z["fx"] -= delta
+		if z["fx"] <= 0.0:
+			z["fx"] = 0.35
+			spawn_ground_fx(z["p"], z["r"], z["col"], 0.5, "fire")
+		for c in allies_root.get_children():
+			if not c.dead and c.visible and c.ground.distance_to(z["p"]) <= z["r"] + c.radius:
+				c.poison(z["dps"] * delta)
+	zone_nemiche = zone_nemiche.filter(func(z) -> bool: return z["t"] > 0.0)
+
+
+## Presentazione del campione, barra della vita in alto e nome dell'ultima mossa.
+func _draw_boss_hud() -> void:
+	var n := boss_hud
+	var vp := n.size
+	if lampo_t > 0.0:
+		n.draw_rect(Rect2(Vector2.ZERO, vp), Color(1, 1, 1, clampf(lampo_t * 1.5, 0.0, 0.5)))
+	var u = campione_attivo
+	if u != null and (not is_instance_valid(u) or u.dead):
+		campione_attivo = null
+		u = null
+	if u != null and state != State.GAME_OVER:
+		var c: Campione = u.dati
+		var r := Rect2(vp.x / 2.0 - 280, 56, 560, 46)
+		Pietra.stone(n, r, C1)
+		var nome := tr(c.nome).to_upper()
+		Pietra.text(n, ui_font, r.position + Vector2(14, 5), nome, 16, C6)
+		if u.fase2:
+			Pietra.text(n, ui_font, r.position + Vector2(r.size.x - 118, 5), tr("FURIA"), 16, c.colore)
+		var bar := Rect2(r.position + Vector2(14, 26), Vector2(r.size.x - 28, 10))
+		n.draw_rect(bar.grow(2), C0)
+		n.draw_rect(bar, C2)
+		var k := clampf(u.hp / u.max_hp, 0.0, 1.0)
+		n.draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * k), bar.size.y)), c.colore)
+		n.draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * k), 2)), Color(1, 1, 1, 0.35))
+		if c.soglia_fase2 > 0.0:  # tacca della seconda fase
+			n.draw_rect(Rect2(bar.position + Vector2(roundf(bar.size.x * c.soglia_fase2), -3), Vector2(2, bar.size.y + 6)), C6)
+		if u.scudo_t > 0.0:
+			n.draw_rect(Rect2(bar.position, Vector2(bar.size.x, 2)), C6)
+		if mossa_t > 0.0:
+			var a := clampf(mossa_t, 0.0, 1.0)
+			Pietra.text_c(n, ui_font, vp.x / 2.0, r.end.y + 8, mossa_testo, 16, Color(c.colore.lightened(0.3), a))
+	if intro_t > 0.0 and intro_campione != null:
+		var c2 := intro_campione
+		var a := clampf(intro_t / 0.5, 0.0, 1.0) * clampf((3.5 - intro_t) / 0.3, 0.0, 1.0)
+		var br := Rect2(vp.x / 2.0 - 330, 170, 660, 150)
+		n.draw_rect(Rect2(0, br.position.y - 8, vp.x, br.size.y + 16), Color(0, 0, 0, 0.55 * a))
+		if c2.sprite != null:
+			var fs := c2.sprite.get_height()
+			var big := float(fs) * (3.0 if fs <= 40 else 2.5)
+			n.draw_texture_rect_region(c2.sprite, Rect2(Vector2(br.position.x + 160 - big, br.get_center().y - big / 2.0 + 4), Vector2(big, big)),
+				Rect2(2 * fs, 0, fs, fs), Color(1, 1, 1, a))
+		var tx := br.position.x + 180
+		Pietra.text(n, ui_font, Vector2(tx, br.position.y + 14), tr("CAMPIONE DEGLI EROI · ONDATA %d") % wave, 16, Color(c2.colore, a), false)
+		Pietra.text(n, ui_font, Vector2(tx, br.position.y + 38), tr(c2.nome).to_upper(), 32, Color(C6, a))
+		Pietra.text(n, ui_font, Vector2(tx, br.position.y + 80), tr(c2.titolo), 16, Color(C5, a))
+		if c2.frase != "":
+			Pietra.text_block_left(n, ui_font, Vector2(tx, br.position.y + 106), br.size.x - 200, "\"" + tr(c2.frase) + "\"", 16, Color(C4.lightened(0.2), a))
+
+
+# --- Fine partita: finale cinematico (scripts/fine_partita.gd) ------------------------
+
+func _mostra_fine(won: bool, earned: int, total: int, coins: int, record_prima: int, nuovo_livello: String, posto: int) -> void:
+	var segs: Array = []
+	var ultimo: Campione = null
+	for i in 10:
+		var w_fine := int(round(ondate_totali * (i + 1) / 10.0))
+		var c: Campione = null
+		if campioni_attivi and campioni != null:
+			c = campioni.per_ondata(w_fine)
+		var battuto := c != null and (c.id in campioni_battuti or wave > w_fine or (won and wave >= w_fine))
+		segs.append({"ondata": w_fine, "campione": c, "sconfitto": battuto})
+		if c != null:
+			ultimo = c
+	var d := {
+		"vinto": won, "infinita": infinita, "ondata": wave, "ondate_totali": ondate_totali,
+		"uccisioni": kills, "record": maxi(record_prima, wave), "posto": posto,
+		"punti": earned, "punti_totali": total, "monete": coins, "pergamene": scrolls_earned,
+		"nuovo_livello": nuovo_livello, "campioni": segs, "campioni_battuti": campioni_battuti.size(),
+		"squadra": unlocked_units.duplicate(), "ultimo": ultimo,
+	}
+	var prep := func() -> void: get_tree().change_scene_to_file("res://scenes/preparazione.tscn")
+	var campo := func() -> void: get_tree().change_scene_to_file("res://scenes/selezione_livello.tscn")
+	var bottoni: Array = []
+	if won and not infinita:
+		bottoni.append({"testo": tr("CONTINUA"), "icona": "infinito", "stile": "oro", "larghezza": 420,
+			"azione": _continua_infinita, "tasti": [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_C]})
+		var prossimo := _livello_successivo()
+		if prossimo != null:
+			bottoni.append({"testo": tr("PROSSIMO CAMPO"), "sotto": tr(prossimo.nome), "stile": "argento", "larghezza": 270,
+				"azione": func() -> void:
+					Livelli.scegli(prossimo)
+					prep.call(), "tasti": [KEY_P]})
+		else:
+			bottoni.append({"testo": tr("CAMPO"), "icona": "campo", "stile": "argento", "larghezza": 270, "azione": campo, "tasti": [KEY_L]})
+		bottoni.append({"testo": tr("RIGIOCA"), "icona": "riprova", "larghezza": 190, "azione": _restart_game, "tasti": [KEY_R]})
+	else:
+		bottoni.append({"testo": tr("RIPROVA"), "icona": "riprova", "stile": "chiaro", "larghezza": 420,
+			"azione": _restart_game, "tasti": [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_R]})
+		bottoni.append({"testo": tr("SQUADRA"), "icona": "squadra", "larghezza": 230, "azione": prep, "tasti": [KEY_S]})
+		bottoni.append({"testo": tr("CAMPO"), "icona": "campo", "larghezza": 230, "azione": campo, "tasti": [KEY_L]})
+	bottoni.append({"testo": "", "icona": "menu", "stile": "scuro", "larghezza": 120, "azione": _go_to_menu, "tasti": [KEY_ESCAPE, KEY_M]})
+	fine_node = FinePartitaScript.new()
+	fine_node.mostra(d, bottoni, ui_font)
+	ui_root.add_child(fine_node)
+	hint_label.text = ""
+
+
+## Il livello dopo questo nell'elenco (null se è l'ultimo).
+func _livello_successivo() -> InfoLivello:
+	var lista := Livelli.elenco()
+	for i in lista.size() - 1:
+		if lista[i].id == id_livello:
+			return lista[i + 1]
+	return null

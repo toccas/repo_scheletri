@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="Dialogo" format=3]
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://d4ibk6kj8uera"]
 
-[ext_resource type="Script" path="res://scripts/battuta_dialogo.gd" id="1_bat"]
-[ext_resource type="Script" path="res://scripts/dialogo.gd" id="2_dia"]
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_bat"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_dia"]
 
 [sub_resource type="Resource" id="Resource_l1"]
 script = ExtResource("1_bat")

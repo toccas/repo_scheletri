@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://cixxtxq6b8a7e"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_bat"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_dia"]
+
+[sub_resource type="Resource" id="Resource_s1"]
+script = ExtResource("1_bat")
+testo = "Quando uno scheletro arriva al rango 3, e poi al rango 5, può prendere una strada tutta sua."
+espressione = 1
+
+[sub_resource type="Resource" id="Resource_s2"]
+script = ExtResource("1_bat")
+testo = "Scegli uno dei due rami: frecce infuocate o tiro multiplo, scudi spinati o muri di ossa... I rami dei due ranghi si sommano."
+
+[sub_resource type="Resource" id="Resource_s3"]
+script = ExtResource("1_bat")
+testo = "Non temere di sbagliare: qui in preparazione puoi cambiare idea quando vuoi."
+espressione = 3
+
+[resource]
+script = ExtResource("2_dia")
+id = "specializzazioni"
+battute = Array[ExtResource("1_bat")]([SubResource("Resource_s1"), SubResource("Resource_s2"), SubResource("Resource_s3")])

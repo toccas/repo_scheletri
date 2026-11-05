@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://d2te15rx6fahj"]
+
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://cx6r5vnjfqucp" path="res://assets/campioni/paladino.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Martello del giudizio"
+ricarica = 7.0
+primo_uso = 3.0
+danno = 1.5
+raggio = 24.0
+durata = 1.2
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Aura sacra"
+tipo = 2
+ricarica = 9.0
+primo_uso = 5.0
+raggio = 70.0
+potenza = 0.15
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Scudo divino"
+tipo = 8
+ricarica = 18.0
+primo_uso = 0.0
+solo_fase2 = true
+durata = 4.0
+potenza = 0.8
+
+[resource]
+script = ExtResource("1_camp")
+id = "paladino"
+nome = "Il Gran Paladino"
+titolo = "Martello della Luce"
+frase = "La Luce non conosce pietà per i morti."
+frase_fase2 = "Scudo divino!"
+ondata = 30
+sprite = ExtResource("3_spr")
+colore = Color(0.9412, 0.8078, 0.3216, 1)
+tipo_base = "gigante"
+vita = 1100.0
+danno = 22.0
+cadenza = 1.5
+velocita = 11.0
+raggio = 10.0
+altezza_colpo = 18.0
+esperienza = 60
+monete = 25
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

@@ -9,6 +9,10 @@ extends Control
 ##   - INIZIA LA RUN (o Invio) avvia la partita, BACK (o Esc) torna al menu
 ## Le unità nuove si trovano aprendo le pergamene nel portale (scena Evocazione).
 ##
+## SPECIALIZZAZIONI: al rango 3 e al rango 5 ogni unità sceglie tra due rami.
+## Clicca la stella in basso a destra sulla carta (o tasto destro sulla carta) per
+## aprire la scelta. I rami si modificano in specializzazioni/<unità>.tres.
+##
 ## STATISTICHE: nell'Inspector di questo nodo, sezione "Statistiche delle unità",
 ## c'è un gruppo per ogni scheletro (vita, attacco, velocità d'attacco, gittata,
 ## velocità di movimento, quantità per squadra, area). La partita (main.gd) le
@@ -24,6 +28,7 @@ const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Livelli := preload("res://scripts/livelli.gd")
+const Spec := preload("res://scripts/specializzazioni.gd")
 const TEX_SKY := preload("res://assets/campo/cielo.png")
 const TEX_GROUND := preload("res://assets/campo/terreno.png")
 const LEVELS_SCENE := "res://scenes/selezione_livello.tscn"
@@ -37,6 +42,8 @@ const EVOCATION_SCENE := "res://scenes/evocazione.tscn"
 
 ## Il tuo tema (per il font). Vuoto = font predefinito.
 @export var tema: Theme
+## Dialogo che spiega le specializzazioni (la prima volta che apri la scelta).
+@export var dialogo_specializzazioni: Dialogo = preload("res://dialoghi/specializzazioni.tres")
 
 const C0 := Color("141414")
 const C1 := Color("242424")
@@ -65,6 +72,12 @@ var message := ""
 var message_t := 0.0
 var card_rects := {}  # id unità -> Rect2
 var altar_rects: Array = []
+## Specializzazioni: unità di cui è aperta la scelta ("" = chiusa) e zone cliccabili.
+var spec_kind := ""
+var spec_rects: Array = []  # [{rect, rango, idx}]
+var spec_close := Rect2()
+var spec_hover := -1
+var _icone_rami := {}
 ## [nome nell'Inspector, chiave, intervallo]: le statistiche modificabili di ogni unità.
 const STAT_FIELDS := [
 	["vita", "hp", "1,5000,1"],
@@ -179,6 +192,11 @@ func _ready() -> void:
 	for i in Collezione.SQUAD_SIZE:
 		altar_rects.append(Rect2(672 + i * 146, 150, 136, 230))
 	_select_first_empty()
+	for k in st["owned"]:
+		if Spec.da_scegliere(k, st["owned"][k]) > 0:
+			_say(tr("Nuove specializzazioni da scegliere: clicca la stella sulle carte!"))
+			message_t = 4.0
+			break
 
 
 func _select_first_empty() -> void:
@@ -210,12 +228,25 @@ func _process(delta: float) -> void:
 			return
 	else:
 		fade = maxf(0.0, fade - delta * 3.0)
+	if spec_kind != "":
+		var m := get_local_mouse_position()
+		spec_hover = -1
+		for i in spec_rects.size():
+			if (spec_rects[i]["rect"] as Rect2).has_point(m):
+				spec_hover = i
+		hover = {}
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if spec_hover >= 0 or spec_close.has_point(m) else Control.CURSOR_ARROW
+		queue_redraw()
+		return
 	hover = _hit(get_local_mouse_position())
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not hover.is_empty() else Control.CURSOR_ARROW
 	queue_redraw()
 
 
 func _hit(p: Vector2) -> Dictionary:
+	for k in card_rects:
+		if _badge_rect(k).has_point(p) and st["owned"].has(k) and not Spec.opzioni(k, 3).is_empty():
+			return {"type": "spec", "id": k}
 	for k in card_rects:
 		if card_rects[k].has_point(p):
 			return {"type": "card", "id": k}
@@ -236,11 +267,16 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if leaving != "" or not (event is InputEventMouseButton and event.pressed):
 		return
+	if spec_kind != "":
+		_spec_click(event)
+		return
 	var h := _hit(event.position)
 	if h.is_empty():
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
-		if h["type"] == "altar":
+		if h["type"] in ["card", "spec"] and st["owned"].has(h["id"]):
+			_apri_rami(h["id"])
+		elif h["type"] == "altar":
 			Suoni.play("click", 0.8)
 			st["squad"][h["id"]] = ""
 			selected = h["id"]
@@ -254,6 +290,8 @@ func _gui_input(event: InputEvent) -> void:
 			selected = h["id"]
 		"card":
 			_place(h["id"])
+		"spec":
+			_apri_rami(h["id"])
 		"button":
 			_press(h["id"])
 
@@ -262,6 +300,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint():
 		return
 	if leaving != "" or not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if spec_kind != "":
+		if event.keycode in [KEY_ESCAPE, KEY_BACKSPACE, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+			Suoni.play("click", 0.9)
+			spec_kind = ""
 		return
 	var num: int = [KEY_1, KEY_2, KEY_3, KEY_4].find(event.keycode)
 	if num >= 0:
@@ -389,6 +432,8 @@ func _draw() -> void:
 	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 8, tr("INIZIA LA RUN"), 24, C6 if ready else C4)
 	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 36, tr("Invio"), 16, C1, false)
 
+	if spec_kind != "":
+		_draw_rami(vp)
 	if message_t > 0.0:
 		var a := clampf(message_t, 0.0, 1.0)
 		var w := font.get_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 32
@@ -428,6 +473,7 @@ func _draw_card(k: String, r: Rect2) -> void:
 		var rank: int = st["owned"][k]
 		if rank > 1:
 			Pietra.text(self, font, rr.position + Vector2(8, 6), "R%d" % rank, 12, C6)
+		_draw_badge(k, rank, hot)
 		if in_squad >= 0:  # numero dell'altare su cui sta
 			var b := Rect2(rr.end.x - 26, rr.position.y + 6, 20, 20)
 			draw_rect(b, C0)
@@ -497,13 +543,24 @@ func _draw_info(r: Rect2, k: String) -> void:
 	Pietra.text(self, font, Vector2(x, y + 34), sub, 16, C5)
 	var rm := Collezione.rank_mult(rank)
 	var ss := stats_for(k)
-	var line := tr("x%d per squadra · Vita %d") % [ss["count"], int(ss["hp"] * rm)]
+	var e := Spec.effetti(k, rank)  # le specializzazioni cambiano le statistiche
+	var line := tr("x%d per squadra · Vita %d") % [ss["count"] + int(e["unita_extra"]), int(ss["hp"] * rm * e["vita"])]
 	if ss["dmg"] > 0.0:
-		line += tr(" · Attacco %d") % int(ss["dmg"] * rm)
+		line += tr(" · Attacco %d") % int(ss["dmg"] * rm * e["danno"])
 	if not d["melee"]:
-		line += tr(" · Gittata %d") % int(ss["range"])
+		line += tr(" · Gittata %d") % int(ss["range"] * e["gittata"])
 	Pietra.text(self, font, Vector2(x, y + 62), line, 16, C6)
 	Pietra.text_block_left(self, font, Vector2(x, y + 96), r.end.x - x - 20, Data.descrizione(k), 16, C5)
+	# specializzazioni scelte (o da scegliere)
+	var rami := Spec.nomi_attivi(k, rank)
+	var manca := Spec.da_scegliere(k, rank)
+	var sy := r.end.y - 34
+	if manca > 0:
+		Pietra.text(self, font, Vector2(x, sy), tr("Rango %d: scegli la specializzazione (stella sulla carta)") % manca, 16, C6)
+	elif rami != "":
+		Pietra.text(self, font, Vector2(x, sy), tr("Specializzazioni: %s") % rami, 16, C6)
+	elif not Spec.opzioni(k, 3).is_empty():
+		Pietra.text(self, font, Vector2(x, sy), tr("Al rango 3 sceglierai una specializzazione"), 16, C4, false)
 
 
 ## Usa cielo e terreno del bioma del livello scelto nella schermata dei livelli.
@@ -517,3 +574,159 @@ func _sfondo_livello() -> void:
 				sfondo_cielo = info.bioma.cielo
 			if info.bioma.terreno:
 				sfondo_terreno = info.bioma.terreno
+
+
+# --- Specializzazioni -----------------------------------------------------------
+
+func _badge_rect(k: String) -> Rect2:
+	var r: Rect2 = card_rects[k]
+	return Rect2(r.end.x - 28, r.end.y - 28, 22, 22)
+
+
+## Stella sulla carta: grigia (rango basso), lampeggiante (da scegliere), colorata (scelta fatta).
+func _draw_badge(k: String, rank: int, hot: bool) -> void:
+	if Spec.opzioni(k, 3).is_empty():
+		return
+	var b := _badge_rect(k)
+	if hot:
+		b.position.y -= 3
+	var manca := Spec.da_scegliere(k, rank) > 0
+	var col := C3
+	if manca:
+		col = C6 if int(t * 3.0) % 2 == 0 else C5
+	elif rank >= 3:
+		var e := Spec.effetti(k, rank)
+		col = e["colore"] if (e["colore"] as Color).a > 0.0 else C5
+	draw_rect(b, C0)
+	draw_rect(b.grow(-2), C2 if not manca else C1)
+	_draw_stella(b.get_center(), 2.0, col)
+	if manca:
+		Pietra.text(self, font, b.position + Vector2(7, -20), "!", 16, C6)
+
+
+## Stellina a pixel 7x7 (il font non ha la stella).
+const STELLA := ["...X...", "...X...", "XXXXXXX", ".XXXXX.", "..XXX..", ".XX.XX.", "X.....X"]
+
+
+func _draw_stella(c: Vector2, px: float, col: Color) -> void:
+	for y in STELLA.size():
+		var row: String = STELLA[y]
+		for x in row.length():
+			if row[x] == "X":
+				draw_rect(Rect2(c + (Vector2(x, y) - Vector2(3.5, 3.5)) * px, Vector2(px, px)), col)
+
+
+func _apri_rami(k: String) -> void:
+	if Spec.opzioni(k, 3).is_empty():
+		return
+	Suoni.play("click")
+	spec_kind = k
+	message_t = 0.0
+	Dialoghi.avvia(self, dialogo_specializzazioni)
+
+
+func _spec_click(event: InputEventMouseButton) -> void:
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		spec_kind = ""
+		return
+	var p := event.position
+	for o in spec_rects:
+		if (o["rect"] as Rect2).has_point(p):
+			var rank: int = st["owned"].get(spec_kind, 1)
+			if rank < int(o["rango"]):
+				Suoni.play("errore")
+				_say(tr("Serve il rango %d: trova altri doppioni nelle pergamene.") % o["rango"])
+				return
+			Suoni.play("conferma")
+			Spec.scegli(spec_kind, o["rango"], o["idx"])
+			return
+	if spec_close.has_point(p) or not Rect2(140, 70, 1000, 580).has_point(p):
+		Suoni.play("click", 0.9)
+		spec_kind = ""
+
+
+## Icona dell'unità con il colore del ramo (stesso cambio colore della partita).
+func _icona_ramo(k: String, col: Color) -> Texture2D:
+	var key := k + col.to_html()
+	if not _icone_rami.has(key):
+		var img := Data.ally_texture(k).get_image().get_region(Rect2i(Data.ally_region(k)))
+		img.convert(Image.FORMAT_RGBA8)
+		var base := Data.accent(k)
+		var luma := base.r * 0.299 + base.g * 0.587 + base.b * 0.114
+		if col.a > 0.0:
+			for y in img.get_height():
+				for x in img.get_width():
+					var c := img.get_pixel(x, y)
+					if c.a > 0.0 and maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b)) > 0.12:
+						var l := c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+						var n := col * (l / maxf(luma, 0.05))
+						img.set_pixel(x, y, Color(clampf(n.r, 0, 1), clampf(n.g, 0, 1), clampf(n.b, 0, 1), c.a))
+		_icone_rami[key] = ImageTexture.create_from_image(img)
+	return _icone_rami[key]
+
+
+func _draw_rami(vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.75))
+	var k := spec_kind
+	var rank: int = st["owned"].get(k, 1)
+	var panel := Rect2(140, 70, 1000, 580)
+	Pietra.stone(self, panel, C2)
+	draw_texture_rect_region(Data.ally_texture(k), Rect2(panel.position + Vector2(28, 18), Vector2(64, 64)), Data.ally_region(k))
+	Pietra.text(self, font, panel.position + Vector2(108, 22), tr("SPECIALIZZAZIONI") + "  ·  " + Data.nome(k).to_upper(), 24, C6)
+	Pietra.text(self, font, panel.position + Vector2(108, 56), tr("rango attuale: %d / %d") % [rank, Data.MAX_RANK], 16, C5, false)
+	spec_rects.clear()
+	var y := panel.position.y + 100
+	for rango in Spec.RANGHI:
+		var ops := Spec.opzioni(k, rango)
+		var aperto := rank >= rango
+		var scelto := Spec.scelta(k, rango)
+		Pietra.text(self, font, Vector2(panel.position.x + 28, y + 70), tr("RANGO %d") % rango, 24, C6 if aperto else C4)
+		if not aperto:
+			Pietra.text(self, font, Vector2(panel.position.x + 28, y + 104), tr("bloccato"), 16, C4, false)
+		for i in ops.size():
+			var r := Rect2(panel.position.x + 190 + i * 396, y, 384, 210)
+			spec_rects.append({"rect": r, "rango": rango, "idx": i})
+			_draw_ramo(r, k, ops[i], aperto, scelto == i, spec_hover == spec_rects.size() - 1)
+		if not aperto:  # velo sui rami ancora bloccati
+			draw_rect(Rect2(panel.position.x + 186, y - 4, 788, 218), Color(0, 0, 0, 0.45))
+			var lt := tr("Serve il rango %d") % rango
+			var lw := font.get_string_size(lt, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x + 40
+			var lr := Rect2(panel.position.x + 580 - lw / 2.0, y + 80, lw, 48)
+			draw_rect(lr, C0)
+			draw_rect(lr.grow(-3), C2)
+			Pietra.text_c(self, font, lr.get_center().x, lr.position.y + 12, lt, 24, C6)
+		y += 226
+	spec_close = Rect2(panel.end.x - 148, panel.end.y - 60, 128, 44)
+	Pietra.stone(self, spec_close, C3, spec_close.has_point(get_local_mouse_position()))
+	Pietra.text_c(self, font, spec_close.get_center().x, spec_close.position.y + 12, tr("CHIUDI"), 16, C6)
+	Pietra.text(self, font, Vector2(panel.position.x + 28, panel.end.y - 46),
+		tr("Puoi cambiare scelta quando vuoi, fuori dalla battaglia."), 16, C4, false)
+
+
+func _draw_ramo(r: Rect2, k: String, s: Specializzazione, aperto: bool, scelto: bool, hot: bool) -> void:
+	if scelto:
+		draw_rect(r.grow(4), C6)
+	Pietra.tomb(self, r, C3 if scelto else C2, hot and aperto and not scelto)
+	var col := s.colore if s.colore.a > 0.0 else Data.accent(k)
+	# icona con il nuovo colore e nome
+	var ic := Rect2(r.position + Vector2(14, 30), Vector2(64, 64))
+	draw_rect(ic.grow(4), C1)
+	draw_texture_rect(_icona_ramo(k, s.colore), ic, false)
+	var nome := tr(s.nome).to_upper()
+	var fs := 24
+	while fs > 12 and font.get_string_size(nome, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 126:
+		fs -= 2
+	draw_rect(Rect2(r.position + Vector2(92, 36), Vector2(10, 10)), col)
+	Pietra.text(self, font, r.position + Vector2(110, 30 + (24 - fs) / 2.0), nome, fs, C6)
+	var yy := r.position.y + 66
+	for riga in Spec.testo_effetti(s):
+		Pietra.text_block_left(self, font, Vector2(r.position.x + 92, yy), r.size.x - 104, "· " + riga, 16, C6 if aperto else C4)
+		yy += 20 * maxi(1, ceili(font.get_string_size("· " + riga, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x / (r.size.x - 104)))
+	if s.descrizione != "":
+		Pietra.text_block_left(self, font, Vector2(r.position.x + 14, maxf(yy + 4, r.position.y + 104)), r.size.x - 28, tr(s.descrizione), 16, C5)
+	if scelto:
+		var tag := Rect2(r.end.x - 98, r.end.y - 34, 86, 24)
+		draw_rect(tag, C6)
+		Pietra.text_c(self, font, tag.get_center().x, tag.position.y + 4, tr("SCELTA"), 16, C0, false)
+	elif aperto:
+		Pietra.text(self, font, Vector2(r.position.x + 14, r.end.y - 30), tr("clicca per scegliere"), 16, C4, false)

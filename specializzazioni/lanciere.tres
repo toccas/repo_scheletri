@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="RamiUnita" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rami_unita.gd" id="1_rami"]
+[ext_resource type="Script" path="res://scripts/specializzazione.gd" id="2_spec"]
+
+[sub_resource type="Resource" id="Resource_3a"]
+script = ExtResource("2_spec")
+nome = "Falange"
+riduzione_danni = 0.2
+spine = 0.2
+colore = Color(0.7059, 0.7373, 0.7843, 1)
+
+[sub_resource type="Resource" id="Resource_3b"]
+script = ExtResource("2_spec")
+nome = "Picchiere"
+gittata = 1.4
+potenza_speciale = 1.5
+
+[sub_resource type="Resource" id="Resource_5a"]
+script = ExtResource("2_spec")
+nome = "Lancia avvelenata"
+danno_nel_tempo = 0.4
+durata_danno_nel_tempo = 4.0
+colore = Color(0.549, 0.8, 0.2353, 1)
+
+[sub_resource type="Resource" id="Resource_5b"]
+script = ExtResource("2_spec")
+nome = "Ammazzagiganti"
+danno_campioni = 2.0
+colore = Color(0.9412, 0.8078, 0.3216, 1)
+
+[resource]
+script = ExtResource("1_rami")
+unita = "lanciere"
+rango_3_a = SubResource("Resource_3a")
+rango_3_b = SubResource("Resource_3b")
+rango_5_a = SubResource("Resource_5a")
+rango_5_b = SubResource("Resource_5b")

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ElencoLivelli" format=3]
+[gd_resource type="Resource" script_class="ElencoLivelli" format=3 uid="uid://bhq6sjbeso32k"]
 
-[ext_resource type="Script" path="res://scripts/elenco_livelli.gd" id="1_ele"]
-[ext_resource type="Script" path="res://scripts/info_livello.gd" id="2_inf"]
+[ext_resource type="Script" uid="uid://bl8gp03io0ilf" path="res://scripts/elenco_livelli.gd" id="1_ele"]
+[ext_resource type="Script" uid="uid://b7asnhwmmpbbt" path="res://scripts/info_livello.gd" id="2_inf"]
 [ext_resource type="Resource" path="res://biomi/cimitero.tres" id="3_cim"]
 [ext_resource type="Resource" path="res://biomi/palude.tres" id="4_pal"]
 [ext_resource type="Resource" path="res://biomi/cattedrale.tres" id="5_cat"]

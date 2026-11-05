@@ -92,6 +92,7 @@ gizmo_extents = 4.0
 [node name="Nebbia" type="Node2D" parent="Mondo" unique_id=2104419948]
 
 [node name="Back" type="Marker2D" parent="Mondo" unique_id=478476929]
+visible = false
 position = Vector2(8, 172)
 gizmo_extents = 6.0
 
@@ -103,7 +104,7 @@ position = Vector2(20, 20)
 gizmo_extents = 24.0
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=429134736]
-position = Vector2(153, 596)
+position = Vector2(153, 646)
 scale = Vector2(4, 4)
 stream = ExtResource("9_i6lef")
 autoplay = true

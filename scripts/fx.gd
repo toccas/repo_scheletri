@@ -12,6 +12,7 @@ var color := Color.WHITE
 var life := 0.4
 var t := 0.0
 var bolt_points := PackedVector2Array()
+var to := Vector2.ZERO  # "zap": punto d'arrivo del fulmine a catena (pixel dell'arte)
 var dir := 1.0  # verso dell'effetto (1 = verso destra)
 var sparks: Array = []  # [direzione, velocità] di ogni scintilla
 var bits: Array = []  # fiamme / crocette: {p, v, d} posizione, velocità, ritardo
@@ -60,6 +61,13 @@ func _ready() -> void:
 			var a := randf() * TAU
 			var r := sqrt(randf()) * radius * 0.9
 			bits.append({"p": Vector2(cos(a) * r, sin(a) * r * 0.45), "v": Vector2(0, -randf_range(10, 20)), "d": randf() * 0.5})
+	if kind == "zap":  # fulmine spezzettato tra due unità
+		var n := maxi(2, int(to.length() / 5.0))
+		for i in n + 1:
+			var p := to * float(i) / n
+			if i > 0 and i < n:
+				p += Vector2(randf_range(-2, 2), randf_range(-2, 2))
+			bolt_points.append(p.round())
 	if kind == "bolt":
 		var x := 0
 		for y in range(-120, 1, 2):
@@ -79,6 +87,10 @@ func _draw() -> void:
 	var k := clampf(t / life, 0.0, 1.0)
 	var col := Color(color, 1.0 - k * 0.7)
 	match kind:
+		"zap":
+			for i in bolt_points.size() - 1:
+				draw_line(bolt_points[i], bolt_points[i + 1], Color(1, 1, 1, col.a), 1.0)
+				draw_rect(Rect2(bolt_points[i] + Vector2(0, 1), Vector2.ONE), col)
 		"ring":
 			var r := radius * (0.35 + 0.65 * k)
 			draw_pixel_circle(self, Vector2.ZERO, r, col)

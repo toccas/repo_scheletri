@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://crj1sh08jy81j"]
+
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://b2hx8dspitge5" path="res://assets/campioni/colosso.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Carica del colosso"
+tipo = 7
+ricarica = 10.0
+danno = 1.2
+raggio = 90.0
+durata = 1.0
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Terremoto"
+ricarica = 12.0
+primo_uso = 7.0
+raggio = 42.0
+durata = 1.5
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Pelle di bronzo"
+tipo = 8
+ricarica = 14.0
+primo_uso = 0.0
+solo_fase2 = true
+durata = 6.0
+potenza = 0.5
+
+[resource]
+script = ExtResource("1_camp")
+id = "colosso"
+nome = "Il Colosso di Bronzo"
+titolo = "Il muro che cammina"
+frase_fase2 = "Il bronzo si arroventa!"
+ondata = 70
+sprite = ExtResource("3_spr")
+colore = Color(0.5882, 0.3922, 0.2275, 1)
+tipo_base = "gigante"
+vita = 1800.0
+danno = 34.0
+cadenza = 1.9
+gittata = 6.0
+velocita = 8.0
+raggio = 13.0
+altezza_colpo = 22.0
+esperienza = 110
+monete = 45
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

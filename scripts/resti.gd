@@ -62,8 +62,8 @@ func setup(u) -> void:
 				var c := img.get_pixel(int(reg.position.x) + x, int(reg.position.y) + y)
 				if c.a < 0.5:
 					continue
-				var lx := (reg.size.x - 1 - x if spr.flip_h else float(x)) - 8.0
-				var ly := float(y) - 16.0
+				var lx := (reg.size.x - 1 - x if spr.flip_h else float(x)) + spr.offset.x
+				var ly := float(y) + spr.offset.y
 				var p := Vector2(lx, ly) * sc
 				var b := {"p": p, "c": c, "landed": false, "land_t": 0.0}
 				if ghost:

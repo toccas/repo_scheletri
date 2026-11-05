@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RamiUnita" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rami_unita.gd" id="1_rami"]
+[ext_resource type="Script" path="res://scripts/specializzazione.gd" id="2_spec"]
+
+[sub_resource type="Resource" id="Resource_3a"]
+script = ExtResource("2_spec")
+nome = "Mietitore d'anime"
+potenza_speciale = 1.5
+colore = Color(0.7686, 0.6039, 0.9412, 1)
+
+[sub_resource type="Resource" id="Resource_3b"]
+script = ExtResource("2_spec")
+nome = "Falce insanguinata"
+rubavita = 0.3
+colore = Color(0.7216, 0.1569, 0.2275, 1)
+
+[sub_resource type="Resource" id="Resource_5a"]
+script = ExtResource("2_spec")
+nome = "Danza della morte"
+cadenza = 1.35
+velocita = 1.2
+
+[sub_resource type="Resource" id="Resource_5b"]
+script = ExtResource("2_spec")
+nome = "Falce maledetta"
+maledici = 3.0
+colore = Color(0.4784, 0.3529, 0.7843, 1)
+
+[resource]
+script = ExtResource("1_rami")
+unita = "mietitore"
+rango_3_a = SubResource("Resource_3a")
+rango_3_b = SubResource("Resource_3b")
+rango_5_a = SubResource("Resource_5a")
+rango_5_b = SubResource("Resource_5b")

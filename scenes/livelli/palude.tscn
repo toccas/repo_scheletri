@@ -1,16 +1,16 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bcnuuiumo3jav"]
 
-[ext_resource type="PackedScene" path="res://scenes/main.tscn" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://c6j11ieushd3v" path="res://scenes/main.tscn" id="1_main"]
 [ext_resource type="Resource" path="res://biomi/palude.tres" id="2_bio"]
 
-[node name="Palude" instance=ExtResource("1_main")]
+[node name="Palude" unique_id=1070672620 instance=ExtResource("1_main")]
 id_livello = "palude"
 bioma = ExtResource("2_bio")
-ondate_totali = 100
-file_bloccate = PackedInt32Array(1, 3)
-ostacoli = Array[Vector2i]([])
-colonne = 9
+file_bloccate = [1, 3]
 file = 5
 
-[node name="Griglia" parent="." index="0"]
+[node name="Griglia" parent="." index="0" unique_id=1689771535]
 position = Vector2(266, 129)
+
+[node name="Torre" parent="." index="1" unique_id=219738757]
+position = Vector2(183, 561)

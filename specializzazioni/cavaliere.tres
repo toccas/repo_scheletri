@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="RamiUnita" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/rami_unita.gd" id="1_rami"]
+[ext_resource type="Script" path="res://scripts/specializzazione.gd" id="2_spec"]
+
+[sub_resource type="Resource" id="Resource_3a"]
+script = ExtResource("2_spec")
+nome = "Lancia da torneo"
+potenza_speciale = 1.5
+colore = Color(0.9412, 0.8078, 0.3216, 1)
+
+[sub_resource type="Resource" id="Resource_3b"]
+script = ExtResource("2_spec")
+nome = "Cavaliere nero"
+rubavita = 0.25
+vita = 1.2
+colore = Color(0.4784, 0.3529, 0.7843, 1)
+
+[sub_resource type="Resource" id="Resource_5a"]
+script = ExtResource("2_spec")
+nome = "Travolgente"
+respingi = 14.0
+stordisci = 0.5
+durata_stordisci = 0.8
+
+[sub_resource type="Resource" id="Resource_5b"]
+script = ExtResource("2_spec")
+nome = "Paladino d'ossa"
+aura_cura = 0.02
+riduzione_danni = 0.1
+colore = Color(0.949, 0.9255, 0.7843, 1)
+
+[resource]
+script = ExtResource("1_rami")
+unita = "cavaliere"
+rango_3_a = SubResource("Resource_3a")
+rango_3_b = SubResource("Resource_3b")
+rango_5_a = SubResource("Resource_5a")
+rango_5_b = SubResource("Resource_5b")

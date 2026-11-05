@@ -19,7 +19,13 @@ extends Node2D
 ##   peste     nubi che avvelenano e rallentano            maledici  i colpiti subiscono +30% danni
 ##   urlo      ferisce e stordisce chi è vicino            aura      +25% danni e velocità ai vicini
 ##   schianto  colpi ad area                               falce     colpisce i vicini, finisce i feriti
-##   muro      barricata che attira i nemici               esplodi   esplode sui nemici (rinasce a fine ondata) Il nodo è scalato di game.px, quindi tutto ciò che
+##   muro      barricata che attira i nemici               esplodi   esplode sui nemici (rinasce a fine ondata)
+##
+## SPECIALIZZAZIONI (rango 3 e 5, vedi specializzazione.gd): `spec` contiene gli effetti
+## sommati dei rami scelti; vita/danno/cadenza/gittata/area sono già nelle statistiche,
+## qui si applicano gli effetti dei colpi, la difesa, le aure e il nuovo colore.
+##
+## Il nodo è scalato di game.px, quindi tutto ciò che
 ## viene disegnato qui (ombra, barra della vita) è in pixel dell'arte.
 
 const Data := preload("res://scripts/game_data.gd")
@@ -78,6 +84,22 @@ var summoner = null  # chi ha rianimato questo scheletro
 var run_dist := 0.0  # carica: strada percorsa dall'ultimo colpo
 var pulse_t := 0.0  # aura del totem: ogni tanto un'onda visiva
 var shot_t := 0.0  # catapulta: secondi in cui mostra il braccio scattato (frame 1)
+## Effetti delle specializzazioni (vuoto = nessuna). Vedi Specializzazioni.effetti().
+var spec: Dictionary = {}
+var spec_col := Color(0, 0, 0, 0)  # nuovo colore d'accento (trasparente = quello normale)
+var _in_effetto := false  # esplosioni e catene non generano altre esplosioni e catene
+var aura_t := 0.0
+# fuoco / veleno delle specializzazioni (danno nel tempo) e colore del rallentamento
+var dot_t := 0.0
+var dot_dps := 0.0
+var dot_col := Color(1, 0.5, 0.2)
+var slow_col := Color(0, 0, 0, 0)
+## Eroi spronati da un campione (GRIDO): +buff_k danni, più veloci, per buff_t secondi.
+var buff_t := 0.0
+var buff_k := 0.0
+var buff_col := Color(1, 1, 1)
+## Vola sopra acqua, crepacci e ostacoli (l'arcangelo).
+var vola := false
 
 var ground := Vector2.ZERO  # posizione sul terreno (vedi sopra)
 var home := Vector2.ZERO  # posizione di guardia sul terreno (alleati)
@@ -127,6 +149,10 @@ func setup_ally(kind_name: String, hp_mult: float, stats: Dictionary = {}) -> vo
 	base_speed = stats.get("speed", base_speed)
 	splash = stats.get("splash", splash)
 	rank = stats.get("rank", 1)
+	spec = stats.get("spec", {})
+	if int(spec.get("attive", 0)) == 0:
+		spec = {}
+	spec_col = spec.get("colore", Color(0, 0, 0, 0))
 	max_hp *= hp_mult
 	hp = max_hp
 	atk_timer = randf() * base_cooldown
@@ -151,24 +177,29 @@ func get_dmg() -> float:
 	if team == ALLY:
 		var d: float = base_dmg * game.mods["ally_dmg"] * game.role_mult(role, "dmg") * game.aura_bonus(self)
 		if special == "furia":
-			d *= 2.0 - clampf(hp / max_hp, 0.0, 1.0)
+			d *= 1.0 + (1.0 - clampf(hp / max_hp, 0.0, 1.0)) * sp("potenza_speciale", 1.0)
 		return d
-	return base_dmg * game.mods["enemy_dmg"]
+	return base_dmg * game.mods["enemy_dmg"] * (1.0 + buff_k if buff_t > 0.0 else 1.0)
 
 
 func get_cooldown() -> float:
 	if team == ALLY:
 		var cd: float = base_cooldown / game.mods["ally_rate"] / game.aura_bonus(self)
 		if special == "furia":
-			cd /= 2.0 - clampf(hp / max_hp, 0.0, 1.0)
+			cd /= 1.0 + (1.0 - clampf(hp / max_hp, 0.0, 1.0)) * sp("potenza_speciale", 1.0)
 		return cd
-	return base_cooldown
+	return base_cooldown / (1.0 + buff_k * 0.5 if buff_t > 0.0 else 1.0)
+
+
+## Valore di un effetto delle specializzazioni (`def` se l'unità non ne ha).
+func sp(k: String, def: float = 0.0) -> float:
+	return float(spec.get(k, def)) if not spec.is_empty() else def
 
 
 func get_speed() -> float:
 	var sp := base_speed * (1.0 - slow_k if slow_t > 0.0 else 1.0)
 	if team == ENEMY:
-		return sp * game.mods["enemy_speed"]
+		return sp * game.mods["enemy_speed"] * (1.0 + buff_k * 0.5 if buff_t > 0.0 else 1.0)
 	return sp
 
 
@@ -196,12 +227,33 @@ func _ready() -> void:
 		_flash_shader = Shader.new()
 		_flash_shader.code = """shader_type canvas_item;
 uniform float flash = 0.0;
+// specializzazione: i pixel colorati della sprite prendono il nuovo colore
+uniform float swap = 0.0;
+uniform vec4 to_col : source_color = vec4(1.0);
+uniform float from_luma = 0.5;
+varying vec4 modulate_col;
+void vertex() {
+	modulate_col = COLOR;  // colore del nodo (modulate): stati come gelo e fuoco
+}
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
-	COLOR = vec4(mix(c.rgb, vec3(1.0), flash), c.a);
+	if (swap > 0.5) {
+		float mx = max(c.r, max(c.g, c.b));
+		float mn = min(c.r, min(c.g, c.b));
+		if (mx - mn > 0.12) {
+			float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+			c.rgb = clamp(to_col.rgb * (l / max(from_luma, 0.05)), 0.0, 1.0);
+		}
+	}
+	COLOR = vec4(mix(c.rgb, vec3(1.0), flash), c.a) * modulate_col;
 }"""
 	sprite.material = ShaderMaterial.new()
 	sprite.material.shader = _flash_shader
+	if spec_col.a > 0.0:
+		var base_col := Data.accent(kind, team)
+		sprite.material.set_shader_parameter("swap", 1.0)
+		sprite.material.set_shader_parameter("to_col", spec_col)
+		sprite.material.set_shader_parameter("from_luma", base_col.r * 0.299 + base_col.g * 0.587 + base_col.b * 0.114)
 	add_child(sprite)
 	bar = Node2D.new()
 	bar.draw.connect(_draw_bar)
@@ -255,6 +307,15 @@ func _process(delta: float) -> void:
 		return
 	slow_t = maxf(0.0, slow_t - delta)
 	curse_t = maxf(0.0, curse_t - delta)
+	buff_t = maxf(0.0, buff_t - delta)
+	_tinta_stati()
+	if dot_t > 0.0:  # fuoco / veleno delle specializzazioni
+		dot_t -= delta
+		poison(dot_dps * delta)
+		if dead:
+			return
+	if not spec.is_empty():
+		_spec_update(delta)
 	if life_left > 0.0:
 		life_left -= delta
 		if life_left <= 0.0:
@@ -268,7 +329,7 @@ func _process(delta: float) -> void:
 		pulse_t -= delta
 		if pulse_t <= 0.0:
 			pulse_t = 2.0
-			game.spawn_ground_fx(ground, game.AURA_RADIUS, accent(), 0.6)
+			game.spawn_ground_fx(ground, game.AURA_RADIUS * sp("area", 1.0), accent(), 0.6)
 	atk_timer = maxf(0.0, atk_timer - delta)
 	var before := ground
 	if team == ALLY:
@@ -276,7 +337,8 @@ func _process(delta: float) -> void:
 	else:
 		_enemy_update(delta)
 	_separate(delta)
-	ground = game.constrain(ground, radius)  # corsie e ostacoli del livello
+	if not vola:
+		ground = game.constrain(ground, radius)  # corsie e ostacoli del livello
 	ground.y = clampf(ground.y, radius, game.depth - 1.0)
 	_animate_walk(ground.distance_squared_to(before) > 0.0001, delta)
 	sync_screen()
@@ -445,28 +507,61 @@ func _attack(t) -> void:
 	_attack_sound()
 	if team == ALLY and special != "":
 		_special_attack(t)
-		return
+	else:
+		_basic_attack(t)
+	# specializzazione: colpisce anche altri nemici (altri proiettili o fendente)
+	var n := int(sp("colpi_extra"))
+	if team == ALLY and n > 0 and not special in ["esplodi", "urlo", "schianto", "falce"]:
+		var k := sp("danno_colpi_extra", 0.6)
+		for e in _altri_bersagli(t, n):
+			if special != "":
+				_special_attack(e, k)
+			else:
+				_basic_attack(e, k)
+
+
+func _basic_attack(t, k: float = 1.0) -> void:
 	if melee:
 		lunge = 5.0
 		var hit_h: float = t.muzzle_height()
-		game.spawn_unit_fx(t.ground, "slash", hit_h, _face(), 0.2)
+		game.spawn_unit_fx(t.ground, "slash", hit_h, _face(), 0.2, accent() if spec_col.a > 0.0 else C_WHITE)
 		game.spawn_unit_fx(t.ground, "spark", hit_h, _face(), 0.25)
-		t.take_damage(get_dmg(), self)
+		t.take_damage(get_dmg() * k, self)
 	else:
 		lunge = -1.5
 		game.spawn_unit_fx(ground + Vector2(4 * _face(), 0), "spark", muzzle_height(), _face(), 0.15)
-		game.spawn_projectile(team, ground, muzzle_height(), t, false, get_dmg(), splash, kind == "mago", "", self)
+		game.spawn_projectile(team, ground, muzzle_height(), t, false, get_dmg() * k, splash, kind == "mago", "", self)
 
 
-## Attacchi delle unità con un'abilità speciale.
-func _special_attack(t) -> void:
-	var dmg := get_dmg()
+## Altri `n` nemici vicini per i colpi extra (a distanza: entro la gittata; corpo a corpo: attorno al bersaglio).
+func _altri_bersagli(t, n: int) -> Array:
+	var c_list: Array = []
+	for c in game.enemies_root.get_children():
+		if c == t or c.dead or not c.visible:
+			continue
+		if melee:
+			if c.ground.distance_to(t.ground) > 14.0 + c.radius or not game.same_lane(c.ground, t.ground):
+				continue
+		else:
+			var d: float = ground.distance_to(c.ground)
+			if d > attack_range or (special == "catapulta" and d < CATAPULT_MIN):
+				continue
+		c_list.append(c)
+	c_list.sort_custom(func(a, b) -> bool: return a.ground.distance_squared_to(t.ground) < b.ground.distance_squared_to(t.ground))
+	return c_list.slice(0, n)
+
+
+## Attacchi delle unità con un'abilità speciale (`k` = parte del danno, per i colpi extra).
+func _special_attack(t, k: float = 1.0) -> void:
+	var dmg := get_dmg() * k
 	var hit_h: float = t.muzzle_height()
+	var pk := sp("potenza_speciale", 1.0)  # specializzazione: abilità più forte
+	var ak := sp("area", 1.0)
 	match special:
 		"trafiggi", "provoca", "furia", "carica":
 			lunge = 5.0
 			if special == "carica" and run_dist >= 24.0:
-				dmg *= 2.0
+				dmg *= 1.0 + pk
 				lunge = 8.0
 				game.spawn_ground_fx(t.ground, 8.0, accent(), 0.3)
 			run_dist = 0.0
@@ -476,21 +571,21 @@ func _special_attack(t) -> void:
 				var b = _enemy_behind(t, 14.0)
 				if b != null:
 					game.spawn_unit_fx(b.ground, "spark", b.muzzle_height(), _face(), 0.2)
-					b.take_damage(dmg * 0.6, self)
+					b.take_damage(dmg * minf(1.0, 0.6 * pk), self)
 		"schianto":
 			lunge = 4.0
-			game.spawn_ground_fx(t.ground, 14.0, accent(), 0.35)
+			game.spawn_ground_fx(t.ground, 14.0 * ak, accent(), 0.35)
 			t.take_damage(dmg, self)
 			for c in game.enemies_root.get_children():
-				if c != t and not c.dead and c.ground.distance_to(t.ground) <= 14.0 + c.radius:
-					c.take_damage(dmg * 0.6, self)
+				if c != t and not c.dead and c.ground.distance_to(t.ground) <= 14.0 * ak + c.radius:
+					c.take_damage(dmg * minf(1.0, 0.6 * pk), self)
 		"falce":
 			lunge = 6.0
 			game.spawn_unit_fx(t.ground, "slash", hit_h, _face(), 0.25)
 			for c in game.enemies_root.get_children():
-				if c.dead or c.ground.distance_to(t.ground) > 11.0 + c.radius:
+				if c.dead or c.ground.distance_to(t.ground) > 11.0 * ak + c.radius:
 					continue
-				if not c.is_boss and c.hp / c.max_hp < 0.2:
+				if not c.is_boss and c.hp / c.max_hp < 0.2 * pk:
 					game.spawn_unit_fx(c.ground, "spark", c.muzzle_height(), _face(), 0.3)
 					c.take_damage(c.hp + 1.0, self)  # esecuzione
 				else:
@@ -504,7 +599,7 @@ func _special_attack(t) -> void:
 			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, 0.0, false, "", self)
 			var b = _enemy_behind(t, 18.0)
 			if b != null:
-				game.spawn_projectile(team, ground, muzzle_height(), b, false, dmg * 0.6, 0.0, false, "", self)
+				game.spawn_projectile(team, ground, muzzle_height(), b, false, dmg * minf(1.0, 0.6 * pk), 0.0, false, "", self)
 		"catapulta":
 			lunge = -2.0
 			shot_t = 0.7
@@ -519,13 +614,13 @@ func _special_attack(t) -> void:
 		"peste":
 			lunge = -1.0
 			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, 0.0, true, "", self)
-			game.add_plague_cloud(t.ground, dmg * 1.5, rank)
+			game.add_plague_cloud(t.ground, dmg * 1.5 * pk, rank, 16.0 * ak, maxf(0.3, sp("rallenta")), sp("maledici"))
 		"maledici":
 			lunge = -1.0
 			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, splash, true, "", self)
 			for c in game.enemies_root.get_children():
 				if not c.dead and c.ground.distance_to(t.ground) <= splash + c.radius:
-					c.curse_t = 4.0
+					c.curse_t = maxf(c.curse_t, 4.0 * pk)
 		"urlo":
 			lunge = -1.0
 			game.spawn_ground_fx(ground, attack_range, accent(), 0.5)
@@ -533,7 +628,7 @@ func _special_attack(t) -> void:
 			for c in game.enemies_root.get_children():
 				if not c.dead and c.ground.distance_to(ground) <= attack_range + c.radius:
 					c.take_damage(dmg, self)
-					c.stun_t = maxf(c.stun_t, 1.2)
+					c.stun_t = maxf(c.stun_t, 1.2 * pk * (0.5 if c.is_boss else 1.0))
 		_:
 			t.take_damage(dmg, self)
 
@@ -575,12 +670,27 @@ func _separate(delta: float) -> void:
 func take_damage(amount: float, attacker = null) -> void:
 	if dead:
 		return
+	var att_ok: bool = attacker != null and is_instance_valid(attacker) and not attacker.dead
+	if team == ALLY and not spec.is_empty():  # difese delle specializzazioni
+		if sp("schiva") > 0.0 and randf() < sp("schiva"):
+			game.spawn_unit_fx(ground, "spark", muzzle_height(), -_face(), 0.2, C_WHITE)
+			return
+		amount *= 1.0 - sp("riduzione_danni")
+		if sp("spine") > 0.0 and att_ok and attacker.melee and attacker.team != team:
+			attacker.take_damage(amount * sp("spine"), null)
+	var dal_ramo: bool = att_ok and attacker.team == ALLY and team == ENEMY and not attacker.spec.is_empty()
+	if dal_ramo:
+		amount = attacker._modifica_colpo(self, amount)
 	_on_attacked(attacker)
 	if curse_t > 0.0:
 		amount *= 1.3
 	if team == ALLY and special == "provoca":
 		amount *= 0.7
 	hp -= amount
+	if dal_ramo:
+		attacker._dopo_colpo(self, amount)
+	if dead:
+		return  # già finito da un effetto (esplosione, catena)
 	flash = 0.18
 	# piccola spinta all'indietro, lontano da chi ha colpito
 	var away := -_face()
@@ -636,11 +746,128 @@ func _attack_sound() -> void:
 
 ## Colore d'accento dell'unità (lo stesso dell'elemento colorato della sprite).
 func accent() -> Color:
+	if spec_col.a > 0.0:
+		return spec_col
 	return Data.accent(kind, team)
 
 
+# --- Specializzazioni ---------------------------------------------------------
+
+## Prima del danno: critico, bonus contro i campioni, esecuzione.
+func _modifica_colpo(v, amount: float) -> float:
+	if sp("critico") > 0.0 and randf() < sp("critico"):
+		amount *= sp("danno_critico", 2.0)
+		game.spawn_unit_fx(v.ground, "spark", v.muzzle_height() + 2.0, _face(), 0.3, accent().lightened(0.3))
+	if v.is_boss:
+		amount *= sp("danno_campioni", 1.0)
+	elif sp("esecuzione") > 0.0 and (v.hp - amount) / v.max_hp < sp("esecuzione"):
+		amount = v.hp + 1.0
+		game.spawn_unit_fx(v.ground, "slash", v.muzzle_height(), _face(), 0.3, accent())
+	return amount
+
+
+## Dopo il danno: fuoco, gelo, stordimento, maledizione, rubavita, spinta, esplosione, catena.
+func _dopo_colpo(v, amount: float) -> void:
+	var col := accent()
+	if sp("danno_nel_tempo") > 0.0:
+		v.dot_dps = maxf(v.dot_dps if v.dot_t > 0.0 else 0.0, amount * sp("danno_nel_tempo"))
+		v.dot_t = maxf(v.dot_t, sp("durata_danno_nel_tempo", 3.0))
+		v.dot_col = col
+	if sp("rallenta") > 0.0:
+		v.slow_k = maxf(v.slow_k if v.slow_t > 0.0 else 0.0, sp("rallenta"))
+		v.slow_t = maxf(v.slow_t, sp("durata_rallenta", 2.0))
+		v.slow_col = col
+	if sp("stordisci") > 0.0 and randf() < sp("stordisci"):
+		v.stun_t = maxf(v.stun_t, sp("durata_stordisci", 0.8) * (0.5 if v.is_boss else 1.0))
+	if sp("maledici") > 0.0:
+		v.curse_t = maxf(v.curse_t, sp("maledici"))
+	if sp("rubavita") > 0.0 and not dead:
+		heal(amount * sp("rubavita"))
+	if sp("respingi") > 0.0 and not v.is_boss and not v.dead:
+		v.ground.x += sp("respingi")
+		v.knock = Vector2(4, 0)
+	if _in_effetto:
+		return
+	_in_effetto = true
+	if sp("esplosione") > 0.0:
+		var r := sp("esplosione")
+		game.spawn_ground_fx(v.ground, r, col, 0.3, "fire" if col.r > col.b else "ring")
+		for c in game.enemies_root.get_children():
+			if c != v and not c.dead and c.ground.distance_to(v.ground) <= r + c.radius:
+				c.take_damage(amount * sp("danno_esplosione", 0.5), self)
+	var n := int(sp("catena"))
+	if n > 0:
+		var prev = v
+		var colpiti: Array = [v]
+		for i in n:
+			var best = null
+			var best_d := 44.0
+			for c in game.enemies_root.get_children():
+				if c.dead or not c.visible or c in colpiti:
+					continue
+				var d: float = c.ground.distance_to(prev.ground)
+				if d < best_d:
+					best_d = d
+					best = c
+			if best == null:
+				break
+			game.spawn_zap(prev.ground, prev.muzzle_height(), best.ground, best.muzzle_height(), col)
+			best.take_damage(amount * sp("danno_catena", 0.6), self)
+			colpiti.append(best)
+			prev = best
+	_in_effetto = false
+
+
+## Rigenerazione e aure delle specializzazioni.
+func _spec_update(delta: float) -> void:
+	if sp("rigenera") > 0.0 and hp < max_hp:
+		heal(max_hp * sp("rigenera") * delta)
+	if sp("aura_cura") <= 0.0 and sp("aura_rallenta") <= 0.0:
+		return
+	aura_t -= delta
+	if aura_t > 0.0:
+		return
+	aura_t = 1.0
+	var r: float = game.AURA_RADIUS * sp("area", 1.0)
+	if sp("aura_cura") > 0.0:
+		var curati := false
+		for c in game.allies_root.get_children():
+			if not c.dead and c.visible and c.hp < c.max_hp and c.ground.distance_to(ground) <= r:
+				c.heal(c.max_hp * sp("aura_cura"))
+				curati = true
+		if curati:
+			game.spawn_ground_fx(ground, r * 0.5, accent(), 0.6, "heal")
+	if sp("aura_rallenta") > 0.0:
+		for c in game.enemies_root.get_children():
+			if not c.dead and c.ground.distance_to(ground) <= r + c.radius:
+				c.slow_k = maxf(c.slow_k if c.slow_t > 0.0 else 0.0, sp("aura_rallenta"))
+				c.slow_t = maxf(c.slow_t, 1.2)
+				c.slow_col = accent()
+		game.spawn_ground_fx(ground, r, Color(accent(), 0.5), 0.5)
+
+
+## Colore dei nemici rallentati dal gelo o in fiamme / avvelenati.
+func _tinta_stati() -> void:
+	var tinta := Color.WHITE
+	if slow_t <= 0.0:
+		slow_col.a = 0.0
+	if slow_t > 0.0 and slow_col.a > 0.0:
+		tinta = Color.WHITE.lerp(slow_col, 0.55)
+	elif dot_t > 0.0:
+		tinta = Color.WHITE.lerp(dot_col, 0.3 + 0.15 * sin(Time.get_ticks_msec() / 90.0))
+	elif buff_t > 0.0:  # spronato da un campione
+		tinta = Color.WHITE.lerp(buff_col, 0.35 + 0.1 * sin(Time.get_ticks_msec() / 120.0))
+	sprite.modulate = Color(tinta, sprite.modulate.a)
+
+
 func _die() -> void:
+	if dead:
+		return
 	dead = true
+	if team == ALLY and sp("esplode_alla_morte") > 0.0 and visible:
+		var r := sp("esplode_alla_morte")
+		game.spawn_ground_fx(ground, r, accent(), 0.5, "fire")
+		game.damage_area(ground, r, maxf(base_dmg, 10.0) * 2.0, ENEMY, null)
 	game.spawn_ground_fx(ground, radius + 2.0, C_WHITE if team == ALLY else C_LIGHT, 0.25)
 	Suoni.play("morte_scheletro" if team == ALLY else "morte_eroe", 0.75 if is_boss or kind in ["gigante", "golem"] else 1.0)
 	if visible:  # si sbriciola lasciando il teschio (o l'arma, per gli eroi)
