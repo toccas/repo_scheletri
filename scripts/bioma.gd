@@ -28,3 +28,13 @@ enum Ambiente { CIMITERO, PALUDE, CATTEDRALE, MONTAGNA }
 @export var eroi_lontani := true
 ## Colore delle file bloccate (acqua, fondo del crepaccio...).
 @export var colore_barriera := Color("1a1c1e")
+
+@export_group("Eroi nemici")
+## Aspetto degli eroi in questo campo (elfi, vichinghi...): una striscia 128x16 con
+## 8 sprite da 16x16 nello stesso ordine della riga degli umani di sprites.png:
+## soldato A,B · arciere A,B · mago A,B · gigante A,B (guardano a destra).
+## Vuoto = i cavalieri normali. I campioni restano sempre gli stessi.
+@export var sprite_nemici: Texture2D
+## Colore d'accento di ogni tipo di eroe (frecce, magie, scintille), per abbinarlo
+## alle sprite. Chiavi: soldato, arciere, mago, gigante. Un tipo assente = colore normale.
+@export var colori_nemici: Dictionary[String, Color] = {}

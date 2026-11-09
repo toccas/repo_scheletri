@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="Campione" format=3]
+
+[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" path="res://assets/campioni/cattedrale/visir.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Lama del visir"
+tipo = 11
+ricarica = 8.0
+primo_uso = 3.0
+danno = 1.6
+raggio = 120.0
+ritardo = 0.8
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Sparizione"
+tipo = 13
+ricarica = 9.0
+primo_uso = 5.0
+raggio = 55.0
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Decreto"
+tipo = 0
+ricarica = 14.0
+primo_uso = 2.0
+raggio = 100.0
+durata = 6.0
+potenza = 0.6
+
+[sub_resource type="Resource" id="Resource_m3"]
+script = ExtResource("2_mossa")
+nome = "Guardie del palazzo"
+tipo = 1
+ricarica = 20.0
+primo_uso = 0.0
+numero = 2
+evoca = "gigante"
+solo_fase2 = true
+
+[resource]
+script = ExtResource("1_camp")
+id = "cattedrale_visir"
+nome = "Il Gran Visir"
+titolo = "Ombra del trono"
+frase = "Ho tramato contro re. Un necromante non mi spaventa."
+frase_fase2 = "Che si compia il decreto!"
+ondata = 90
+sprite = ExtResource("3_spr")
+spazio_sotto_i_piedi = 0
+colore = Color(0.7216, 0.1569, 0.2275, 1)
+tipo_base = "soldato"
+corpo_a_corpo = true
+vita = 1900.0
+danno = 36.0
+cadenza = 1.3
+gittata = 7.0
+velocita = 13.0
+raggio = 10.0
+area = 0.0
+altezza_colpo = 20.0
+volante = false
+esperienza = 140
+monete = 60
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2"), SubResource("Resource_m3")])

@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="Campione" format=3]
+
+[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" path="res://assets/campioni/montagna/cacciatore_orsi.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Pioggia di frecce"
+tipo = 6
+ricarica = 7.0
+primo_uso = 3.0
+danno = 0.8
+raggio = 32.0
+ritardo = 0.8
+numero = 8
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Lancia scagliata"
+tipo = 11
+ricarica = 9.0
+primo_uso = 5.0
+danno = 2.0
+raggio = 150.0
+ritardo = 0.7
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Battitori"
+tipo = 1
+ricarica = 15.0
+primo_uso = 8.0
+numero = 3
+evoca = "arciere"
+
+[resource]
+script = ExtResource("1_camp")
+id = "montagna_cacciatore_orsi"
+nome = "Il Cacciatore d'Orsi"
+titolo = "Pelle d'orso, occhio di falco"
+frase = "Ho cacciato orsi più grossi di questa torre."
+frase_fase2 = "Ora caccio io!"
+ondata = 50
+sprite = ExtResource("3_spr")
+spazio_sotto_i_piedi = 0
+colore = Color(0.5882, 0.3922, 0.2275, 1)
+tipo_base = "arciere"
+corpo_a_corpo = false
+vita = 900.0
+danno = 18.0
+cadenza = 1.2
+gittata = 120.0
+velocita = 13.0
+raggio = 8.0
+area = 0.0
+altezza_colpo = 18.0
+volante = false
+esperienza = 80
+monete = 35
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

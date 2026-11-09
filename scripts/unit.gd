@@ -249,6 +249,9 @@ void fragment() {
 }"""
 	sprite.material = ShaderMaterial.new()
 	sprite.material.shader = _flash_shader
+	if team == ENEMY and game.tex_nemici != null:
+		sprite.texture = game.tex_nemici
+		_update_frame()
 	if spec_col.a > 0.0:
 		var base_col := Data.accent(kind, team)
 		sprite.material.set_shader_parameter("swap", 1.0)
@@ -279,7 +282,9 @@ func _update_frame() -> void:
 	if team == ALLY:
 		sprite.region_rect = Data.ally_region(kind, frame)
 	else:
-		sprite.region_rect = Rect2((ATLAS_COL[kind] + frame) * 16, team * 16, 16, 16)
+		# eroi del bioma (elfi, vichinghi...): la loro striscia ha una riga sola
+		var y := 0 if sprite.texture != ATLAS else team * 16
+		sprite.region_rect = Rect2((ATLAS_COL[kind] + frame) * 16, y, 16, 16)
 
 
 func _process(delta: float) -> void:
@@ -445,7 +450,7 @@ func _enemy_update(delta: float) -> void:
 	if to_tower <= attack_range:
 		_attack_tower()
 		return
-	ground.x -= get_speed() * delta
+	ground += _passo(Vector2(-get_speed() * delta, 0.0))  # gira attorno agli ostacoli
 	# vicino alla torre i nemici convergono verso la sua base
 	if to_tower < 40.0:
 		ground.y = move_toward(ground.y, game.tower_base_y, get_speed() * delta * 0.7)
@@ -455,8 +460,13 @@ func _move_toward(p: Vector2, delta: float) -> void:
 	if team == ALLY and is_static():
 		return
 	var before := ground
-	ground = ground.move_toward(p, get_speed() * delta)
+	ground += _passo(ground.move_toward(p, get_speed() * delta) - ground)
 	run_dist += ground.distance_to(before)
+
+
+## Passo che evita gli ostacoli del livello (chi vola ci passa sopra).
+func _passo(step: Vector2) -> Vector2:
+	return step if vola else game.aggira(ground, step, radius)
 
 
 const CATAPULT_MIN := 30.0
@@ -748,6 +758,8 @@ func _attack_sound() -> void:
 func accent() -> Color:
 	if spec_col.a > 0.0:
 		return spec_col
+	if team == ENEMY and game != null and game.colori_nemici.has(kind):
+		return game.colori_nemici[kind]
 	return Data.accent(kind, team)
 
 

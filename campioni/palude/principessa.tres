@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="Campione" format=3]
+
+[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" path="res://assets/campioni/palude/principessa.png" id="3_spr"]
+
+[sub_resource type="Resource" id="Resource_m0"]
+script = ExtResource("2_mossa")
+nome = "Carica lunare"
+tipo = 7
+ricarica = 9.0
+primo_uso = 4.0
+danno = 1.5
+raggio = 90.0
+durata = 0.6
+
+[sub_resource type="Resource" id="Resource_m1"]
+script = ExtResource("2_mossa")
+nome = "Canto della luna"
+tipo = 0
+ricarica = 12.0
+primo_uso = 2.0
+raggio = 90.0
+durata = 6.0
+potenza = 0.5
+
+[sub_resource type="Resource" id="Resource_m2"]
+script = ExtResource("2_mossa")
+nome = "Guardia d'onore"
+tipo = 1
+ricarica = 13.0
+primo_uso = 7.0
+numero = 4
+evoca = "soldato"
+
+[resource]
+script = ExtResource("1_camp")
+id = "palude_principessa"
+nome = "La Principessa della Luna"
+titolo = "Lancia d'argento"
+frase = "Al chiaro di luna, nessun morto cammina."
+frase_fase2 = "Guardia d'onore, a me!"
+ondata = 40
+sprite = ExtResource("3_spr")
+spazio_sotto_i_piedi = 0
+colore = Color(0.7059, 0.8235, 0.9412, 1)
+tipo_base = "soldato"
+corpo_a_corpo = true
+vita = 1000.0
+danno = 20.0
+cadenza = 1.1
+gittata = 8.0
+velocita = 17.0
+raggio = 9.0
+area = 0.0
+altezza_colpo = 18.0
+volante = false
+esperienza = 70
+monete = 30
+mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

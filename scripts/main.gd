@@ -248,6 +248,9 @@ var tex_sky: Texture2D = TEX_SKY
 var tex_ground: Texture2D = TEX_GROUND
 var tex_tiles: Texture2D = TEX_TILES
 var tex_obst: Texture2D = null
+## Eroi di questo campo (elfi, vichinghi, ...) e i loro colori: dal bioma.
+var tex_nemici: Texture2D
+var colori_nemici: Dictionary = {}
 var ambiente := 0  # Bioma.Ambiente
 var lanes: Array[Vector2] = []  # corsie libere: (y inizio, y fine) in pixel dell'arte
 var obstacle_rects: Array[Rect2] = []  # caselle con un ostacolo, in coordinate del terreno
@@ -642,6 +645,8 @@ func _apply_bioma() -> void:
 	tex_tiles = b.lastre if b.lastre else TEX_TILES
 	tex_obst = b.ostacoli
 	ambiente = b.ambiente
+	tex_nemici = b.sprite_nemici
+	colori_nemici = b.colori_nemici
 
 
 ## Corsie = gruppi di file vicine non bloccate.
@@ -705,6 +710,44 @@ func constrain(g: Vector2, radius: float) -> Vector2:
 			else:
 				g.x = rr.end.x
 	return g
+
+
+## Passo che gira attorno agli ostacoli: se `step` porterebbe dentro un ostacolo,
+## l'unità scivola in su o in giù verso il lato libero più vicino (dentro la sua
+## corsia) invece di restare bloccata dietro. Chi arriva da sopra o da sotto scivola di lato.
+func aggira(g: Vector2, step: Vector2, radius: float) -> Vector2:
+	if obstacle_rects.is_empty() or step == Vector2.ZERO:
+		return step
+	var next := g + step
+	var pad := radius * 0.8 + 0.5
+	for r in obstacle_rects:
+		var rr := r.grow(pad)
+		if not rr.has_point(next):
+			continue
+		var da_lato := g.x >= rr.end.x - 0.5 or g.x <= rr.position.x + 0.5
+		if not da_lato:  # arriva da sopra o da sotto: scivola di lato
+			return Vector2(step.x, 0.0) if absf(step.x) > 0.01 else Vector2(-step.length(), 0.0)
+		# bloccato davanti: sale o scende, verso il lato libero più vicino
+		var l: Vector2 = lanes[lane_of(g.y)] if not lanes.is_empty() else Vector2(0, depth)
+		var su_y := rr.position.y - 0.5
+		var giu_y := rr.end.y + 0.5
+		var su_ok := su_y >= l.x + minf(radius, 2.0) and not _dentro_ostacolo(Vector2(rr.get_center().x, su_y - 1.0), pad)
+		var giu_ok := giu_y <= l.y - minf(radius, 2.0) and not _dentro_ostacolo(Vector2(rr.get_center().x, giu_y + 1.0), pad)
+		var su := g.y - rr.position.y <= rr.end.y - g.y
+		if su and not su_ok and giu_ok:
+			su = false
+		elif not su and not giu_ok and su_ok:
+			su = true
+		var v := maxf(step.length(), 0.01)
+		return Vector2(0.0, -v if su else v)
+	return step
+
+
+func _dentro_ostacolo(p: Vector2, pad: float) -> bool:
+	for r in obstacle_rects:
+		if r.grow(pad).has_point(p):
+			return true
+	return false
 
 
 ## Punto di partenza di un eroe: a caso in una delle corsie.
@@ -2179,6 +2222,8 @@ func _draw_wave_banner() -> void:
 			n.draw_set_transform(Vector2(40, y - 4), 0.0, Vector2(-1, 1))  # girato verso sinistra
 			n.draw_texture_rect_region(camp.sprite, Rect2(Vector2.ZERO, Vector2(36, 36)), Rect2(0, 0, fs, fs))
 			n.draw_set_transform(Vector2.ZERO)
+		elif tex_nemici != null:
+			n.draw_texture_rect_region(tex_nemici, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 0, 16, 16))
 		else:
 			n.draw_texture_rect_region(ATLAS, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 16, 16, 16))
 		if e[2]:  # corona del campione

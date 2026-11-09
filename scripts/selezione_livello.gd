@@ -15,6 +15,7 @@ const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Data := preload("res://scripts/game_data.gd")
+const ATLAS := preload("res://assets/sprites.png")
 const PREP_SCENE := "res://scenes/preparazione.tscn"
 const MENU_SCENE := "res://scenes/menu.tscn"
 const LOCK: Array[String] = ["..KKK..", ".K...K.", ".K...K.", "KKKKKKK", "KWWWWWK", "KWWKWWK", "KWWKWWK", "KKKKKKK"]
@@ -261,6 +262,13 @@ func _draw_card(i: int, r: Rect2) -> void:
 			Rect2(sx, 0, w, pv.size.y - sky_h))
 		if b.ostacoli:  # un ostacolo del bioma in primo piano
 			draw_texture_rect_region(b.ostacoli, Rect2(pv.end - Vector2(76, 68), Vector2(64, 64)), Rect2((i % 4) * 32, 0, 32, 32))
+		# gli eroi che si incontrano in questo campo (elfi, vichinghi...), girati verso sinistra
+		var tn: Texture2D = b.sprite_nemici if b.sprite_nemici else ATLAS
+		var ty := 0.0 if b.sprite_nemici else 16.0
+		for k in 2:
+			draw_set_transform(Vector2(pv.position.x + 60 + k * 44, pv.end.y - 52 - k * 4), 0.0, Vector2(-1, 1))
+			draw_texture_rect_region(tn, Rect2(0, 0, 48, 48), Rect2(k * 32 + (int(t * 3.0) % 2) * 16, ty, 16, 16))
+			draw_set_transform(Vector2.ZERO)
 	else:
 		draw_rect(pv, C1)
 	if not open:

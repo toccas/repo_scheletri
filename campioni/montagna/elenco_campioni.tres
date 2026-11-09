@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ElencoCampioni" format=3]
+
+[ext_resource type="Script" path="res://scripts/elenco_campioni.gd" id="1_el"]
+[ext_resource type="Script" path="res://scripts/campione.gd" id="2_camp"]
+[ext_resource type="Resource" path="res://campioni/montagna/predone.tres" id="c0"]
+[ext_resource type="Resource" path="res://campioni/montagna/scaldo.tres" id="c1"]
+[ext_resource type="Resource" path="res://campioni/montagna/jarl.tres" id="c2"]
+[ext_resource type="Resource" path="res://campioni/montagna/scudiera.tres" id="c3"]
+[ext_resource type="Resource" path="res://campioni/montagna/cacciatore_orsi.tres" id="c4"]
+[ext_resource type="Resource" path="res://campioni/montagna/veggente.tres" id="c5"]
+[ext_resource type="Resource" path="res://campioni/montagna/jotunn.tres" id="c6"]
+[ext_resource type="Resource" path="res://campioni/montagna/volva.tres" id="c7"]
+[ext_resource type="Resource" path="res://campioni/montagna/re_berserker.tres" id="c8"]
+[ext_resource type="Resource" path="res://campioni/montagna/valchiria.tres" id="c9"]
+
+[resource]
+script = ExtResource("1_el")
+campioni = Array[ExtResource("2_camp")]([ExtResource("c0"), ExtResource("c1"), ExtResource("c2"), ExtResource("c3"), ExtResource("c4"), ExtResource("c5"), ExtResource("c6"), ExtResource("c7"), ExtResource("c8"), ExtResource("c9")])
