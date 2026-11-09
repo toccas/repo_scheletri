@@ -88,6 +88,15 @@ func _process(delta: float) -> void:
 	else:
 		fade = maxf(0.0, fade - delta * 3.0)
 	var m := get_local_mouse_position()
+	_aggiorna_hover(m)
+	var mano := hover_btn >= 0 or hover_back or (hover >= 0 and Livelli.sbloccato(lista, hover))
+	if classifica_i >= 0:
+		mano = cl_prev.has_point(m) or cl_next.has_point(m)
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if mano else Control.CURSOR_ARROW
+	queue_redraw()
+
+
+func _aggiorna_hover(m: Vector2) -> void:
 	hover = -1
 	hover_btn = -1
 	hover_back = false
@@ -99,18 +108,14 @@ func _process(delta: float) -> void:
 			if (bottoni[k]["rect"] as Rect2).has_point(m):
 				hover_btn = k
 		hover_back = back_rect.has_point(m)
-	var mano := hover_btn >= 0 or hover_back or (hover >= 0 and Livelli.sbloccato(lista, hover))
-	if classifica_i >= 0:
-		mano = cl_prev.has_point(m) or cl_next.has_point(m)
-	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if mano else Control.CURSOR_ARROW
-	queue_redraw()
 
 
 func _gui_input(event: InputEvent) -> void:
 	if leaving != "" or not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
+	_aggiorna_hover(event.position)  # sul telefono il tocco arriva senza movimento prima
 	if classifica_i >= 0:
-		var m := get_local_mouse_position()
+		var m: Vector2 = event.position
 		if cl_prev.has_point(m):
 			_cambia_classifica(-1)
 		elif cl_next.has_point(m):

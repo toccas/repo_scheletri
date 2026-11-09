@@ -1593,8 +1593,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventMouseButton and event.pressed) or modal.visible or levelup.visible:
 		return
-	var p := get_global_mouse_position()
+	var p: Vector2 = get_canvas_transform().affine_inverse() * event.position  # il punto del tocco
 	var idx := slot_at_screen(p)
+	hover_slot = idx
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		if selected_ability != "":
 			selected_ability = ""

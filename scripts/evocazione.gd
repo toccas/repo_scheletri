@@ -109,24 +109,28 @@ func _process(delta: float) -> void:
 		s["p"] = (s["p"] as Vector2).move_toward(PORTAL, delta * 260.0)
 		s["life"] -= delta
 	sparks = sparks.filter(func(s): return s["life"] > 0.0 and (s["p"] as Vector2).distance_to(PORTAL) > 8.0)
-	var m := get_local_mouse_position()
-	hover = ""
-	if fase == Fase.ATTESA and open_rect.has_point(m):
-		hover = "open"
-	elif fase == Fase.ATTESA and multi_rect.has_point(m):
-		hover = "multi"
-	elif back_rect.has_point(m):
-		hover = "back"
-	elif prep_rect.has_point(m):
-		hover = "prep"
+	hover = _hover_at(get_local_mouse_position())
 	var revealing := fase == Fase.RIVELA or fase == Fase.RIVELA_MULTI
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hover != "" or revealing else Control.CURSOR_ARROW
 	queue_redraw()
 
 
+func _hover_at(m: Vector2) -> String:
+	if fase == Fase.ATTESA and open_rect.has_point(m):
+		return "open"
+	if fase == Fase.ATTESA and multi_rect.has_point(m):
+		return "multi"
+	if back_rect.has_point(m):
+		return "back"
+	if prep_rect.has_point(m):
+		return "prep"
+	return ""
+
+
 func _gui_input(event: InputEvent) -> void:
 	if leaving != "" or not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
+	hover = _hover_at(event.position)  # sul telefono il tocco arriva senza movimento prima
 	if fase == Fase.RIVELA or fase == Fase.RIVELA_MULTI:
 		_continue()
 	elif hover != "":

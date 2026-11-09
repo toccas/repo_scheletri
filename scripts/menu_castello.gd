@@ -270,7 +270,7 @@ func _process(delta: float) -> void:
 			return
 	else:
 		fade = maxf(0.0, fade - delta * 1.6)
-	_update_hover()
+	_update_hover(get_viewport().get_mouse_position())
 	_update_sky(delta)
 	_update_siege(delta)
 	_update_walkers(delta)
@@ -279,11 +279,13 @@ func _process(delta: float) -> void:
 		n.queue_redraw()
 
 
-func _update_hover() -> void:
+## `pos` è in coordinate della finestra (come event.position): sul telefono non c'è
+## un mouse che si muove prima del tocco, quindi al tocco si ricalcola da lì.
+func _update_hover(pos: Vector2) -> void:
 	var new_hover = null
 	if feedback_panel == null and not leaving:
-		var mouse := get_global_mouse_position()
-		var art_mouse := mondo.get_local_mouse_position()
+		var mouse: Vector2 = get_canvas_transform().affine_inverse() * pos
+		var art_mouse: Vector2 = mondo.get_global_transform().affine_inverse() * mouse
 		for code in lang_rects:
 			if (lang_rects[code] as Rect2).grow(2).has_point(mouse):
 				new_hover = "lang:" + code
@@ -322,6 +324,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		key_index = -1
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		key_index = -1
+		_update_hover(event.position)
 		if hovered != null:
 			_activate(hovered)
 	elif event is InputEventKey and event.pressed and not event.echo:

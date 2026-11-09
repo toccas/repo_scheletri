@@ -201,7 +201,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
-	_press(_hit(get_local_mouse_position()))
+	_press(_hit(event.position))
 
 
 func _press(what: String) -> void:

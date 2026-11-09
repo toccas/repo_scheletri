@@ -51,11 +51,7 @@ func _process(delta: float) -> void:
 	if chiudendo and fade <= 0.0:
 		queue_free()
 		return
-	var m := root.get_local_mouse_position()
-	var h := -1
-	for i in rects.size():
-		if rects[i].has_point(m):
-			h = i
+	var h := _indice_a(root.get_local_mouse_position())
 	if h != hover:
 		hover = h
 		if h >= 0:
@@ -82,10 +78,19 @@ func _input(event: InputEvent) -> void:
 			_conferma(sel)
 
 
+func _indice_a(m: Vector2) -> int:
+	for i in rects.size():
+		if rects[i].has_point(m):
+			return i
+	return -1
+
+
 func _on_gui_input(event: InputEvent) -> void:
-	if not chiudendo and event is InputEventMouseButton and event.pressed \
-			and event.button_index == MOUSE_BUTTON_LEFT and hover >= 0:
-		_conferma(hover)
+	if chiudendo or not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	var i := _indice_a(event.position)  # sul telefono il tocco arriva senza movimento prima
+	if i >= 0:
+		_conferma(i)
 
 
 func _conferma(i: int) -> void:
