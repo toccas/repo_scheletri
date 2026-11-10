@@ -1,19 +1,18 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://bvs1r2cm4hb3y"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/palude/incantatrice.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://cnv2j5cd2r2u2" path="res://assets/campioni/palude/incantatrice.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
 nome = "Sciame di lucciole"
 tipo = 12
 ricarica = 9.0
-primo_uso = 4.0
 danno = 2.2
 raggio = 14.0
-ritardo = 1.2
 numero = 4
+ritardo = 1.2
 
 [sub_resource type="Resource" id="Resource_m1"]
 script = ExtResource("2_mossa")
@@ -38,10 +37,10 @@ nome = "Stella cadente"
 tipo = 5
 ricarica = 9.0
 primo_uso = 0.0
+solo_fase2 = true
 danno = 3.0
 raggio = 26.0
 ritardo = 1.5
-solo_fase2 = true
 
 [resource]
 script = ExtResource("1_camp")
@@ -52,7 +51,6 @@ frase = "Seguite le luci... fino alla fine."
 frase_fase2 = "Che la palude si illumini!"
 ondata = 60
 sprite = ExtResource("3_spr")
-spazio_sotto_i_piedi = 0
 colore = Color(0.8235, 0.9333, 0.3529, 1)
 tipo_base = "mago"
 corpo_a_corpo = false
@@ -64,7 +62,6 @@ velocita = 10.0
 raggio = 8.0
 area = 10.0
 altezza_colpo = 18.0
-volante = false
 esperienza = 90
 monete = 40
 mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2"), SubResource("Resource_m3")])

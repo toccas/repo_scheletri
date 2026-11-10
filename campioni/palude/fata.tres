@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://cwb2t5irg5i3j"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/palude/fata.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://dotmifq3tq5d8" path="res://assets/campioni/palude/fata.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
@@ -22,8 +22,8 @@ ricarica = 10.0
 primo_uso = 5.0
 danno = 2.5
 raggio = 14.0
-ritardo = 1.2
 numero = 5
+ritardo = 1.2
 
 [sub_resource type="Resource" id="Resource_m2"]
 script = ExtResource("2_mossa")
@@ -40,19 +40,17 @@ nome = "Corte delle fate"
 tipo = 1
 ricarica = 16.0
 primo_uso = 0.0
-numero = 3
-evoca = "mago"
 solo_fase2 = true
+evoca = "mago"
 
 [sub_resource type="Resource" id="Resource_m4"]
 script = ExtResource("2_mossa")
 nome = "Ali di cristallo"
 tipo = 8
 ricarica = 18.0
-primo_uso = 4.0
+solo_fase2 = true
 durata = 5.0
 potenza = 0.7
-solo_fase2 = true
 
 [resource]
 script = ExtResource("1_camp")
@@ -73,7 +71,6 @@ cadenza = 1.6
 gittata = 110.0
 velocita = 10.0
 raggio = 11.0
-area = 0.0
 altezza_colpo = 26.0
 volante = true
 esperienza = 300

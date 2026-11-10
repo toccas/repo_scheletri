@@ -374,7 +374,7 @@ func _ready() -> void:
 	Lingua.setup()
 	_apply_bioma()
 	infinita = prova_modalita_infinita or (Livelli.modalita_infinita() and Livelli.scelto() == id_livello)
-	if OS.is_debug_build():  # x5 scelto nel pannello dev resta attivo tra una partita e l'altra
+	if Portafoglio.dev_attivo():  # x5 scelto nel pannello dev resta attivo tra una partita e l'altra
 		var dcfg := ConfigFile.new()
 		dcfg.load(SAVE_PATH)
 		dev_x5 = bool(dcfg.get_value("dev", "velocita_x5", false))

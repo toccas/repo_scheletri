@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://bt6j1e5i3jv5l"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/cattedrale/visir.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://dq8h577mh1i3a" path="res://assets/campioni/cattedrale/visir.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
 nome = "Lama del visir"
 tipo = 11
-ricarica = 8.0
 primo_uso = 3.0
 danno = 1.6
 raggio = 120.0
@@ -38,9 +37,9 @@ nome = "Guardie del palazzo"
 tipo = 1
 ricarica = 20.0
 primo_uso = 0.0
+solo_fase2 = true
 numero = 2
 evoca = "gigante"
-solo_fase2 = true
 
 [resource]
 script = ExtResource("1_camp")
@@ -51,19 +50,13 @@ frase = "Ho tramato contro re. Un necromante non mi spaventa."
 frase_fase2 = "Che si compia il decreto!"
 ondata = 90
 sprite = ExtResource("3_spr")
-spazio_sotto_i_piedi = 0
 colore = Color(0.7216, 0.1569, 0.2275, 1)
-tipo_base = "soldato"
-corpo_a_corpo = true
 vita = 1900.0
 danno = 36.0
-cadenza = 1.3
 gittata = 7.0
 velocita = 13.0
 raggio = 10.0
-area = 0.0
 altezza_colpo = 20.0
-volante = false
 esperienza = 140
 monete = 60
 mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2"), SubResource("Resource_m3")])

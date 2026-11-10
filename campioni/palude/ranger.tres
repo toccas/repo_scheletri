@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://dkfy6cj2txtv3"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/palude/ranger.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://dwxjr1otyjq41" path="res://assets/campioni/palude/ranger.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
@@ -12,8 +12,8 @@ ricarica = 7.0
 primo_uso = 3.0
 danno = 0.8
 raggio = 32.0
-ritardo = 0.8
 numero = 8
+ritardo = 0.8
 
 [sub_resource type="Resource" id="Resource_m1"]
 script = ExtResource("2_mossa")
@@ -42,19 +42,15 @@ frase = "Non mi vedrete arrivare."
 frase_fase2 = "Nella nebbia sono ovunque!"
 ondata = 50
 sprite = ExtResource("3_spr")
-spazio_sotto_i_piedi = 0
 colore = Color(0.251, 0.6902, 0.6275, 1)
 tipo_base = "arciere"
 corpo_a_corpo = false
 vita = 900.0
-danno = 18.0
 cadenza = 1.2
 gittata = 120.0
 velocita = 13.0
 raggio = 8.0
-area = 0.0
 altezza_colpo = 18.0
-volante = false
 esperienza = 80
 monete = 35
 mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

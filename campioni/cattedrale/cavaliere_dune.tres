@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://bwbhfvufuo2dg"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/cattedrale/cavaliere_dune.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://dadmyqnaml81w" path="res://assets/campioni/cattedrale/cavaliere_dune.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
 nome = "Mazza del deserto"
-tipo = 3
 ricarica = 7.0
 primo_uso = 3.0
 danno = 1.5
@@ -29,9 +28,9 @@ nome = "Armatura di sabbia"
 tipo = 8
 ricarica = 18.0
 primo_uso = 0.0
+solo_fase2 = true
 durata = 4.0
 potenza = 0.8
-solo_fase2 = true
 
 [resource]
 script = ExtResource("1_camp")
@@ -42,19 +41,14 @@ frase = "La sabbia ha seppellito eserciti più grandi del tuo."
 frase_fase2 = "Acqua dell'oasi, proteggimi!"
 ondata = 30
 sprite = ExtResource("3_spr")
-spazio_sotto_i_piedi = 0
 colore = Color(0.9255, 0.5412, 0.1882, 1)
 tipo_base = "gigante"
-corpo_a_corpo = true
 vita = 1100.0
 danno = 22.0
 cadenza = 1.5
-gittata = 5.0
 velocita = 11.0
 raggio = 10.0
-area = 0.0
 altezza_colpo = 18.0
-volante = false
 esperienza = 60
 monete = 25
 mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])

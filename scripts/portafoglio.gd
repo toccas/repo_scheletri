@@ -12,6 +12,10 @@ const Collezione := preload("res://scripts/collezione.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const SAVE_PATH := "user://progressi.cfg"
 const DEV_TOOL := "res://scripts/dev_tool.gd"
+## Impostazioni del giocatore che non sono progressi (per ora: dev tool sbloccato).
+const CFG_IMPOSTAZIONI := "user://impostazioni.cfg"
+
+static var _dev_sbloccato := -1  # -1 = ancora da leggere
 
 
 static func load_state() -> Dictionary:
@@ -35,9 +39,44 @@ static func save_state(st: Dictionary) -> void:
 	cfg.save(SAVE_PATH)
 
 
-## Fondi infiniti attivi? Solo nelle build di prova (editor ed export di debug).
+## Fondi infiniti attivi? Solo con il dev tool (build di prova, oppure sbloccato
+## con il codice nelle Impostazioni).
 static func infinite(st: Dictionary) -> bool:
-	return OS.is_debug_build() and bool(st["dev_infiniti"])
+	return dev_attivo() and bool(st["dev_infiniti"])
+
+
+## Dev tool disponibile: nelle build di prova (editor ed export di debug) sempre,
+## nelle build finali solo dopo il codice sviluppatore nelle Impostazioni.
+static func dev_attivo() -> bool:
+	return OS.is_debug_build() or dev_sbloccato()
+
+
+## true se il codice sviluppatore è stato inserito (mostra il tasto DEV in alto a destra).
+static func dev_sbloccato() -> bool:
+	if _dev_sbloccato < 0:
+		var cfg := ConfigFile.new()
+		cfg.load(CFG_IMPOSTAZIONI)
+		_dev_sbloccato = 1 if bool(cfg.get_value("dev", "sbloccato", false)) else 0
+	return _dev_sbloccato == 1
+
+
+## Sblocca (true) o toglie (false) il dev tool e salva la scelta.
+static func sblocca_dev(on: bool, tree: SceneTree) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(CFG_IMPOSTAZIONI)
+	cfg.set_value("dev", "sbloccato", on)
+	cfg.save(CFG_IMPOSTAZIONI)
+	_dev_sbloccato = 1 if on else 0
+	if tree == null:
+		return
+	if on:
+		install_dev_tool(tree)
+	elif not OS.is_debug_build():
+		var dt := tree.root.get_node_or_null("DevTool")
+		if dt != null:
+			if dt.has_method("chiudi_pannello"):
+				dt.chiudi_pannello()
+			dt.queue_free()
 
 
 static func has_vip() -> bool:
@@ -106,9 +145,9 @@ static func set_dev_infinite(on: bool) -> void:
 
 
 ## Mette il dev tool nella radice del gioco (resta attivo cambiando scena).
-## Nelle build finali (senza debug) non fa niente.
+## Nelle build finali (senza debug) solo se è stato sbloccato con il codice.
 static func install_dev_tool(tree: SceneTree) -> void:
-	if not OS.is_debug_build() or tree == null or tree.root.has_node("DevTool"):
+	if not dev_attivo() or tree == null or tree.root.has_node("DevTool"):
 		return
 	var dt: Node = load(DEV_TOOL).new()
 	dt.name = "DevTool"

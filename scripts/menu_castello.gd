@@ -3,14 +3,15 @@ extends Node2D
 ##
 ## Gli edifici sono i pulsanti (nodi figli di Mondo/Cortile, script menu_building.gd):
 ##   AlloggioNecromante -> AVVIA RUN    Ricerca -> RICERCA    Portale -> EVOCAZIONE
-## In basso a sinistra BACK chiude il gioco; in alto a sinistra "Bug e consigli".
+## In alto a sinistra "Bug e consigli"; in basso a sinistra l'ingranaggio delle
+## IMPOSTAZIONI (volumi e codici, vedi impostazioni.gd).
 ##
 ## Livelli di disegno (dal fondo): Cielo, CieloAnim (stelle, nuvole, pipistrelli),
 ## Orda (assedianti fuori dalle mura), Mura, Difese (difensori, torce, frecce),
-## Cortile (edifici e scheletri, ordinati in profondità), Nebbia (nebbia e BACK).
+## Cortile (edifici e scheletri, ordinati in profondità), Nebbia (nebbia).
 ## Tutto dentro Mondo, scalato di scala_pixel: le coordinate sono in pixel dell'arte.
 ##
-## Comandi: mouse; frecce sinistra/destra + Invio; Esc non fa nulla (per uscire c'è BACK).
+## Comandi: mouse/tocco; frecce sinistra/destra + Invio.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
 const Lingua := preload("res://scripts/lingua.gd")
@@ -20,6 +21,7 @@ const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const ATLAS := preload("res://assets/sprites.png")
 const FeedbackPanel := preload("res://scripts/feedback_panel.gd")
+const PannelloImpostazioni := preload("res://scripts/impostazioni.gd")
 const GAME_SCENE := "res://scenes/main.tscn"
 const PREP_SCENE := "res://scenes/selezione_livello.tscn"  # AVVIA RUN: prima si sceglie il livello, poi la squadra
 const RESEARCH_SCENE := "res://scenes/research.tscn"
@@ -38,6 +40,13 @@ const SHOP_SCENE := "res://scenes/negozio.tscn"
 @export_range(0, 120) var nemici_orda := 54
 ## Scheletri che girano nel cortile.
 @export_range(0, 20) var scheletri_cortile := 7
+
+@export_group("Impostazioni")
+## Lato dell'ingranaggio in pixel dello schermo (60 = comodo sul telefono).
+@export_range(32, 120) var lato_pulsante_impostazioni := 60
+## Codice da scrivere nelle Impostazioni per avere il tasto DEV (il pannello dev)
+## anche sul telefono. Maiuscole/minuscole non contano. Vuoto = nessun codice.
+@export var codice_sviluppatore := "LEONARDO"
 
 @export_group("Bug e consigli")
 ## La tua email: è il destinatario quando il gioco apre l'app email del giocatore.
@@ -81,16 +90,16 @@ const ART := Vector2(320, 180)
 
 var t := 0.0
 var buildings: Array = []
-var hovered = null  # edificio sotto il mouse, oppure "back" / "feedback"
+var hovered = null  # edificio sotto il mouse, oppure "impostazioni" / "feedback" / "lang:xx"
 var key_index := -1  # selezione da tastiera
 var fade := 1.0
 var leaving := false
 var next_scene := ""
-var quitting := false
 var feedback_panel: Node = null
 var feedback_rect := Rect2()
 var lang_rects := {}  # "it"/"en"/"es" -> rettangolo del pulsante (pixel dello schermo)
-var back_rect := Rect2()  # in pixel dell'arte
+var impostazioni_rect := Rect2()  # ingranaggio (pixel dello schermo)
+var impostazioni_panel: Node = null
 
 var stars: Array = []
 var clouds: Array = []
@@ -263,10 +272,7 @@ func _process(delta: float) -> void:
 	if leaving:
 		fade = minf(1.0, fade + delta * 2.5)
 		if fade >= 1.0:
-			if quitting:
-				get_tree().quit()
-			else:
-				get_tree().change_scene_to_file(next_scene)
+			get_tree().change_scene_to_file(next_scene)
 			return
 	else:
 		fade = maxf(0.0, fade - delta * 1.6)
@@ -283,9 +289,8 @@ func _process(delta: float) -> void:
 ## un mouse che si muove prima del tocco, quindi al tocco si ricalcola da lì.
 func _update_hover(pos: Vector2) -> void:
 	var new_hover = null
-	if feedback_panel == null and not leaving:
+	if not _pannello_aperto() and not leaving:
 		var mouse: Vector2 = get_canvas_transform().affine_inverse() * pos
-		var art_mouse: Vector2 = mondo.get_global_transform().affine_inverse() * mouse
 		for code in lang_rects:
 			if (lang_rects[code] as Rect2).grow(2).has_point(mouse):
 				new_hover = "lang:" + code
@@ -293,8 +298,8 @@ func _update_hover(pos: Vector2) -> void:
 			pass
 		elif feedback_rect.grow(4).has_point(mouse):
 			new_hover = "feedback"
-		elif back_rect.grow(2).has_point(art_mouse):
-			new_hover = "back"
+		elif impostazioni_rect.grow(4).has_point(mouse):
+			new_hover = "impostazioni"
 		else:
 			# dal più vicino allo spettatore (y maggiore) al più lontano
 			var ordered := buildings.duplicate()
@@ -314,12 +319,16 @@ func _update_hover(pos: Vector2) -> void:
 
 func _key_target(i: int):
 	var items: Array = buildings.duplicate()
-	items.append("back")
+	items.append("impostazioni")
 	return items[posmod(i, items.size())]
 
 
+func _pannello_aperto() -> bool:
+	return feedback_panel != null or impostazioni_panel != null
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if leaving or feedback_panel != null:
+	if leaving or _pannello_aperto():
 		return
 	if event is InputEventMouseMotion:
 		key_index = -1
@@ -356,9 +365,8 @@ func _activate(target) -> void:
 	if target is String:
 		if target == "feedback":
 			_open_feedback()
-		elif target == "back":
-			quitting = true
-			leaving = true
+		elif target == "impostazioni":
+			_open_impostazioni()
 		return
 	match target.azione:
 		0:
@@ -375,6 +383,14 @@ func _activate(target) -> void:
 		var a := rnd.randf() * TAU
 		particles.append({"p": target.position + Vector2(0, -20), "v": Vector2(cos(a), sin(a)) * rnd.randf_range(10, 30),
 			"life": 0.6, "max": 0.6, "col": C6, "g": 0.0, "layer": "fog"})
+
+
+func _open_impostazioni() -> void:
+	impostazioni_panel = PannelloImpostazioni.new()
+	impostazioni_panel.codice_dev = codice_sviluppatore
+	impostazioni_panel.theme_override = tema_feedback
+	impostazioni_panel.closed.connect(func(): impostazioni_panel = null)
+	add_child(impostazioni_panel)
 
 
 func _open_feedback() -> void:
@@ -733,7 +749,7 @@ func _update_walkers(delta: float) -> void:
 		s.position = (w["pos"] as Vector2).round()  # pixel interi: restano nitidi
 
 
-# --- Nebbia, BACK, interfaccia ----------------------------------------------------------
+# --- Nebbia e interfaccia --------------------------------------------------------------
 
 func _draw_fog() -> void:
 	var n := nebbia
@@ -749,37 +765,12 @@ func _draw_fog() -> void:
 	for p in particles:
 		if p["layer"] == "fog":
 			n.draw_rect(Rect2((p["p"] as Vector2).round(), Vector2.ONE), Color(p["col"], clampf(p["life"] / p["max"], 0.0, 1.0)))
-	_draw_back_sign(n)
-
-
-## Cartello di pietra "BACK" in basso a sinistra, con faccia superiore e lato in ombra.
-func _draw_back_sign(n: CanvasItem) -> void:
-	var anchor := Vector2(8, 170)
-	var m := mondo.get_node_or_null("Back") as Node2D
-	if m:
-		anchor = m.position.round()
-	var label := tr("< BACK")
-	var tw := PixelFont.text_width(label, 1.0)
-	var size := Vector2(tw + 10, 13)
-	var r := Rect2(anchor - Vector2(0, size.y), size)
-	back_rect = r
-	var hot: bool = hovered is String and hovered == "back"
-	if hot:  # contorno bianco come gli edifici
-		n.draw_rect(r.grow(2), C6)
-	n.draw_rect(r.grow(1), C0)
-	n.draw_rect(Rect2(r.position + Vector2(2, -3), Vector2(size.x, 3)), Color("8a8a8c"))  # faccia superiore
-	n.draw_rect(Rect2(r.position + Vector2(size.x, -1), Vector2(2, size.y)), C2)  # lato
-	n.draw_rect(r, Color("5e5e60") if not hot else Color("707070"))
-	n.draw_rect(Rect2(r.position, Vector2(size.x, 1)), C4)
-	n.draw_rect(Rect2(r.position + Vector2(0, size.y - 1), Vector2(size.x, 1)), C1)
-	var tp := r.position + Vector2(5, 3)
-	PixelFont.draw_text(n, label, tp + Vector2(1, 1), 1.0, C0)
-	PixelFont.draw_text(n, label, tp, 1.0, C6 if hot else C5)
 
 
 func _draw_ui() -> void:
 	var n := interfaccia
 	_draw_feedback_button(n)
+	_draw_settings_button(n)
 	_draw_language(n)
 	if fade > 0.0:
 		n.draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color(C0, fade))
@@ -848,3 +839,32 @@ func _draw_feedback_button(n: CanvasItem) -> void:
 			if bug[y][x] == "#":
 				n.draw_rect(Rect2(o + Vector2(x, y) * 2.0, Vector2(2, 2)), C6 if hot else C5)
 	PixelFont.draw_text(n, label, feedback_rect.position + Vector2(10 + 14 + 8, 7), p, C6 if hot else C5)
+
+
+## Ingranaggio delle IMPOSTAZIONI in basso a sinistra (pixel dello schermo), grande
+## abbastanza per il pollice. Per spostarlo aggiungi alla scena un Marker2D
+## chiamato "Impostazioni" (figlio di Menu): il marker indica l'angolo in alto a sinistra.
+func _draw_settings_button(n: CanvasItem) -> void:
+	var lato := float(lato_pulsante_impostazioni)
+	var pos := Vector2(20, get_viewport_rect().size.y - 20 - lato)
+	var m := get_node_or_null("Impostazioni") as Node2D
+	if m:
+		pos = m.position.round()
+	impostazioni_rect = Rect2(pos, Vector2(lato, lato))
+	var hot: bool = hovered is String and hovered == "impostazioni"
+	n.draw_rect(impostazioni_rect, Color(C1, 0.92) if not hot else C2)
+	var border := C6 if hot else C4
+	n.draw_rect(Rect2(impostazioni_rect.position, Vector2(lato, 2)), border)
+	n.draw_rect(Rect2(impostazioni_rect.position + Vector2(0, lato - 2), Vector2(lato, 2)), border)
+	n.draw_rect(Rect2(impostazioni_rect.position, Vector2(2, lato)), border)
+	n.draw_rect(Rect2(impostazioni_rect.position + Vector2(lato - 2, 0), Vector2(2, lato)), border)
+	# ingranaggio 11x11 pixel, ingrandito
+	var ruota := ["....###....", ".##.###.##.", ".#########.", "..##...##..", "###.....###", "###.....###",
+		"###.....###", "..##...##..", ".#########.", ".##.###.##.", "....###...."]
+	var px := floorf((lato - 12.0) / 11.0)
+	var o := (impostazioni_rect.position + (Vector2(lato, lato) - Vector2(11, 11) * px) / 2.0).round()
+	var col := C6 if hot else C5
+	for y in ruota.size():
+		for x in ruota[y].length():
+			if ruota[y][x] == "#":
+				n.draw_rect(Rect2(o + Vector2(x, y) * px, Vector2(px, px)), col)

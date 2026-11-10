@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="Campione" format=3]
+[gd_resource type="Resource" script_class="Campione" format=3 uid="uid://dl2dvjcp7cl24"]
 
-[ext_resource type="Script" path="res://scripts/campione.gd" id="1_camp"]
-[ext_resource type="Script" path="res://scripts/mossa_campione.gd" id="2_mossa"]
-[ext_resource type="Texture2D" path="res://assets/campioni/cattedrale/guaritrice.png" id="3_spr"]
+[ext_resource type="Script" uid="uid://bx4qd7yblde3t" path="res://scripts/campione.gd" id="1_camp"]
+[ext_resource type="Script" uid="uid://cb0cdgbte618b" path="res://scripts/mossa_campione.gd" id="2_mossa"]
+[ext_resource type="Texture2D" uid="uid://vjw4gm2rmd1e" path="res://assets/campioni/cattedrale/guaritrice.png" id="3_spr"]
 
 [sub_resource type="Resource" id="Resource_m0"]
 script = ExtResource("2_mossa")
@@ -17,7 +17,6 @@ numero = 4
 script = ExtResource("2_mossa")
 nome = "Acqua fresca"
 tipo = 2
-ricarica = 8.0
 primo_uso = 3.0
 raggio = 80.0
 potenza = 0.2
@@ -40,7 +39,6 @@ frase = "Finché la mia lampada brilla, nessuno resta a terra."
 frase_fase2 = "Sole di mezzogiorno!"
 ondata = 80
 sprite = ExtResource("3_spr")
-spazio_sotto_i_piedi = 0
 colore = Color(0.4706, 0.8863, 0.9176, 1)
 tipo_base = "mago"
 corpo_a_corpo = false
@@ -50,9 +48,7 @@ cadenza = 1.6
 gittata = 70.0
 velocita = 10.0
 raggio = 8.0
-area = 0.0
 altezza_colpo = 18.0
-volante = false
 esperienza = 120
 monete = 50
 mosse = Array[ExtResource("2_mossa")]([SubResource("Resource_m0"), SubResource("Resource_m1"), SubResource("Resource_m2")])
