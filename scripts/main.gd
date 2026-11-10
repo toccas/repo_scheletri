@@ -103,6 +103,9 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export var corno_dimensione := Vector2(480, 84)
 ## Distanza del pulsante "SUONA IL CORNO" dal bordo in basso dello schermo.
 @export_range(0, 300) var corno_margine_basso := 6
+## Secondi in cui resta l'avviso "non hai schierato tutte le unità" (premendo di
+## nuovo il corno le ondate partono lo stesso).
+@export_range(0.5, 10.0, 0.5) var avviso_durata := 3.0
 
 @export_group("Torre del necromante", "torre_")
 ## Attiva: la torre si mette da sola sul bordo sinistro della griglia (anche se
@@ -243,6 +246,9 @@ var hover_slot := -1
 var tut_cella := -1
 var tut_attesa := false
 var deploy_counter: Control  # targa "UNITÀ EVOCABILI 0/3" durante lo schieramento
+var avviso_popup: Control  # "non hai schierato tutte le unità"
+var avviso_t := 0.0  # secondi rimasti dell'avviso
+var avviso_dato := false  # già avvisato: il prossimo tocco sul corno fa partire le ondate
 
 var allies_root: Node2D
 var enemies_root: Node2D
@@ -1556,6 +1562,13 @@ func _cella_tutorial() -> int:
 func _on_start_pressed() -> void:
 	if state != State.DEPLOY or deployed_count() == 0:
 		return
+	if deployed_count() < max_deploy and not avviso_dato:
+		# prima volta: avviso che restano unità da schierare; al secondo tocco si parte
+		avviso_dato = true
+		avviso_t = avviso_durata
+		Suoni.play("errore")
+		return
+	avviso_t = 0.0
 	state = State.PLAYING
 	start_button.hide()
 	next_wave_timer = 1.0
@@ -2130,6 +2143,18 @@ func _build_ui() -> void:
 	deploy_counter.draw.connect(_draw_deploy_counter)
 	ui_root.add_child(deploy_counter)
 
+	# avviso al centro: "non hai schierato tutte le unità" (non blocca i tocchi)
+	avviso_popup = Control.new()
+	avviso_popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avviso_popup.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	avviso_popup.offset_left = -300
+	avviso_popup.offset_right = 300
+	avviso_popup.offset_top = -80
+	avviso_popup.offset_bottom = 80
+	avviso_popup.visible = false
+	avviso_popup.draw.connect(_draw_avviso)
+	ui_root.add_child(avviso_popup)
+
 	# "SUONA IL CORNO": grande pietra chiara in basso al centro, con alone che pulsa
 	start_button = _flat_button()
 	start_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -2323,6 +2348,13 @@ func _update_hud() -> void:
 	deploy_counter.visible = state == State.DEPLOY
 	if deploy_counter.visible:
 		deploy_counter.queue_redraw()
+	if avviso_t > 0.0:
+		avviso_t = maxf(0.0, avviso_t - get_process_delta_time() / maxf(0.01, Engine.time_scale))
+	avviso_popup.visible = avviso_t > 0.0 and state == State.DEPLOY
+	if avviso_popup.visible:
+		# entra in 0,15 secondi e svanisce negli ultimi 0,4
+		avviso_popup.modulate.a = minf(clampf((avviso_durata - avviso_t) / 0.15, 0.0, 1.0), clampf(avviso_t / 0.4, 0.0, 1.0))
+		avviso_popup.queue_redraw()
 	if start_button.visible:
 		start_button.queue_redraw()  # alone e frecce animati
 	spell_row.visible = state != State.DEPLOY and state != State.GAME_OVER and state != State.VICTORY
@@ -2412,6 +2444,29 @@ func _draw_deploy_counter() -> void:
 	Pietra.text(c, ui_font, Vector2(r.size.x - cw - 18.0, r.size.y / 2.0 - 25.0), conto, 40, C6)
 
 
+## Avviso a comparsa: unità ancora da schierare. Entra ingrandendosi e svanisce.
+func _draw_avviso() -> void:
+	var c := avviso_popup
+	var dentro := clampf((avviso_durata - avviso_t) / 0.15, 0.0, 1.0)  # comparsa
+	var s := 0.9 + 0.1 * dentro
+	var r := Rect2(c.size * (1.0 - s) / 2.0, c.size * s)
+	c.draw_rect(r.grow(6), Color(0, 0, 0, 0.35))
+	Pietra.stone(c, r, C3, true)
+	var n := deployed_count()
+	# punto esclamativo in un rombo, a sinistra
+	var ic := r.position + Vector2(56, r.size.y / 2.0)
+	for i in 13:
+		var w := float(13 - absi(i - 6) * 2) * 3.0
+		c.draw_rect(Rect2(ic.x - w / 2.0, ic.y - 20.0 + i * 3.0, w, 3), C5)
+	c.draw_rect(Rect2(ic.x - 3, ic.y - 10, 6, 12), C0)
+	c.draw_rect(Rect2(ic.x - 3, ic.y + 6, 6, 6), C0)
+	var x := r.position.x + 104
+	Pietra.text(c, ui_font, Vector2(x, r.position.y + 22), tr("UNITÀ NON SCHIERATE"), 26, C6)
+	Pietra.text(c, ui_font, Vector2(x, r.position.y + 64), tr("Hai schierato %d unità su %d.") % [n, max_deploy], 18, C5, false)
+	Pietra.text_block_left(c, ui_font, Vector2(x, r.position.y + 94), r.size.x - 124.0,
+		tr("Premi di nuovo SUONA IL CORNO per partire lo stesso."), 16, C5)
+
+
 ## Pulsante "SUONA IL CORNO": pietra chiara con alone che pulsa, icona »» e frecce
 ## che corrono verso il pulsante. Spento (grigio) finché non schieri un'unità.
 func _draw_start_button() -> void:
@@ -2434,6 +2489,8 @@ func _draw_start_button() -> void:
 		fs -= 2
 	Pietra.text_c(b, ui_font, cx, r.size.y * 0.5 - fs + 4.0, titolo, fs, testo_col, false)
 	var sotto := tr("inizia l'ondata %d") % (wave + 1) if attivo else tr("schiera almeno un'unità")
+	if attivo and avviso_dato and deployed_count() < max_deploy:
+		sotto = tr("premi di nuovo per partire lo stesso")
 	Pietra.text_c(b, ui_font, cx, r.size.y * 0.5 + 10.0, sotto, 16, C2 if attivo else C4, false)
 	if attivo:  # frecce a gradini che corrono verso il pulsante, ai due lati
 		_frecce_corno(b, Vector2(-30.0, r.size.y / 2.0), -1.0)

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Dialogo" format=3]
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://sr6x2ox31wat"]
 
 [ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_a2oli"]
 [ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_8x4u6"]

@@ -880,6 +880,10 @@ schiera almeno un'unità,schiera almeno un'unità,deploy at least one unit,despl
 Schieramento completo: suona il corno per iniziare.,Schieramento completo: suona il corno per iniziare.,Deployment complete: sound the horn to begin.,Despliegue completo: toca el cuerno para empezar.
 UNITÀ EVOCABILI,UNITÀ EVOCABILI,UNITS TO SUMMON,UNIDADES INVOCABLES
 Tocca la casella che lampeggia.,Tocca la casella che lampeggia.,Tap the flashing square.,Toca la casilla que parpadea.
+UNITÀ NON SCHIERATE,UNITÀ NON SCHIERATE,UNITS NOT DEPLOYED,UNIDADES SIN DESPLEGAR
+Hai schierato %d unità su %d.,Hai schierato %d unità su %d.,You have deployed %d of %d units.,Has desplegado %d de %d unidades.
+Premi di nuovo SUONA IL CORNO per partire lo stesso.,Premi di nuovo SUONA IL CORNO per partire lo stesso.,Press SOUND THE HORN again to start anyway.,Pulsa de nuevo TOCA EL CUERNO para empezar igualmente.
+premi di nuovo per partire lo stesso,premi di nuovo per partire lo stesso,press again to start anyway,pulsa de nuevo para empezar igualmente
 Oh! Un nuovo apprendista. Finalmente!,Oh! Un nuovo apprendista. Finalmente!,Oh! A new apprentice. At last!,¡Oh! Un nuevo aprendiz. ¡Por fin!
 "Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","I am the Necromancer, lord of this tower and of every bone around it.","Soy el Nigromante, señor de esta torre y de cada hueso que la rodea."
 "Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","The kingdom's heroes want to tear it down. They will come in waves: a hundred, each stronger than the last.","Los héroes del reino quieren derribarla. Llegarán en oleadas: cien, cada una más fuerte que la anterior."
