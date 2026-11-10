@@ -12,6 +12,9 @@ extends RefCounted
 ##   effect    tipo di bonus (vedi bonuses() e main.gd: _apply_research)
 ##   value     valore del bonus per ogni livello
 ##   icon      angolo in alto a sinistra dell'icona 16x16 in assets/sprites.png
+##   tex       (facoltativo) "necro" = l'icona è in assets/necromanti/necromanti.png
+##   tree      (facoltativo) a quale necromante appartiene: "ossa" (se manca),
+##             "strega" o "lich". Ogni necromante ha il suo albero; i punti sono in comune.
 ##
 ## Le unità NON si sbloccano più da qui: si trovano aprendo le pergamene nel
 ## portale (vedi collezione.gd). Qui ci sono solo potenziamenti, anche per ruolo
@@ -25,6 +28,21 @@ const BRANCHES := [
 	{"name": "EVOCAZIONI", "cols": [3, 4]},
 	{"name": "ARCANO", "cols": [6, 7]},
 ]
+
+## Rami di ogni albero (id del necromante -> rami). Le colonne sono quelle della griglia.
+const TREES := {
+	"ossa": BRANCHES,
+	"strega": [
+		{"name": "STREGA", "cols": [0, 1]},
+		{"name": "EVOCAZIONI", "cols": [3, 4]},
+		{"name": "MALEFICI", "cols": [6, 7]},
+	],
+	"lich": [
+		{"name": "LICH", "cols": [0, 1]},
+		{"name": "EVOCAZIONI", "cols": [3, 4]},
+		{"name": "INVERNO", "cols": [6, 7]},
+	],
+}
 
 const NODES := {
 	# --- Necromante ---------------------------------------------------------
@@ -110,6 +128,194 @@ const NODES := {
 		"branch": 2, "pos": Vector2i(7, 1), "costs": [10, 16, 24], "requires": ["cura", 1],
 		"effect": "ability_cd", "value": 0.10, "icon": Vector2(96, 48),
 	},
+	# --- Signore delle Ossa: ricerca in più nel ramo Necromante ---------------
+	"raccolto": {
+		"tree": "ossa", "name": "Raccolto d'ossa", "desc": "Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello.",
+		"branch": 0, "pos": Vector2i(0, 2), "costs": [8, 12, 18], "requires": ["occhio", 1],
+		"effect": "rialza", "value": 0.05, "icon": Vector2(96, 32), "tex": "necro",
+	},
+	# --- Strega Pestilenziale ---------------------------------------------------
+	"s_veleno": {
+		"tree": "strega", "name": "Veleno potente", "desc": "Veleno dei colpi della torre +20% per livello.",
+		"branch": 0, "pos": Vector2i(0, 0), "costs": [4, 6, 9, 12, 16], "requires": [],
+		"effect": "veleno_torre", "value": 0.20, "icon": Vector2(0, 32), "tex": "necro",
+	},
+	"s_ira": {
+		"tree": "strega", "name": "Ira della strega", "desc": "Danno della torre +10% per livello.",
+		"branch": 0, "pos": Vector2i(1, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "necro_dmg", "value": 0.10, "icon": Vector2(112, 48),
+	},
+	"s_tossine": {
+		"tree": "strega", "name": "Tossine lente", "desc": "Il veleno della torre dura 1 secondo in più per livello.",
+		"branch": 0, "pos": Vector2i(0, 1), "costs": [6, 10, 15], "requires": ["s_veleno", 1],
+		"effect": "veleno_durata", "value": 1.0, "icon": Vector2(16, 32), "tex": "necro",
+	},
+	"s_malocchio": {
+		"tree": "strega", "name": "Malocchio", "desc": "I colpi della torre maledicono 1 secondo in più per livello.",
+		"branch": 0, "pos": Vector2i(1, 1), "costs": [6, 10, 15], "requires": ["s_ira", 1],
+		"effect": "maledizione_torre", "value": 1.0, "icon": Vector2(32, 32), "tex": "necro",
+	},
+	"s_rovi": {
+		"tree": "strega", "name": "Mura di rovi", "desc": "Vita della torre +20 per livello.",
+		"branch": 0, "pos": Vector2i(0, 2), "costs": [4, 6, 9, 12, 16], "requires": ["s_tossine", 1],
+		"effect": "tower_hp", "value": 20.0, "icon": Vector2(80, 64),
+	},
+	"s_rito": {
+		"tree": "strega", "name": "Rito del calderone", "desc": "Velocità d'attacco della torre +8% per livello.",
+		"branch": 0, "pos": Vector2i(1, 2), "costs": [8, 12, 18], "requires": ["s_malocchio", 1],
+		"effect": "necro_rate", "value": 0.08, "icon": Vector2(96, 48),
+	},
+	"s_lame": {
+		"tree": "strega", "name": "Lame avvelenate", "desc": "I colpi degli scheletri avvelenano: 10% del danno al secondo per livello.",
+		"branch": 1, "pos": Vector2i(3, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "ally_veleno", "value": 0.10, "icon": Vector2(96, 64),
+	},
+	"s_ossa": {
+		"tree": "strega", "name": "Ossa marce", "desc": "Vita delle unità scheletro +10% per livello.",
+		"branch": 1, "pos": Vector2i(4, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "ally_hp", "value": 0.10, "icon": Vector2(80, 48),
+	},
+	"s_contagio": {
+		"tree": "strega", "name": "Contagio", "desc": "Quando un nemico avvelenato muore, 20% per livello di contagiare chi gli sta vicino.",
+		"branch": 1, "pos": Vector2i(3, 1), "costs": [6, 10, 15], "requires": ["s_lame", 1],
+		"effect": "contagio", "value": 0.20, "icon": Vector2(48, 32), "tex": "necro",
+	},
+	"s_streghe": {
+		"tree": "strega", "name": "Arti della congrega", "desc": "Danno delle unità magiche +12% per livello.",
+		"branch": 1, "pos": Vector2i(4, 1), "costs": [8, 12, 18], "requires": ["s_ossa", 1],
+		"effect": "dmg_magia", "value": 0.12, "icon": Vector2(64, 0),
+	},
+	"s_legione": {
+		"tree": "strega", "name": "Esercito appestato", "desc": "Squadre schierabili a inizio partita +1 per livello.",
+		"branch": 1, "pos": Vector2i(3, 2), "costs": [25, 40], "requires": ["s_contagio", 1],
+		"effect": "deploy", "value": 1.0, "icon": Vector2(112, 64),
+	},
+	"s_mira": {
+		"tree": "strega", "name": "Frecce intinte", "desc": "Danno delle unità a distanza +12% per livello.",
+		"branch": 1, "pos": Vector2i(4, 2), "costs": [8, 12, 18], "requires": ["s_streghe", 1],
+		"effect": "dmg_distanza", "value": 0.12, "icon": Vector2(32, 0),
+	},
+	"s_nube": {
+		"tree": "strega", "name": "Nube di peste", "desc": "Sblocca la magia Nube di peste: una nube che avvelena, rallenta e maledice.",
+		"branch": 2, "pos": Vector2i(6, 0), "costs": [8], "requires": [],
+		"effect": "unlock_nube_di_peste", "value": 1.0, "icon": Vector2(0, 16), "tex": "necro",
+	},
+	"s_maledizione": {
+		"tree": "strega", "name": "Maledizione", "desc": "Sblocca la magia Maledizione: i nemici nell'area subiscono il 50% di danni in più.",
+		"branch": 2, "pos": Vector2i(7, 0), "costs": [8], "requires": [],
+		"effect": "unlock_maledizione", "value": 1.0, "icon": Vector2(16, 16), "tex": "necro",
+	},
+	"s_sciame": {
+		"tree": "strega", "name": "Sciame", "desc": "Sblocca la magia Sciame: insetti velenosi su tanti nemici vicini.",
+		"branch": 2, "pos": Vector2i(6, 1), "costs": [14], "requires": ["s_nube", 1],
+		"effect": "unlock_sciame", "value": 1.0, "icon": Vector2(32, 16), "tex": "necro",
+	},
+	"s_potere": {
+		"tree": "strega", "name": "Potere del sabba", "desc": "Potenza delle magie +15% per livello.",
+		"branch": 2, "pos": Vector2i(6, 2), "costs": [10, 16, 24], "requires": ["s_sciame", 1],
+		"effect": "ability_power", "value": 0.15, "icon": Vector2(64, 64),
+	},
+	"s_luna": {
+		"tree": "strega", "name": "Luna nera", "desc": "Tempo di ricarica delle magie -10% per livello.",
+		"branch": 2, "pos": Vector2i(7, 1), "costs": [10, 16, 24], "requires": ["s_maledizione", 1],
+		"effect": "ability_cd", "value": 0.10, "icon": Vector2(96, 48),
+	},
+	"s_anatema": {
+		"tree": "strega", "name": "Anatema", "desc": "I maledetti subiscono il 10% di danni in più per livello.",
+		"branch": 2, "pos": Vector2i(7, 2), "costs": [10, 16, 24], "requires": ["s_luna", 1],
+		"effect": "maledizione_forza", "value": 0.10, "icon": Vector2(48, 64),
+	},
+	# --- Lich del Ghiaccio -------------------------------------------------------
+	"l_gelo": {
+		"tree": "lich", "name": "Tocco gelido", "desc": "Rallentamento dei colpi della torre +8% per livello.",
+		"branch": 0, "pos": Vector2i(0, 0), "costs": [4, 6, 9, 12, 16], "requires": [],
+		"effect": "rallenta_torre", "value": 0.08, "icon": Vector2(64, 32), "tex": "necro",
+	},
+	"l_furia": {
+		"tree": "lich", "name": "Furia del lich", "desc": "Danno della torre +10% per livello.",
+		"branch": 0, "pos": Vector2i(1, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "necro_dmg", "value": 0.10, "icon": Vector2(112, 48),
+	},
+	"l_inverno": {
+		"tree": "lich", "name": "Inverno lungo", "desc": "Il rallentamento della torre dura mezzo secondo in più per livello.",
+		"branch": 0, "pos": Vector2i(0, 1), "costs": [6, 10, 15], "requires": ["l_gelo", 1],
+		"effect": "rallenta_durata", "value": 0.5, "icon": Vector2(96, 48),
+	},
+	"l_congela": {
+		"tree": "lich", "name": "Morsa di ghiaccio", "desc": "Probabilità di congelare a ogni colpo della torre +4% per livello.",
+		"branch": 0, "pos": Vector2i(1, 1), "costs": [6, 10, 15], "requires": ["l_furia", 1],
+		"effect": "congela", "value": 0.04, "icon": Vector2(64, 16), "tex": "necro",
+	},
+	"l_mura": {
+		"tree": "lich", "name": "Mura di ghiaccio", "desc": "Vita della torre +20 per livello.",
+		"branch": 0, "pos": Vector2i(0, 2), "costs": [4, 6, 9, 12, 16], "requires": ["l_inverno", 1],
+		"effect": "tower_hp", "value": 20.0, "icon": Vector2(80, 64),
+	},
+	"l_cuore": {
+		"tree": "lich", "name": "Cuore gelido", "desc": "Il congelamento dura 0,3 secondi in più per livello.",
+		"branch": 0, "pos": Vector2i(1, 2), "costs": [8, 12, 18], "requires": ["l_congela", 1],
+		"effect": "congela_durata", "value": 0.3, "icon": Vector2(48, 64),
+	},
+	"l_lame": {
+		"tree": "lich", "name": "Lame di brina", "desc": "I colpi degli scheletri rallentano i nemici dell'8% per livello.",
+		"branch": 1, "pos": Vector2i(3, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "ally_gelo", "value": 0.08, "icon": Vector2(96, 64),
+	},
+	"l_ossa": {
+		"tree": "lich", "name": "Ossa di ghiaccio", "desc": "Vita delle unità scheletro +10% per livello.",
+		"branch": 1, "pos": Vector2i(4, 0), "costs": [5, 8, 12, 16, 22], "requires": [],
+		"effect": "ally_hp", "value": 0.10, "icon": Vector2(80, 48),
+	},
+	"l_guardia": {
+		"tree": "lich", "name": "Guardia d'inverno", "desc": "Vita delle unità corpo a corpo +12% per livello.",
+		"branch": 1, "pos": Vector2i(3, 1), "costs": [6, 10, 15], "requires": ["l_lame", 1],
+		"effect": "hp_corpo", "value": 0.12, "icon": Vector2(0, 0),
+	},
+	"l_mira": {
+		"tree": "lich", "name": "Frecce di ghiaccio", "desc": "Danno delle unità a distanza +12% per livello.",
+		"branch": 1, "pos": Vector2i(4, 1), "costs": [8, 12, 18], "requires": ["l_ossa", 1],
+		"effect": "dmg_distanza", "value": 0.12, "icon": Vector2(32, 0),
+	},
+	"l_legione": {
+		"tree": "lich", "name": "Legione gelata", "desc": "Squadre schierabili a inizio partita +1 per livello.",
+		"branch": 1, "pos": Vector2i(3, 2), "costs": [25, 40], "requires": ["l_guardia", 1],
+		"effect": "deploy", "value": 1.0, "icon": Vector2(112, 64),
+	},
+	"l_schegge": {
+		"tree": "lich", "name": "Schegge", "desc": "I nemici congelati subiscono il 20% di danni in più per livello.",
+		"branch": 1, "pos": Vector2i(4, 2), "costs": [8, 12, 18], "requires": ["l_mira", 1],
+		"effect": "schegge", "value": 0.20, "icon": Vector2(80, 32), "tex": "necro",
+	},
+	"l_bufera": {
+		"tree": "lich", "name": "Bufera", "desc": "Sblocca la magia Bufera: una tempesta di neve che rallenta e ferisce.",
+		"branch": 2, "pos": Vector2i(6, 0), "costs": [8], "requires": [],
+		"effect": "unlock_bufera", "value": 1.0, "icon": Vector2(48, 16), "tex": "necro",
+	},
+	"l_prigione": {
+		"tree": "lich", "name": "Prigione gelida", "desc": "Sblocca la magia Prigione gelida: congela i nemici in una piccola area.",
+		"branch": 2, "pos": Vector2i(7, 0), "costs": [8], "requires": [],
+		"effect": "unlock_prigione_di_ghiaccio", "value": 1.0, "icon": Vector2(64, 16), "tex": "necro",
+	},
+	"l_cometa": {
+		"tree": "lich", "name": "Cometa gelata", "desc": "Sblocca la magia Cometa gelata: danni altissimi e gelo dove cade.",
+		"branch": 2, "pos": Vector2i(6, 1), "costs": [14], "requires": ["l_bufera", 1],
+		"effect": "unlock_cometa_gelata", "value": 1.0, "icon": Vector2(80, 16), "tex": "necro",
+	},
+	"l_potere": {
+		"tree": "lich", "name": "Potere del gelo", "desc": "Potenza delle magie +15% per livello.",
+		"branch": 2, "pos": Vector2i(6, 2), "costs": [10, 16, 24], "requires": ["l_cometa", 1],
+		"effect": "ability_power", "value": 0.15, "icon": Vector2(64, 64),
+	},
+	"l_luna": {
+		"tree": "lich", "name": "Notte polare", "desc": "Tempo di ricarica delle magie -10% per livello.",
+		"branch": 2, "pos": Vector2i(7, 1), "costs": [10, 16, 24], "requires": ["l_prigione", 1],
+		"effect": "ability_cd", "value": 0.10, "icon": Vector2(96, 48),
+	},
+	"l_eterno": {
+		"tree": "lich", "name": "Inverno eterno", "desc": "Gli effetti delle magie (gelo, bufera) durano il 20% in più per livello.",
+		"branch": 2, "pos": Vector2i(7, 2), "costs": [10, 16, 24], "requires": ["l_luna", 1],
+		"effect": "durata_magie", "value": 0.20, "icon": Vector2(64, 32), "tex": "necro",
+	},
 }
 
 
@@ -186,9 +392,29 @@ static func buy(st: Dictionary, id: String) -> bool:
 	return true
 
 
-## Restituisce tutti i punti spesi e azzera le ricerche.
-static func refund_all(st: Dictionary) -> void:
+## Albero a cui appartiene la ricerca ("ossa" se non è indicato).
+static func tree_of(id: String) -> String:
+	return String(NODES[id].get("tree", "ossa"))
+
+
+## Id delle ricerche di un albero.
+static func tree_nodes(tree: String) -> Array:
+	var out: Array = []
 	for id in NODES:
+		if tree_of(id) == tree:
+			out.append(id)
+	return out
+
+
+static func branches(tree: String) -> Array:
+	return TREES.get(tree, BRANCHES)
+
+
+## Restituisce i punti spesi e azzera le ricerche (di un solo albero se `tree` non è vuoto).
+static func refund_all(st: Dictionary, tree: String = "") -> void:
+	for id in NODES:
+		if tree != "" and tree_of(id) != tree:
+			continue
 		var costs: Array = NODES[id]["costs"]
 		for i in level(st, id):
 			st["points"] += costs[i]
@@ -196,10 +422,13 @@ static func refund_all(st: Dictionary) -> void:
 	save_state(st)
 
 
-## Somma dei bonus di tutte le ricerche fatte: {effect: valore totale}.
-static func bonuses(levels: Dictionary) -> Dictionary:
+## Somma dei bonus delle ricerche fatte: {effect: valore totale}.
+## Con `tree` conta solo l'albero di quel necromante (quello in partita).
+static func bonuses(levels: Dictionary, tree: String = "") -> Dictionary:
 	var b := {}
 	for id in NODES:
+		if tree != "" and tree_of(id) != tree:
+			continue
 		var lv: int = levels.get(id, 0)
 		if lv > 0:
 			var n: Dictionary = NODES[id]

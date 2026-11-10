@@ -32,6 +32,8 @@ const Specializzazioni := preload("res://scripts/specializzazioni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Livelli := preload("res://scripts/livelli.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
+const NECRO_ATLAS := preload("res://assets/necromanti/necromanti.png")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -52,6 +54,9 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
 ## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
 @export var dialogo_tutorial: Dialogo = preload("res://dialoghi/battaglia.tres")
+## Seconda parte del tutorial: compare dopo che il giocatore ha evocato la prima
+## unità nella casella che lampeggia (schiera le altre, poi SUONA IL CORNO).
+@export var dialogo_schieramento: Dialogo = preload("res://dialoghi/battaglia_2.tres")
 
 @export_group("Livello")
 ## Nome del livello nei salvataggi (finito, record): ogni livello ne ha uno diverso,
@@ -94,6 +99,10 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 ## Fine partita a schermo intero (bande nere, cronaca delle ondate, pulsanti grandi
 ## per il telefono). Spento = il vecchio pannello con l'elenco dei pulsanti.
 @export var schermata_finale_cinematica := true
+## Pulsante "SUONA IL CORNO" per iniziare le ondate: larghezza e altezza (pixel dello schermo).
+@export var corno_dimensione := Vector2(480, 84)
+## Distanza del pulsante "SUONA IL CORNO" dal bordo in basso dello schermo.
+@export_range(0, 300) var corno_margine_basso := 6
 
 @export_group("Torre del necromante", "torre_")
 ## Attiva: la torre si mette da sola sul bordo sinistro della griglia (anche se
@@ -115,7 +124,8 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export var colore_saetta := Color("5292ec")
 ## Cerchio e crocette dell'area curativa.
 @export var colore_area_curativa := Color("68be4c")
-## Colpi del necromante e bagliore del suo bastone.
+## Colpi del necromante e bagliore del suo bastone. In partita lo sostituisce il
+## colore del necromante scelto (necromanti/*.tres, campo "Colore").
 @export var colore_necromante := Color("9c5ccc")
 ## Nubi dello stregone della peste.
 @export var colore_nube_peste := Color("b6d640")
@@ -186,6 +196,11 @@ const R_IC_HEART := Rect2(80, 64, 16, 16)
 const R_IC_SWORD := Rect2(96, 64, 16, 16)
 const R_IC_FAST := Rect2(48, 80, 16, 16)
 const ABILITY_ICONS := {"palla_di_fuoco": R_IC_FIRE, "area_curativa": R_IC_HEAL, "saetta": R_IC_BOLT}
+## Icone delle magie di Strega e Lich (in assets/necromanti/necromanti.png).
+const ABILITY_ICONS_NECRO := {
+	"nube_di_peste": Rect2(0, 16, 16, 16), "maledizione": Rect2(16, 16, 16, 16), "sciame": Rect2(32, 16, 16, 16),
+	"bufera": Rect2(48, 16, 16, 16), "prigione_di_ghiaccio": Rect2(64, 16, 16, 16), "cometa_gelata": Rect2(80, 16, 16, 16),
+}
 # crepe della torre (coordinate nel rettangolo della torre), una lista per livello di danno
 const TOWER_CRACKS := [
 	[[Vector2(9, 15), Vector2(9, 19), Vector2(11, 19), Vector2(11, 24), Vector2(10, 24), Vector2(10, 28)],
@@ -223,6 +238,11 @@ var tower_base_y := 0.0  # profondità (terreno) della base della torre
 var state: int = State.DEPLOY
 var slots: Array = []  # una per casella: {cell, center, kind, units}
 var hover_slot := -1
+## Tutorial del primo avvio: casella che lampeggia (-1 = nessuna) e attesa della
+## prima unità schierata per far partire la seconda parte del dialogo.
+var tut_cella := -1
+var tut_attesa := false
+var deploy_counter: Control  # targa "UNITÀ EVOCABILI 0/3" durante lo schieramento
 
 var allies_root: Node2D
 var enemies_root: Node2D
@@ -272,6 +292,26 @@ var necro_dmg := Data.NECRO_DMG
 var necro_cooldown := Data.NECRO_COOLDOWN
 var necro_range := Data.NECRO_RANGE
 var necro_timer := 0.0
+## Il necromante scelto nella preparazione (necromanti/*.tres) e le sue tre magie.
+var necromante: Necromante
+var ability_order: Array = []
+# poteri del necromante + bonus del suo albero (vedi _apply_research)
+var veleno_k := 0.0
+var veleno_durata := 3.0
+var maled_durata := 0.0
+var maled_forza := 0.3
+var rallenta_k := 0.0
+var rallenta_durata := 2.0
+var congela_prob := 0.0
+var congela_durata := 1.0
+var rialza_prob := 0.0
+var rialza_durata := 20.0
+var ally_veleno := 0.0
+var ally_gelo := 0.0
+var contagio := 0.0
+var schegge := 0.0
+var durata_magie := 1.0
+const RIALZATI_MAX := 6  # scheletri rialzati dal Signore delle Ossa insieme
 
 ## Moltiplicatori dei buff/debuff scelti durante la run.
 var mods := {
@@ -379,6 +419,12 @@ func _ready() -> void:
 		dcfg.load(SAVE_PATH)
 		dev_x5 = bool(dcfg.get_value("dev", "velocita_x5", false))
 	_compute_layout()
+	necromante = Necromanti.attivo()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--necromante="):  # prove: necromante scelto da riga di comando
+			necromante = Necromanti.per_id(a.substr(13))
+	ability_order = necromante.magie.duplicate()
+	colore_necromante = necromante.colore
 	_apply_research()
 	for r in rows:
 		for c in cols:
@@ -418,12 +464,15 @@ func _ready() -> void:
 	fx_root = $fx
 	remains_root = $remains
 	segnali_root = $segnali
-	for k in Data.ABILITY_ORDER:
+	for k in ability_order:
 		ability_cd[k] = 0.0
 	next_queue = _coda_ondata(1)
 	next_queue_wave = 1
 	_build_ui()
-	Dialoghi.avvia(self, dialogo_tutorial)
+	if Dialoghi.avvia(self, dialogo_tutorial) != null:
+		# primo avvio: una casella lampeggia per mostrare dove evocare la prima unità
+		tut_cella = _cella_tutorial()
+		tut_attesa = tut_cella >= 0
 	_show_deploy_hint()
 	if "--autotest" in OS.get_cmdline_user_args():
 		_start_autotest()
@@ -506,11 +555,10 @@ func _fit_on_screen() -> void:
 func _apply_research() -> void:
 	var args := OS.get_cmdline_user_args()
 	var levels: Dictionary = {} if "--autotest" in args else Research.load_state()["levels"]
-	var b := Research.bonuses(levels)
+	var b := Research.bonuses(levels, necromante.id)
 	if "--autotest" in args and not "--fresh" in args:
-		for k in ["unlock_arciere", "unlock_mago", "unlock_gigante",
-				"unlock_palla_di_fuoco", "unlock_area_curativa", "unlock_saetta"]:
-			b[k] = 1.0
+		for k in ability_order:
+			b["unlock_" + k] = 1.0
 	tower_max_hp += b.get("tower_hp", 0.0)
 	tower_hp = tower_max_hp
 	necro_dmg *= 1.0 + b.get("necro_dmg", 0.0)
@@ -519,7 +567,25 @@ func _apply_research() -> void:
 	xp_mult = 1.0 + b.get("xp", 0.0)
 	mods["ally_dmg"] *= 1.0 + b.get("ally_dmg", 0.0)
 	mods["ally_hp"] *= 1.0 + b.get("ally_hp", 0.0)
-	max_deploy = MAX_DEPLOY + int(b.get("deploy", 0.0))
+	max_deploy = MAX_DEPLOY + int(b.get("deploy", 0.0)) + necromante.squadre_extra
+	# poteri del necromante scelto, potenziati dal suo albero
+	necro_dmg *= necromante.danno
+	necro_cooldown /= maxf(0.1, necromante.velocita_attacco)
+	veleno_k = necromante.veleno * (1.0 + b.get("veleno_torre", 0.0))
+	veleno_durata = necromante.veleno_durata + b.get("veleno_durata", 0.0)
+	maled_durata = necromante.maledizione_durata + b.get("maledizione_torre", 0.0)
+	maled_forza = necromante.maledizione_forza + b.get("maledizione_forza", 0.0)
+	rallenta_k = minf(0.85, necromante.rallenta + b.get("rallenta_torre", 0.0))
+	rallenta_durata = necromante.rallenta_durata + b.get("rallenta_durata", 0.0)
+	congela_prob = necromante.congela_probabilita + b.get("congela", 0.0)
+	congela_durata = necromante.congela_durata + b.get("congela_durata", 0.0)
+	rialza_prob = necromante.rialza_probabilita + b.get("rialza", 0.0)
+	rialza_durata = necromante.rialza_durata
+	ally_veleno = b.get("ally_veleno", 0.0)
+	ally_gelo = b.get("ally_gelo", 0.0)
+	contagio = b.get("contagio", 0.0)
+	schegge = b.get("schegge", 0.0)
+	durata_magie = 1.0 + b.get("durata_magie", 0.0)
 	# squadra della run: le 4 unità scelte nella preparazione (collezione salvata)
 	var col := Collezione.load_state()
 	unit_ranks = col["owned"]
@@ -542,7 +608,7 @@ func _apply_research() -> void:
 	_load_unit_overrides()
 
 	unlocked_abilities = []
-	for k in Data.ABILITY_ORDER:
+	for k in ability_order:
 		if b.has("unlock_" + k):
 			unlocked_abilities.append(k)
 	ability_cd_mult = maxf(0.3, 1.0 - b.get("ability_cd", 0.0))
@@ -1029,6 +1095,8 @@ func on_enemy_killed(u) -> void:
 	if u.is_boss:
 		shake(0.4, 2.0)
 	_try_raise(u)
+	_rialza_ossa(u)
+	_contagia(u)
 	necro_xp += u.xp_value * xp_mult
 	while necro_xp >= necro_xp_next:
 		necro_xp -= necro_xp_next
@@ -1184,8 +1252,10 @@ func nearest_taunter(from: Vector2, dist: float):
 
 
 ## Nube di peste: avvelena (danno nel tempo) e rallenta i nemici dentro.
-func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1, raggio: float = 16.0, lento: float = 0.3, maledizione: float = 0.0) -> void:
-	clouds.append({"p": g, "t": 3.0, "dps": dps, "r": raggio, "slow": lento, "curse": maledizione})
+func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1, raggio: float = 16.0, lento: float = 0.3, maledizione: float = 0.0,
+		durata: float = 3.0, colore: Color = Color(0, 0, 0, 0), neve: bool = false) -> void:
+	clouds.append({"p": g, "t": durata, "dps": dps, "r": raggio, "slow": lento, "curse": maledizione,
+		"col": colore if colore.a > 0.0 else colore_nube_peste, "neve": neve})
 
 
 func _update_clouds(delta: float) -> void:
@@ -1196,9 +1266,95 @@ func _update_clouds(delta: float) -> void:
 				c.poison(cl["dps"] * delta)
 				c.slow_k = maxf(c.slow_k if c.slow_t > 0.0 else 0.0, float(cl.get("slow", 0.3)))
 				c.slow_t = maxf(c.slow_t, 0.4)
+				if cl.get("neve", false):
+					c.slow_col = cl["col"]
 				if float(cl.get("curse", 0.0)) > 0.0:
-					c.curse_t = maxf(c.curse_t, float(cl["curse"]))
+					maledici(c, float(cl["curse"]), maled_forza)
 	clouds = clouds.filter(func(cl): return cl["t"] > 0.0)
+
+
+# --- Poteri dei necromanti -----------------------------------------------------
+
+## Un colpo della torre è andato a segno (chiamato dal proiettile).
+func on_necro_hit(bersaglio, dmg: float) -> void:
+	if bersaglio == null or not is_instance_valid(bersaglio) or bersaglio.dead:
+		return
+	if veleno_k > 0.0:
+		avvelena(bersaglio, dmg * veleno_k, veleno_durata, colore_necromante)
+	if maled_durata > 0.0:
+		maledici(bersaglio, maled_durata, maled_forza)
+	if rallenta_k > 0.0:
+		rallenta(bersaglio, rallenta_k, rallenta_durata, colore_necromante)
+	if congela_prob > 0.0 and randf() < congela_prob:
+		congela(bersaglio, congela_durata)
+
+
+## Uno scheletro ha colpito un nemico (chiamato da unit.gd): rami delle ricerche.
+func on_ally_hit(bersaglio, amount: float) -> void:
+	if bersaglio.dead:
+		return
+	if ally_veleno > 0.0:
+		avvelena(bersaglio, amount * ally_veleno, 2.0, Color("8ccc3c"))
+	if ally_gelo > 0.0:
+		rallenta(bersaglio, ally_gelo, 1.5, Color("78e2ea"))
+
+
+func avvelena(u, dps: float, secs: float, col: Color) -> void:
+	u.dot_dps = maxf(u.dot_dps if u.dot_t > 0.0 else 0.0, dps)
+	u.dot_t = maxf(u.dot_t, secs)
+	u.dot_col = col
+
+
+## Maledetto: subisce `forza` danni in più (0.3 = +30%) per `secs` secondi.
+func maledici(u, secs: float, forza: float) -> void:
+	u.curse_k = maxf(u.curse_k if u.curse_t > 0.0 else 0.0, forza)
+	u.curse_t = maxf(u.curse_t, secs)
+
+
+func rallenta(u, k: float, secs: float, col: Color) -> void:
+	u.slow_k = maxf(u.slow_k if u.slow_t > 0.0 else 0.0, k)
+	u.slow_t = maxf(u.slow_t, secs)
+	u.slow_col = col
+
+
+## Congelato: non si muove e non attacca (metà del tempo per boss e campioni).
+func congela(u, secs: float) -> void:
+	var d := secs * (0.5 if u.is_boss else 1.0)
+	u.stun_t = maxf(u.stun_t, d)
+	u.gelo_t = maxf(u.gelo_t, d)
+	spawn_unit_fx(u.ground, "spark", 6.0, 1.0, 0.3, Color("c8f6fa"))
+
+
+## Signore delle Ossa: a volte il nemico ucciso si rialza come scheletro.
+func _rialza_ossa(dead_enemy) -> void:
+	if rialza_prob <= 0.0 or dead_enemy.is_boss or not dead_enemy.visible or randf() >= rialza_prob:
+		return
+	var vivi := 0
+	for m in allies_root.get_children():
+		if m.has_meta("rialzato") and not m.dead:
+			vivi += 1
+	if vivi >= RIALZATI_MAX:
+		return
+	var u := UnitScript.new()
+	u.game = self
+	u.setup_ally("soldato", mods["ally_hp"] * 0.6, ally_stats("soldato"))
+	u.ground = dead_enemy.ground
+	u.home = dead_enemy.ground
+	u.life_left = rialza_durata
+	u.set_meta("rialzato", true)
+	allies_root.add_child(u)
+	spawn_ground_fx(u.ground, 6.0, colore_necromante, 0.4)
+	spawn_unit_fx(u.ground, "spark", 6.0, 1.0, 0.3, colore_necromante)
+
+
+## Strega (Contagio): il veleno passa ai nemici vicini a chi muore avvelenato.
+func _contagia(dead_enemy) -> void:
+	if contagio <= 0.0 or dead_enemy.dot_t <= 0.0 or randf() >= contagio:
+		return
+	for c in enemies_root.get_children():
+		if c != dead_enemy and not c.dead and c.ground.distance_to(dead_enemy.ground) <= 24.0:
+			avvelena(c, dead_enemy.dot_dps, 3.0, dead_enemy.dot_col)
+	spawn_ground_fx(dead_enemy.ground, 24.0, Color("8ccc3c"), 0.4)
 
 
 ## Il negromante minore rialza come scheletro un nemico morto vicino a lui.
@@ -1371,12 +1527,30 @@ func _pick_unit(idx: int, kind: String) -> void:
 
 func _show_deploy_hint() -> void:
 	var n := deployed_count()
-	if n < max_deploy:
-		set_hint(tr("Clicca una casella della griglia per evocare un'unità (%d/%d). Tasto destro per rimuoverla.") % [n, max_deploy])
-	else:
-		set_hint(tr("Schieramento completo: premi \"Inizia ondate\"."))
+	set_hint("", 0.0)  # il conto delle unità sta nella targa "UNITÀ EVOCABILI"
 	if start_button:
 		start_button.disabled = n == 0
+	if tut_attesa and n > 0:  # prima unità schierata: seconda parte del tutorial
+		tut_attesa = false
+		tut_cella = -1
+		Dialoghi.avvia(self, dialogo_schieramento)
+
+
+## Casella del tutorial: la seconda colonna, nella fila di mezzo (o la più vicina libera).
+func _cella_tutorial() -> int:
+	var best := -1
+	var best_d := INF
+	var target := Vector2i(mini(1, cols - 1), int(floor(rows / 2.0)))
+	for i in slots.size():
+		var s: Dictionary = slots[i]
+		if s["blocked"] or s["kind"] != "":
+			continue
+		var c: Vector2i = s["cell"]
+		var d := absf(c.x - target.x) * 1.5 + absf(c.y - target.y)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
 
 
 func _on_start_pressed() -> void:
@@ -1560,6 +1734,59 @@ func _cast(key: String, g: Vector2) -> void:
 					u.heal(a["power"])
 			spawn_ground_fx(g, a["radius"], colore_area_curativa, 0.9, "heal")
 			Suoni.play("area_curativa")
+		# --- Strega Pestilenziale ---
+		"nube_di_peste":
+			add_plague_cloud(g, power * 0.25, 1, a["radius"], 0.3, 2.0, 5.0 * durata_magie, a["color"])
+			spawn_ground_fx(g, a["radius"], a["color"], 1.0, "nube")
+			Suoni.play("nube_di_peste")
+		"maledizione":
+			for e in enemies_root.get_children():
+				if not e.dead and g.distance_to(e.ground) <= a["radius"] + e.radius:
+					e.take_damage(power, null)
+					if not e.dead:
+						maledici(e, 8.0 * durata_magie, 0.5 + maled_forza - 0.3)
+						spawn_unit_fx(e.ground, "spark", 10.0, 1.0, 0.3, a["color"])
+			spawn_ground_fx(g, a["radius"], a["color"], 1.1, "maledizione")
+			Suoni.play("maledizione")
+			shake(0.15, 1.0)
+		"sciame":
+			var vicini: Array = []
+			for e in enemies_root.get_children():
+				if not e.dead and g.distance_to(e.ground) <= a["radius"]:
+					vicini.append(e)
+			vicini.sort_custom(func(x, y): return g.distance_to(x.ground) < g.distance_to(y.ground))
+			for e in vicini.slice(0, 10):
+				avvelena(e, power * 0.25, 4.0 * durata_magie, a["color"])
+				spawn_ground_fx(e.ground, 7.0, a["color"], 0.9, "sciame")  # mosche su ogni nemico
+			spawn_ground_fx(g, 22.0, a["color"], 1.0, "sciame")
+			Suoni.play("sciame")
+		# --- Lich del Ghiaccio ---
+		"bufera":
+			add_plague_cloud(g, power * 0.2, 1, a["radius"], 0.5, 0.0, 5.0 * durata_magie, a["color"], true)
+			spawn_ground_fx(g, a["radius"], a["color"], 1.0, "bufera")
+			Suoni.play("bufera")
+		"prigione_di_ghiaccio":
+			damage_area(g, a["radius"], power * 0.5, 1)
+			for e in enemies_root.get_children():
+				if not e.dead and g.distance_to(e.ground) <= a["radius"] + e.radius:
+					congela(e, 2.5 * durata_magie)
+			spawn_ground_fx(g, a["radius"], a["color"], 1.2, "ghiaccio")
+			Suoni.play("prigione_di_ghiaccio")
+			shake(0.15, 1.0)
+		"cometa_gelata":
+			# la cometa cade dal cielo: danno e gelo arrivano quando tocca terra
+			spawn_ground_fx(g, a["radius"] * 2.0, a["color"], 1.0, "cometa")
+			Suoni.play("cometa_gelata")
+			var raggio: float = a["radius"]
+			var col_c: Color = a["color"]
+			get_tree().create_timer(FxScript.COMETA_CADUTA, false).timeout.connect(func() -> void:
+				if state != State.PLAYING:
+					return
+				damage_area(g, raggio, power, 1)
+				for e in enemies_root.get_children():
+					if not e.dead and g.distance_to(e.ground) <= raggio * 2.0 + e.radius:
+						rallenta(e, 0.5, 3.0 * durata_magie, col_c)
+				shake(0.3, 2.0))
 
 
 # --- Input -------------------------------------------------------------------
@@ -1579,12 +1806,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_pick_unit(picker_slot, unlocked_units[num])
 			return
 		match event.keycode:
-			KEY_1:
-				_select_ability(Data.ABILITY_ORDER[0])
-			KEY_2:
-				_select_ability(Data.ABILITY_ORDER[1])
-			KEY_3:
-				_select_ability(Data.ABILITY_ORDER[2])
+			KEY_1, KEY_2, KEY_3:
+				var i: int = event.keycode - KEY_1
+				if i < ability_order.size():
+					_select_ability(ability_order[i])
 			KEY_SPACE:
 				_cycle_speed()
 		return
@@ -1608,6 +1833,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match state:
 		State.DEPLOY:
+			if tut_cella >= 0 and idx != tut_cella:  # tutorial: solo la casella che lampeggia
+				Suoni.play("errore")
+				set_hint(tr("Tocca la casella che lampeggia."), 2.0)
+				return
 			if idx >= 0 and slots[idx]["kind"] == "":
 				if deployed_count() < max_deploy:
 					Suoni.play("click")
@@ -1786,11 +2015,11 @@ func _autotest_cast() -> void:
 		return
 	var t = nearest_to_tower(enemies_root, 999.0)
 	if t != null:
-		for k in ["saetta", "palla_di_fuoco"]:
-			if k in unlocked_abilities and ability_cd[k] <= 0.0:
+		for k in ability_order:
+			if k != "area_curativa" and k in unlocked_abilities and ability_cd[k] <= 0.0:
 				_cast(k, t.ground)
 				return
-	if "area_curativa" in unlocked_abilities and ability_cd["area_curativa"] <= 0.0:
+	if "area_curativa" in unlocked_abilities and ability_cd.get("area_curativa", 1.0) <= 0.0:
 		for u in allies_root.get_children():
 			if not u.dead and u.hp < u.max_hp * 0.5:
 				_cast("area_curativa", u.ground)
@@ -1890,17 +2119,27 @@ func _build_ui() -> void:
 	ui_root.add_child(soul_orb)
 
 	# Pulsante grande in basso al centro, visibile solo durante lo schieramento.
-	start_button = Button.new()
-	start_button.text = tr("Inizia ondate")
-	start_button.add_theme_font_size_override("font_size", 22)
+	# targa "UNITÀ EVOCABILI 0/3" in alto al centro durante lo schieramento
+	deploy_counter = Control.new()
+	deploy_counter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	deploy_counter.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	deploy_counter.offset_left = -200
+	deploy_counter.offset_right = 200
+	deploy_counter.offset_top = 64
+	deploy_counter.offset_bottom = 128
+	deploy_counter.draw.connect(_draw_deploy_counter)
+	ui_root.add_child(deploy_counter)
+
+	# "SUONA IL CORNO": grande pietra chiara in basso al centro, con alone che pulsa
+	start_button = _flat_button()
 	start_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	start_button.offset_left = -130
-	start_button.offset_right = 130
-	start_button.offset_top = -80
-	start_button.offset_bottom = -24
-	start_button.focus_mode = Control.FOCUS_NONE
+	start_button.offset_left = -corno_dimensione.x / 2.0
+	start_button.offset_right = corno_dimensione.x / 2.0
+	start_button.offset_top = -corno_dimensione.y - corno_margine_basso
+	start_button.offset_bottom = -corno_margine_basso
 	start_button.disabled = true
 	start_button.pressed.connect(_on_start_pressed)
+	start_button.draw.connect(_draw_start_button)
 	ui_root.add_child(start_button)
 
 	hint_label = Label.new()
@@ -1951,8 +2190,8 @@ func _build_ui() -> void:
 	spell_row.offset_bottom = -4
 	spell_row.draw.connect(func(): Pietra.stone(spell_row, Rect2(Vector2.ZERO, spell_row.size), C3))
 	ui_root.add_child(spell_row)
-	for i in Data.ABILITY_ORDER.size():
-		var k: String = Data.ABILITY_ORDER[i]
+	for i in ability_order.size():
+		var k: String = ability_order[i]
 		var sb := _flat_button()
 		sb.position = Vector2(12 + i * 242, 9)
 		sb.size = Vector2(230, 52)
@@ -2081,6 +2320,11 @@ func _update_hud() -> void:
 		orb_flash = 1.0
 	speed_button.queue_redraw()
 	soul_orb.queue_redraw()
+	deploy_counter.visible = state == State.DEPLOY
+	if deploy_counter.visible:
+		deploy_counter.queue_redraw()
+	if start_button.visible:
+		start_button.queue_redraw()  # alone e frecce animati
 	spell_row.visible = state != State.DEPLOY and state != State.GAME_OVER and state != State.VICTORY
 	for k in spell_slots:
 		var b: Button = spell_slots[k]
@@ -2142,6 +2386,71 @@ func _draw_soul_orb() -> void:
 		Pietra.text(n, ui_font, box.position + Vector2(12, 8), label, 16, C6)
 
 
+func _ability_tex(k: String) -> Texture2D:
+	return NECRO_ATLAS if ABILITY_ICONS_NECRO.has(k) else ATLAS
+
+
+func _ability_rect(k: String) -> Rect2:
+	return ABILITY_ICONS_NECRO[k] if ABILITY_ICONS_NECRO.has(k) else ABILITY_ICONS.get(k, R_IC_STAR)
+
+
+## Targa dello schieramento: scheletro, "UNITÀ EVOCABILI" e il conto grande (es. 1/3).
+func _draw_deploy_counter() -> void:
+	var c := deploy_counter
+	var r := Rect2(Vector2.ZERO, c.size)
+	var n := deployed_count()
+	var pieno := n >= max_deploy
+	Pietra.stone(c, r, C4 if pieno else C3, pieno)
+	c.draw_texture_rect_region(Data.ally_texture("soldato"), Rect2(Vector2(12, 8), Vector2(48, 48)), Data.ally_region("soldato"))
+	var titolo := tr("UNITÀ EVOCABILI")
+	var fs := 22
+	while fs > 14 and ui_font.get_string_size(titolo, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 190.0:
+		fs -= 2
+	Pietra.text(c, ui_font, Vector2(70, r.size.y / 2.0 - fs * 0.62), titolo, fs, C6 if pieno else C5)
+	var conto := "%d/%d" % [n, max_deploy]
+	var cw := ui_font.get_string_size(conto, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
+	Pietra.text(c, ui_font, Vector2(r.size.x - cw - 18.0, r.size.y / 2.0 - 25.0), conto, 40, C6)
+
+
+## Pulsante "SUONA IL CORNO": pietra chiara con alone che pulsa, icona »» e frecce
+## che corrono verso il pulsante. Spento (grigio) finché non schieri un'unità.
+func _draw_start_button() -> void:
+	var b := start_button
+	var r := Rect2(Vector2.ZERO, b.size)
+	var attivo := not b.disabled
+	var p := 0.5 + 0.5 * sin(amb_t * 5.0)
+	if attivo:  # alone bianco che pulsa
+		b.draw_rect(r.grow(10.0 + p * 4.0), Color(1, 1, 1, 0.07 + 0.06 * p))
+		b.draw_rect(r.grow(5.0 + p * 2.0), Color(1, 1, 1, 0.12 + 0.1 * p))
+	var premuto := attivo and b.button_pressed
+	Pietra.stone(b, Rect2(Vector2(0, 2 if premuto else 0), r.size), C5 if attivo else C3, attivo and (b.is_hovered() or premuto))
+	var testo_col := C0 if attivo else C4
+	var icona := minf(48.0, r.size.y - 30.0)
+	b.draw_texture_rect_region(ATLAS, Rect2(Vector2(22, (r.size.y - icona) / 2.0), Vector2(icona, icona)), R_IC_FAST, testo_col)
+	var cx := r.size.x / 2.0 + 24.0
+	var titolo := tr("SUONA IL CORNO")
+	var fs := 32
+	while fs > 16 and ui_font.get_string_size(titolo, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 110.0:
+		fs -= 2
+	Pietra.text_c(b, ui_font, cx, r.size.y * 0.5 - fs + 4.0, titolo, fs, testo_col, false)
+	var sotto := tr("inizia l'ondata %d") % (wave + 1) if attivo else tr("schiera almeno un'unità")
+	Pietra.text_c(b, ui_font, cx, r.size.y * 0.5 + 10.0, sotto, 16, C2 if attivo else C4, false)
+	if attivo:  # frecce a gradini che corrono verso il pulsante, ai due lati
+		_frecce_corno(b, Vector2(-30.0, r.size.y / 2.0), -1.0)
+		_frecce_corno(b, Vector2(r.size.x + 24.0, r.size.y / 2.0), 1.0)
+
+
+func _frecce_corno(b: Button, c: Vector2, dir: float) -> void:
+	var off := fmod(amb_t * 40.0, 26.0)
+	for i in 3:
+		var dist := i * 26.0 + 26.0 - off
+		var a := 1.0 - clampf(0.3 + dist / 78.0, 0.0, 1.0) * 0.7
+		var x := c.x + dir * dist
+		for k in 11:
+			var dx := float(k if k <= 5 else 10 - k) * 2.0
+			b.draw_rect(Rect2(x + dir * (10.0 - dx) - 2.0, c.y - 11.0 + k * 2.0, 4, 2), Color(C6, a))
+
+
 ## Uno slot della fila degli incantesimi: icona, tasto, nome e ricarica.
 func _draw_spell_slot(b: Button, k: String) -> void:
 	var a: Dictionary = Data.ABILITIES[k]
@@ -2152,11 +2461,15 @@ func _draw_spell_slot(b: Button, k: String) -> void:
 	var aiming := selected_ability == k
 	Pietra.stone(b, r, C4 if ready or aiming else C2, aiming or (ready and b.is_hovered()))
 	var icon := Rect2(Vector2(6, 6), Vector2(40, 40))
-	b.draw_texture_rect_region(ATLAS, icon, ABILITY_ICONS.get(k, R_IC_STAR), Color(1, 1, 1, 1.0 if ready or aiming else 0.4))
-	Pietra.text(b, ui_font, Vector2(8, 4), a["key"], 16, C6 if ready else C5)
+	b.draw_texture_rect_region(_ability_tex(k), icon, _ability_rect(k), Color(1, 1, 1, 1.0 if ready or aiming else 0.4))
+	Pietra.text(b, ui_font, Vector2(8, 4), str(ability_order.find(k) + 1), 16, C6 if ready else C5)
 	if cd > 0.0 and not locked:
 		Pietra.text_c(b, ui_font, icon.get_center().x, 16, "%d" % ceili(cd), 16, C6)
-	Pietra.text(b, ui_font, Vector2(54, 7), Data.nome_abilita(k).to_upper(), 16, C6 if ready or aiming else C5)
+	var nome := Data.nome_abilita(k).to_upper()
+	var fs := 16
+	while fs > 10 and ui_font.get_string_size(nome, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 62.0:
+		fs -= 2  # nomi lunghi (traduzioni): il testo si rimpicciolisce
+	Pietra.text(b, ui_font, Vector2(54, 7.0 + (16 - fs) * 0.5), nome, fs, C6 if ready or aiming else C5)
 	if locked:
 		Pietra.text(b, ui_font, Vector2(54, 28), tr("bloccata"), 16, C3, false)
 		return
@@ -2276,6 +2589,15 @@ func _draw() -> void:
 		elif placing and i == hover_slot:
 			draw_rect(rect, Color(C6, 0.2))
 			_px_outline(self, rect, C6)
+		if i == tut_cella:  # tutorial: la casella lampeggia e una freccia la indica
+			var lamp := 0.5 + 0.5 * sin(amb_t * 7.0)
+			draw_rect(rect, Color(C6, 0.15 + 0.3 * lamp))
+			_px_outline(self, rect, C6)
+			_px_outline(self, rect.grow(-1.0), Color(C6, lamp))
+			var top := rect.position + Vector2(rect.size.x / 2.0, -4.0 - roundf(absf(sin(amb_t * 4.0)) * 4.0))
+			for k in 5:  # freccia a gradini che punta in giù
+				draw_rect(Rect2(top.x - 4.0 + k, top.y - 5.0 + k, 9.0 - k * 2.0, 1.0), C0 if k == 0 else C6)
+			draw_rect(Rect2(top.x - 1.0, top.y - 10.0, 3.0, 5.0), C6)
 	if placing:
 		_px_outline(self, Rect2(origin - Vector2.ONE, Vector2(lane_len + 2, depth + 2)), C5)
 
@@ -2403,7 +2725,10 @@ func _draw_tower() -> void:
 			t.draw_rect(Rect2(pos + wp + Vector2(0, -1), Vector2(4, 2)), C5)
 	# il necromante sul tetto, dietro i merli
 	var necro := pos + NECRO_FEET - Vector2(8, 15)
-	t.draw_texture_rect_region(ATLAS, Rect2(necro, Vector2(16, 16)), R_NECRO)
+	if necromante != null and necromante.ritratto != null:
+		t.draw_texture_rect(necromante.ritratto, Rect2(necro, Vector2(16, 16)), false)
+	else:
+		t.draw_texture_rect_region(ATLAS, Rect2(necro, Vector2(16, 16)), R_NECRO)
 	t.draw_texture(TEX_TOWER_MERLI, pos + TOWER_IMG_OFFSET)
 	if dmg >= 2:  # merli crollati
 		for mx in ([24.0] if dmg == 2 else [24.0, 6.0]):
@@ -2733,13 +3058,22 @@ func _draw_ambient() -> void:
 	for cl in clouds:
 		var a: float = clampf(cl["t"], 0.0, 1.0)
 		var cp: Vector2 = origin + (cl["p"] as Vector2).round()
-		for yy in range(-6, 7, 2):
-			for xx in range(-16, 17, 2):
-				if Vector2(xx, yy * 2.4).length() > 16.0:
+		var rr: int = int(float(cl.get("r", 16.0)))
+		var ccol: Color = cl.get("col", colore_nube_peste)
+		var ry: int = int(rr / 2.4)
+		if cl.get("neve", false):  # bufera: fiocchi che cadono di traverso
+			for i in rr:
+				var fx := fmod(i * 37.0 + t * 22.0, rr * 2.0) - rr
+				var fy := fmod(i * 23.0 + t * 30.0, ry * 2.0) - ry
+				if Vector2(fx, fy * 2.4).length() <= rr:
+					n.draw_rect(Rect2(cp + Vector2(roundf(fx), roundf(fy)), Vector2.ONE * (2.0 if i % 3 == 0 else 1.0)), Color(C6, 0.8 * a))
+		for yy in range(-ry, ry + 1, 2):
+			for xx in range(-rr, rr + 1, 2):
+				if Vector2(xx, yy * 2.4).length() > rr:
 					continue
 				var v := sin(xx * 0.5 + t * 3.0 + yy) * cos(yy * 0.7 - t * 2.0)
 				if v > 0.1:
-					n.draw_rect(Rect2(cp + Vector2(xx, yy), Vector2(2, 2)), Color(colore_nube_peste, 0.4 * a))
+					n.draw_rect(Rect2(cp + Vector2(xx, yy), Vector2(2, 2)), Color(ccol, (0.25 if cl.get("neve", false) else 0.4) * a))
 	# nebbia che vortica nel portale degli eroi
 	var sx := origin.x + lane_len
 	for y in range(0, int(depth), 2):
@@ -3098,6 +3432,7 @@ func _mostra_fine(won: bool, earned: int, total: int, coins: int, record_prima: 
 		"punti": earned, "punti_totali": total, "monete": coins, "pergamene": scrolls_earned,
 		"nuovo_livello": nuovo_livello, "campioni": segs, "campioni_battuti": campioni_battuti.size(),
 		"squadra": unlocked_units.duplicate(), "ultimo": ultimo,
+		"necro_tex": necromante.ritratto if necromante != null else null,
 	}
 	var prep := func() -> void: get_tree().change_scene_to_file("res://scenes/preparazione.tscn")
 	var campo := func() -> void: get_tree().change_scene_to_file("res://scenes/selezione_livello.tscn")

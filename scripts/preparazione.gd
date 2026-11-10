@@ -7,6 +7,9 @@ extends Control
 ##     (se è già in squadra, le due unità si scambiano di posto)
 ##   - tasto destro su un altare: lo svuota
 ##   - INIZIA LA RUN (o Invio) avvia la partita, BACK (o Esc) torna al menu
+##   - in basso il NECROMANTE della run: toccalo per vederne i poteri, toccalo ancora per passare al prossimo
+##     tra quelli che hai; il riquadro a destra mostra i suoi poteri e le sue magie.
+##     Strega e Lich si comprano nel negozio (necromanti/*.tres).
 ## Le unità nuove si trovano aprendo le pergamene nel portale (scena Evocazione).
 ##
 ## SPECIALIZZAZIONI: al rango 3 e al rango 5 ogni unità sceglie tra due rami.
@@ -29,6 +32,7 @@ const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Spec := preload("res://scripts/specializzazioni.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
 const TEX_SKY := preload("res://assets/campo/cielo.png")
 const TEX_GROUND := preload("res://assets/campo/terreno.png")
 const LEVELS_SCENE := "res://scenes/selezione_livello.tscn"
@@ -93,6 +97,8 @@ var unit_stats := {}
 var start_rect := Rect2(1000, 646, 256, 62)
 var back_rect := Rect2(24, 652, 120, 50)
 var portal_rect := Rect2(560, 652, 300, 50)
+var necro_rect := Rect2(156, 646, 392, 62)
+var mostra_necro := false  # il riquadro a destra mostra il necromante invece dell'unità
 
 
 # --- Statistiche nell'Inspector ------------------------------------------------
@@ -259,6 +265,8 @@ func _hit(p: Vector2) -> Dictionary:
 		return {"type": "button", "id": "back"}
 	if portal_rect.has_point(p):
 		return {"type": "button", "id": "portal"}
+	if necro_rect.has_point(p):
+		return {"type": "button", "id": "necro"}
 	return {}
 
 
@@ -284,6 +292,8 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
+	if h["type"] != "button":
+		mostra_necro = false
 	match h["type"]:
 		"altar":
 			Suoni.play("click")
@@ -355,6 +365,14 @@ func _press(id: String) -> void:
 			Suoni.play("click")
 			_save()
 			leaving = EVOCATION_SCENE
+		"necro":
+			Suoni.play("click")
+			if mostra_necro:  # al primo tocco si vede chi è, dal secondo si cambia
+				var prossimo := Necromanti.successivo(Necromanti.attivo_id(), 1)
+				if prossimo == Necromanti.attivo_id():
+					_say(tr("Altri necromanti si comprano nel negozio."))
+				Necromanti.scegli(prossimo)
+			mostra_necro = true
 
 
 func _say(text: String) -> void:
@@ -418,7 +436,10 @@ func _draw() -> void:
 		info_kind = st["squad"][hover["id"]]
 	else:
 		info_kind = st["squad"][selected]
-	_draw_info(Rect2(664, 400, 592, 232), info_kind)
+	if mostra_necro:
+		_draw_necro_info(Rect2(664, 400, 592, 232))
+	else:
+		_draw_info(Rect2(664, 400, 592, 232), info_kind)
 
 	# pulsanti in basso
 	var hb: String = hover.get("id", "") if hover.get("type", "") == "button" else ""
@@ -427,6 +448,7 @@ func _draw() -> void:
 	Pietra.stone(self, portal_rect, C3, hb == "portal")
 	var sc_label := tr("PERGAMENE: %d  · PORTALE") % st["scrolls"]
 	Pietra.text_c(self, font, portal_rect.get_center().x, portal_rect.position.y + 15, sc_label, 16, C6 if st["scrolls"] > 0 else C5)
+	_draw_necro_button(hb == "necro")
 	var ready := not _squad().is_empty()
 	Pietra.stone(self, start_rect, C4 if ready else C2, hb == "start" and ready)
 	Pietra.text_c(self, font, start_rect.get_center().x, start_rect.position.y + 8, tr("INIZIA LA RUN"), 24, C6 if ready else C4)
@@ -445,12 +467,31 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(C0, fade))
 
 
+## Quadratini della rarità (1 comune ... 4 leggendario), nel colore della rarità.
 func _draw_rarity_pips(center_x: float, y: float, rarity: String, col: Color) -> void:
 	var n: int = RARITY_PIPS.get(rarity, 0)
 	var x0 := center_x - (n * 9 - 3) / 2.0
 	for i in n:
 		draw_rect(Rect2(x0 + i * 9, y, 6, 6), C0)
 		draw_rect(Rect2(x0 + i * 9 + 1, y + 1, 4, 4), col)
+
+
+## Gemma colorata della rarità (rombo 14x14 in pixel art da 2): `p` è la punta in alto.
+func _draw_rarity_gem(p: Vector2, rarity: String, dim: bool) -> void:
+	if rarity == "base":
+		return
+	var col := Data.colore_rarita(rarity)
+	if dim:
+		col = col.darkened(0.55)
+	var rows := [1, 3, 5, 7, 5, 3, 1]
+	for i in rows.size():  # contorno scuro
+		var w: float = rows[i] * 2.0
+		draw_rect(Rect2(p.x - w / 2.0 - 2.0, p.y + i * 2.0 - 2.0, w + 4.0, 6.0), C0)
+	for i in rows.size():
+		var w: float = rows[i] * 2.0
+		draw_rect(Rect2(p.x - w / 2.0, p.y + i * 2.0, w, 2.0), col)
+	if not dim:  # riflesso
+		draw_rect(Rect2(p.x - 2.0, p.y + 4.0, 2.0, 2.0), col.lightened(0.6))
 
 
 func _draw_card(k: String, r: Rect2) -> void:
@@ -469,7 +510,8 @@ func _draw_card(k: String, r: Rect2) -> void:
 		var label := Data.nome_breve(k)
 		var fs := 16 if font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= rr.size.x - 10 else 12
 		Pietra.text_c(self, font, rr.get_center().x, rr.position.y + 64 + (16 - fs) / 2.0, label, fs, C6)
-		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], C6)
+		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], Data.colore_rarita(d["rarity"]))
+		_draw_rarity_gem(rr.position + Vector2(16, rr.size.y - 24), d["rarity"], false)
 		var rank: int = st["owned"][k]
 		if rank > 1:
 			Pietra.text(self, font, rr.position + Vector2(8, 6), "R%d" % rank, 12, C6)
@@ -483,7 +525,8 @@ func _draw_card(k: String, r: Rect2) -> void:
 		# sagoma scura: unità ancora da trovare
 		draw_texture_rect_region(Data.ally_texture(k), icon, Data.ally_region(k), Color(0, 0, 0, 0.85))
 		Pietra.text_c(self, font, rr.get_center().x, rr.position.y + 64, "???", 16, C3, false)
-		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], C3)
+		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], Data.colore_rarita(d["rarity"]).darkened(0.55))
+		_draw_rarity_gem(rr.position + Vector2(16, rr.size.y - 24), d["rarity"], true)
 
 
 func _draw_altar(i: int, r: Rect2) -> void:
@@ -518,6 +561,71 @@ func _draw_altar(i: int, r: Rect2) -> void:
 		Pietra.text_c(self, font, r.get_center().x, r.position.y + 10 + k2, "v", 16, C6)
 
 
+## Pulsante in basso: il necromante della run (ritratto, nome, "tocca per cambiare").
+func _draw_necro_button(hot: bool) -> void:
+	var n := Necromanti.attivo()
+	if n == null:
+		return
+	Pietra.stone(self, necro_rect, C3, hot)
+	var ic := Rect2(necro_rect.position + Vector2(12, 7), Vector2(48, 48))
+	draw_rect(ic.grow(2), C1)
+	if n.ritratto != null:
+		draw_texture_rect(n.ritratto, ic, false)
+	var nome := tr(n.nome).to_upper()
+	var fs := 16
+	while fs > 10 and font.get_string_size(nome, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > necro_rect.size.x - 84.0:
+		fs -= 2
+	Pietra.text(self, font, necro_rect.position + Vector2(72, 9), nome, fs, n.colore.lightened(0.3))
+	var sotto := tr("tocca per cambiare") if Necromanti.posseduti().size() > 1 else tr("altri nel negozio")
+	Pietra.text(self, font, necro_rect.position + Vector2(72, 34), sotto, 16, C5, false)
+
+
+## Riquadro a destra con il necromante: potere, magie e quanti ne hai.
+func _draw_necro_info(r: Rect2) -> void:
+	var n := Necromanti.attivo()
+	Pietra.stone(self, r, C2)
+	if n == null:
+		return
+	var spr := Rect2(r.position + Vector2(20, 24), Vector2(96, 96))
+	draw_rect(Rect2(spr.position + Vector2(-6, -6), spr.size + Vector2(12, 12)), C1)
+	if n.ritratto != null:
+		draw_texture_rect(n.ritratto, spr, false)
+	var x := r.position.x + 140
+	var y := r.position.y + 18
+	Pietra.text(self, font, Vector2(x, y), tr(n.nome).to_upper(), 24, n.colore.lightened(0.3))
+	Pietra.text(self, font, Vector2(x, y + 32), tr(n.titolo), 16, C5, false)
+	var righe := _a_capo(tr(n.descrizione), r.end.x - x - 16.0)
+	for i in righe.size():
+		Pietra.text(self, font, Vector2(x, y + 60 + i * 20), righe[i], 16, C6, false)
+	var ym := y + 66 + righe.size() * 20
+	Pietra.text(self, font, Vector2(x, ym), tr("MAGIE:"), 16, C4, false)
+	var nomi: Array = []
+	for k: String in n.magie:
+		nomi.append(Data.nome_abilita(k))
+	var mr := _a_capo(", ".join(nomi), r.end.x - x - 90.0)
+	for i in mr.size():
+		Pietra.text(self, font, Vector2(x + 74, ym + i * 20), mr[i], 16, C5, false)
+	var tot := Necromanti.elenco().size()
+	Pietra.text(self, font, Vector2(r.position.x + 20, r.end.y - 30),
+		tr("Necromanti: %d/%d  ·  il loro albero è nelle Ricerche") % [Necromanti.posseduti().size(), tot], 16, C4, false)
+
+
+## Spezza il testo in righe larghe al massimo `w` pixel.
+func _a_capo(text: String, w: float) -> Array:
+	var out: Array = []
+	var line := ""
+	for word in text.split(" "):
+		var prova := word if line == "" else line + " " + word
+		if line != "" and font.get_string_size(prova, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x > w:
+			out.append(line)
+			line = word
+		else:
+			line = prova
+	if line != "":
+		out.append(line)
+	return out
+
+
 func _draw_info(r: Rect2, k: String) -> void:
 	Pietra.stone(self, r, C2)
 	if k == "":
@@ -533,6 +641,7 @@ func _draw_info(r: Rect2, k: String) -> void:
 	if not owned:
 		Pietra.text(self, font, Vector2(x, y), tr("UNITÀ SCONOSCIUTA"), 24, C5)
 		Pietra.text(self, font, Vector2(x, y + 38), "%s · %s" % [Data.rarita(d["rarity"]), Data.ruolo(d["role"])], 16, C4)
+		_draw_rarity_gem(Vector2(x - 10, y + 40), d["rarity"], true)
 		Pietra.text(self, font, Vector2(x, y + 70), tr("Trovala aprendo le pergamene nel portale."), 16, C4, false)
 		return
 	var rank: int = st["owned"][k]
@@ -541,6 +650,9 @@ func _draw_info(r: Rect2, k: String) -> void:
 	if rank > 1:
 		sub += tr(" · rango %d (+%d%%)") % [rank, int(round((Collezione.rank_mult(rank) - 1.0) * 100.0))]
 	Pietra.text(self, font, Vector2(x, y + 34), sub, 16, C5)
+	_draw_rarity_gem(Vector2(x - 10, y + 36), d["rarity"], false)
+	if d["rarity"] != "base":  # il nome della rarità nel suo colore, sopra il testo grigio
+		Pietra.text(self, font, Vector2(x, y + 34), Data.rarita(d["rarity"]), 16, Data.colore_rarita(d["rarity"]))
 	var rm := Collezione.rank_mult(rank)
 	var ss := stats_for(k)
 	var e := Spec.effetti(k, rank)  # le specializzazioni cambiano le statistiche

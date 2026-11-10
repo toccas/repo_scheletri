@@ -31,6 +31,9 @@ enum Valuta { MONETE_D_OSSO, EURO }
 @export_range(0, 1000000) var monete := 0
 ## Sblocca il pacchetto VIP (velocità di gioco x3).
 @export var sblocca_vip := false
+## Sblocca un necromante giocabile: "strega" o "lich" (l'id del file in necromanti/).
+## Vuoto = nessuno. Se lo hai già la scheda mostra ACQUISTATO.
+@export var necromante := ""
 
 @export_group("Vendita")
 ## Si può comprare una volta sola (poi la scheda mostra ACQUISTATO).

@@ -160,10 +160,22 @@ const STARTING_UNITS := ["soldato", "arciere", "mago", "gigante"]
 
 const ROLE_NAMES := {"corpo": "Corpo a corpo", "distanza": "A distanza", "magia": "Magia", "supporto": "Supporto"}
 const RARITY_NAMES := {"base": "Base", "comune": "Comune", "raro": "Raro", "epico": "Epico", "leggendario": "Leggendario"}
+## Colore di ogni rarità (gemma e quadratini sulle carte della preparazione).
+## Le unità "base" (quelle di partenza) restano grigie.
+const RARITY_COLORS := {
+	"base": Color("8a8a8c"), "comune": Color("68be4c"), "raro": Color("5292ec"),
+	"epico": Color("b062e8"), "leggendario": Color("f0ce52"),
+}
+
+
+static func colore_rarita(r: String) -> Color:
+	return RARITY_COLORS.get(r, Color("8a8a8c"))
 ## Probabilità di ogni rarità quando apri una pergamena.
 const RARITY_ODDS := {"comune": 0.50, "raro": 0.30, "epico": 0.15, "leggendario": 0.05}
 ## Ogni quante pergamene un'unità epica o leggendaria è garantita.
 const PITY_EVERY := 10
+## Doppione di un'unità già al rango massimo: diventa monete d'osso per il negozio.
+const MONETE_DOPPIONE := {"comune": 10, "raro": 25, "epico": 60, "leggendario": 150}
 ## Ogni quante ondate superate si guadagna una pergamena.
 const WAVES_PER_SCROLL := 10
 ## Monete d'osso guadagnate per ogni ondata superata (si spendono nel NEGOZIO).
@@ -267,8 +279,16 @@ static func accent(kind: String, team: int = 0) -> Color:
 	return d.get(kind, Color("acacac"))
 
 
-## Abilità del necromante. La potenza scala con l'attacco del necromante.
+## Abilità (magie) dei necromanti. La potenza scala con l'attacco del necromante.
 ## L'area curativa cura solo le unità alleate: la torre non si cura mai.
+## Ogni necromante ne usa tre (necromanti/*.tres, campo "magie"); "key" è il
+## tasto di riserva: in partita i tasti sono 1, 2, 3 nell'ordine del necromante.
+##   nube_di_peste        nube per 5 s: veleno (potenza x0,25 al secondo), rallenta, maledice
+##   maledizione          piccolo danno (potenza) e +50% danni subiti per 8 s
+##   sciame               fino a 10 nemici vicini: veleno potenza x0,25 al secondo per 4 s
+##   bufera               tempesta per 5 s: rallenta del 50% e ferisce (potenza x0,2 al secondo)
+##   prigione_di_ghiaccio danno potenza x0,5 e congela per 2,5 s
+##   cometa_gelata        danno pieno e rallenta del 50% per 3 s
 const ABILITIES := {
 	"palla_di_fuoco": {
 		"name": "Palla di fuoco", "key": "1", "radius": 24.0, "power": 60.0,
@@ -281,6 +301,32 @@ const ABILITIES := {
 	"saetta": {
 		"name": "Saetta", "key": "3", "radius": 10.0, "power": 140.0,
 		"cooldown": 8.0, "color": Color("5292ec"),
+	},
+	# --- Strega Pestilenziale ---
+	"nube_di_peste": {
+		"name": "Nube di peste", "key": "1", "radius": 26.0, "power": 40.0,
+		"cooldown": 12.0, "color": Color("8ccc3c"),
+	},
+	"maledizione": {
+		"name": "Maledizione", "key": "2", "radius": 40.0, "power": 20.0,
+		"cooldown": 14.0, "color": Color("ce96f6"),
+	},
+	"sciame": {
+		"name": "Sciame", "key": "3", "radius": 60.0, "power": 40.0,
+		"cooldown": 16.0, "color": Color("d2c050"),
+	},
+	# --- Lich del Ghiaccio ---
+	"bufera": {
+		"name": "Bufera", "key": "1", "radius": 34.0, "power": 30.0,
+		"cooldown": 14.0, "color": Color("b4d2f0"),
+	},
+	"prigione_di_ghiaccio": {
+		"name": "Prigione gelida", "key": "2", "radius": 20.0, "power": 40.0,
+		"cooldown": 15.0, "color": Color("78e2ea"),
+	},
+	"cometa_gelata": {
+		"name": "Cometa gelata", "key": "3", "radius": 14.0, "power": 150.0,
+		"cooldown": 10.0, "color": Color("5292ec"),
 	},
 }
 

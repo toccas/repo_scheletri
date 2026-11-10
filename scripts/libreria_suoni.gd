@@ -38,6 +38,22 @@ extends Resource
 @export var saetta: VoceSuono
 @export var area_curativa: VoceSuono
 
+@export_group("Magie della Strega")
+## Sbuffo di gas e bolle.
+@export var nube_di_peste: VoceSuono
+## Accordo stonato che scende, sussurro e rintocco.
+@export var maledizione: VoceSuono
+## Ronzio degli insetti.
+@export var sciame: VoceSuono
+
+@export_group("Magie del Lich")
+## Vento che ulula.
+@export var bufera: VoceSuono
+## Crepitio del ghiaccio che si forma e cristallo che risuona.
+@export var prigione_di_ghiaccio: VoceSuono
+## Sibilo dal cielo, schianto e schegge.
+@export var cometa_gelata: VoceSuono
+
 @export_group("Morti")
 ## Uno scheletro si sbriciola.
 @export var morte_scheletro: VoceSuono

@@ -7,9 +7,13 @@ extends RefCounted
 ##   [squadra]     unita = le 4 unità scelte per la prossima run
 ##
 ## Regole delle pergamene (valori in game_data.gd):
-##   - rarità estratta con RARITY_ODDS; ogni PITY_EVERY aperture un'epica o leggendaria è garantita
-##   - finché la collezione non è completa esce sempre un'unità che non hai
-##   - a collezione completa i doppioni alzano il rango (+10% vita e danno per rango)
+##   - prima si estrae la rarità con RARITY_ODDS (comune 50%, raro 30%, epico 15%,
+##     leggendario 5%); ogni PITY_EVERY aperture un'epica o leggendaria è garantita
+##   - poi un'unità a caso tra TUTTE quelle di quella rarità, anche se l'hai già:
+##     più l'unità è rara più è difficile trovarla, e i doppioni delle comuni
+##     escono spesso anche prima di avere la collezione completa
+##   - un doppione alza il rango (+10% vita e danno per rango); se l'unità è già
+##     al rango massimo diventa monete d'osso (MONETE_DOPPIONE)
 
 const Data := preload("res://scripts/game_data.gd")
 const SAVE_PATH := "user://progressi.cfg"
@@ -78,7 +82,8 @@ static func owned_count(st: Dictionary) -> int:
 	return st["owned"].size()
 
 
-## Apre una pergamena. Restituisce {kind, rank, new, rarity} oppure {} se non ce ne sono.
+## Apre una pergamena. Restituisce {kind, rank, new, rarity, max, monete} oppure {} se
+## non ce ne sono. `max` = era già al rango massimo, `monete` = monete d'osso ricevute.
 static func open_scroll(st: Dictionary) -> Dictionary:
 	if st["scrolls"] <= 0:
 		return {}
@@ -87,22 +92,32 @@ static func open_scroll(st: Dictionary) -> Dictionary:
 	var rarity := _roll_rarity(st["pity"] >= Data.PITY_EVERY)
 	if rarity == "epico" or rarity == "leggendario":
 		st["pity"] = 0
-	var missing: Array = Data.ALLY_ORDER.filter(func(k): return not st["owned"].has(k))
+	# un'unità a caso della rarità estratta, posseduta o no (se in quella rarità
+	# non ci fossero unità si passa alla rarità più vicina)
 	var pick := ""
-	if not missing.is_empty():
-		# sempre un'unità nuova: della rarità estratta, o della più vicina che ti manca
-		for r in _nearest_rarities(rarity):
-			var pool: Array = missing.filter(func(k): return Data.UNITS[k]["rarity"] == r)
-			if not pool.is_empty():
-				pick = pool.pick_random()
-				break
-	else:
-		var pool: Array = Data.ALLY_ORDER.filter(func(k): return Data.UNITS[k]["rarity"] == rarity)
-		pick = pool.pick_random()
+	for r in _nearest_rarities(rarity):
+		var pool: Array = Data.ALLY_ORDER.filter(func(k): return Data.UNITS[k]["rarity"] == r)
+		if not pool.is_empty():
+			pick = pool.pick_random()
+			break
 	var is_new: bool = not st["owned"].has(pick)
+	var was_max: bool = not is_new and int(st["owned"][pick]) >= Data.MAX_RANK
 	st["owned"][pick] = 1 if is_new else mini(Data.MAX_RANK, st["owned"][pick] + 1)
 	save_state(st)
-	return {"kind": pick, "rank": st["owned"][pick], "new": is_new, "rarity": Data.UNITS[pick]["rarity"]}
+	var r_pick: String = Data.UNITS[pick]["rarity"]
+	var coins := 0
+	if was_max:
+		coins = int(Data.MONETE_DOPPIONE.get(r_pick, 10))
+		_add_monete(coins)
+	return {"kind": pick, "rank": st["owned"][pick], "new": is_new, "rarity": r_pick, "max": was_max, "monete": coins}
+
+
+## Monete d'osso nel portafoglio (stessa voce di portafoglio.gd: [negozio] monete).
+static func _add_monete(n: int) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(SAVE_PATH)
+	cfg.set_value("negozio", "monete", int(cfg.get_value("negozio", "monete", 0)) + n)
+	cfg.save(SAVE_PATH)
 
 
 static func _roll_rarity(guaranteed_epic: bool) -> String:

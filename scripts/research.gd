@@ -6,6 +6,10 @@ extends Node2D
 ## Comandi: clic su un nodo per vederne i dettagli, clic su SBLOCCA/POTENZIA
 ## (o Invio) per comprarlo. Frecce per muoversi tra i nodi. Esc torna al menu.
 ##
+## In alto c'è il necromante di cui vedi l'albero: le frecce ai lati (o Q / E)
+## passano agli altri. I punti sono in comune; gli alberi dei necromanti che non
+## hai ancora comprato nel negozio si possono guardare ma non sbloccare.
+##
 ## POSIZIONI: nella scena ci sono dei nodi figli (Marker2D) da spostare
 ## nell'editor, trascinandoli nella vista 2D o dal loro Transform nell'Inspector.
 ## Lo script gira anche nell'editor, quindi vedi subito il risultato.
@@ -21,7 +25,9 @@ const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Research := preload("res://scripts/research_data.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
 const ATLAS := preload("res://assets/sprites.png")
+const NECRO_ATLAS := preload("res://assets/necromanti/necromanti.png")
 const MENU_SCENE := "res://scenes/menu.tscn"
 
 const C0 := Color("141414")
@@ -47,6 +53,9 @@ const ICON_SCALE := 3.0
 
 var st: Dictionary
 var t := 0.0
+var albero := "ossa"  # id del necromante di cui si vede l'albero
+var freccia_sx := Rect2()
+var freccia_dx := Rect2()
 var selected := "mura"
 var hovered := ""
 var grid_left := 0.0
@@ -71,6 +80,9 @@ var stars: Array = []
 
 func _ready() -> void:
 	st = Research.load_state()
+	if not Engine.is_editor_hint():
+		albero = Necromanti.attivo_id()
+	_scegli_albero(albero)
 	Suoni.install()
 	Lingua.setup()
 	Dialoghi.avvia(self, dialogo_tutorial)
@@ -114,6 +126,33 @@ func _update_layout() -> void:
 	panel_pos = _marker("Dettagli", Vector2(default_grid_left - PANEL_PAD, PANEL_TOP))
 
 
+## Ricerche dell'albero mostrato.
+func _ids() -> Array:
+	return Research.tree_nodes(albero)
+
+
+func _scegli_albero(id: String) -> void:
+	albero = id
+	var ids := _ids()
+	if not selected in ids and not ids.is_empty():
+		selected = ids[0]
+		for k in ids:  # la prima in alto a sinistra
+			var p: Vector2i = Research.NODES[k]["pos"]
+			var q: Vector2i = Research.NODES[selected]["pos"]
+			if p.y < q.y or (p.y == q.y and p.x < q.x):
+				selected = k
+
+
+func _cambia_albero(passo: int) -> void:
+	Suoni.play("click")
+	_scegli_albero(Necromanti.successivo(albero, passo, false))
+	hovered = ""
+
+
+func _icon_tex(n: Dictionary) -> Texture2D:
+	return NECRO_ATLAS if n.get("tex", "") == "necro" else ATLAS
+
+
 func node_rect(id: String) -> Rect2:
 	var p: Vector2i = Research.NODES[id]["pos"]
 	return Rect2(grid_left + p.x * COL_STEP, grid_top + p.y * ROW_STEP, NODE, NODE)
@@ -153,6 +192,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if id != "":
 			Suoni.play("click")
 			selected = id
+		elif freccia_sx.grow(6).has_point(p):
+			_cambia_albero(-1)
+		elif freccia_dx.grow(6).has_point(p):
+			_cambia_albero(1)
 		elif buy_rect.grow(6).has_point(p):
 			_buy()
 		elif back_rect.grow(8).has_point(p):
@@ -166,6 +209,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				leaving = true
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 				_buy()
+			KEY_Q, KEY_PAGEUP:
+				_cambia_albero(-1)
+			KEY_E, KEY_PAGEDOWN, KEY_TAB:
+				_cambia_albero(1)
 			KEY_LEFT, KEY_A:
 				_move(Vector2i(-1, 0))
 			KEY_RIGHT, KEY_D:
@@ -177,7 +224,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _node_at(p: Vector2) -> String:
-	for id in Research.NODES:
+	for id in _ids():
 		if node_rect(id).grow(4).has_point(p):
 			return id
 	return ""
@@ -188,7 +235,7 @@ func _move(dir: Vector2i) -> void:
 	var from: Vector2i = Research.NODES[selected]["pos"]
 	var best := ""
 	var best_d := INF
-	for id in Research.NODES:
+	for id in _ids():
 		var p: Vector2i = Research.NODES[id]["pos"]
 		var d := p - from
 		var along := d.x * dir.x + d.y * dir.y
@@ -204,6 +251,11 @@ func _move(dir: Vector2i) -> void:
 
 
 func _buy() -> void:
+	if not Necromanti.possiede(albero):
+		Suoni.play("errore")
+		message = tr("COMPRA PRIMA QUESTO NECROMANTE NEL NEGOZIO")
+		message_t = 2.5
+		return
 	var lv_before := Research.level(st, selected)
 	if Research.buy(st, selected):
 		Suoni.play("livello", 1.2, -3.0)
@@ -221,7 +273,7 @@ func _buy() -> void:
 
 func _reset() -> void:
 	if reset_armed > 0.0:
-		Research.refund_all(st)
+		Research.refund_all(st, albero)
 		reset_armed = 0.0
 		message = tr("RICERCHE AZZERATE: PUNTI RESTITUITI")
 		message_t = 2.5
@@ -235,8 +287,8 @@ func _draw() -> void:
 	var vp := _screen_size()
 	_draw_background(vp)
 
-	# intestazione
-	PixelFont.draw_centered(self, tr("RICERCHE"), title_pos.x, title_pos.y, 7.0, C6, C0)
+	# intestazione: il necromante di cui si vede l'albero, con le frecce per cambiarlo
+	_draw_titolo()
 	back_rect = Rect2(back_pos, Vector2(PixelFont.text_width(tr("< MENU"), 4.0), PixelFont.text_height(4.0)))
 	PixelFont.draw_text(self, tr("< MENU"), back_rect.position, 4.0, C6 if back_rect.grow(8).has_point(get_local_mouse_position()) else C5)
 	var pts := tr("PUNTI: %d") % st["points"]
@@ -248,7 +300,7 @@ func _draw() -> void:
 	PixelFont.draw_text(self, rtxt, reset_rect.position, 2.0, C6 if reset_armed > 0.0 else C4)
 
 	# titoli dei rami
-	for b in Research.BRANCHES:
+	for b in Research.branches(albero):
 		var cols: Array = b["cols"]
 		var cx: float = grid_left + (cols[0] + cols[cols.size() - 1]) * COL_STEP / 2.0 + NODE / 2.0
 		PixelFont.draw_centered(self, tr(b["name"]), cx, grid_top - 44, 4.0, C5, C0)
@@ -256,7 +308,7 @@ func _draw() -> void:
 		draw_rect(Rect2(cx - w / 2.0, grid_top - 16, w, 2), C3)
 
 	# collegamenti tra ricerche
-	for id in Research.NODES:
+	for id in _ids():
 		var req: Array = Research.NODES[id]["requires"]
 		if req.is_empty():
 			continue
@@ -268,7 +320,7 @@ func _draw() -> void:
 		draw_rect(Rect2(x, a.end.y + 18, 4, b.position.y - a.end.y - 22), col)
 
 	# nodi
-	for id in Research.NODES:
+	for id in _ids():
 		_draw_node(id)
 
 	_draw_panel(vp)
@@ -279,6 +331,49 @@ func _draw() -> void:
 
 	if fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(C0, fade))
+
+
+## Nome del necromante (al posto della scritta RICERCHE), frecce e stato.
+func _draw_titolo() -> void:
+	var n := Necromanti.per_id(albero)
+	var nome: String = tr(n.nome).to_upper() if n != null else tr("RICERCHE")
+	var col: Color = n.colore if n != null else C6
+	var s := 4.0
+	while s > 2.0 and PixelFont.text_width(nome, s) > 480.0:
+		s -= 1.0
+	var w := PixelFont.text_width(nome, s)
+	var cy := title_pos.y + PixelFont.text_height(5.0) / 2.0
+	# ritratto + nome, centrati insieme (stanno tra "< MENU" e i punti)
+	var tot := 60.0 + w
+	var x0 := roundf(title_pos.x - tot / 2.0)
+	if n != null and n.ritratto != null:
+		draw_texture_rect(n.ritratto, Rect2(x0, cy - 26, 48, 48), false)
+	var ty := roundf(cy - PixelFont.text_height(s) / 2.0)
+	PixelFont.draw_text(self, nome, Vector2(x0 + 62, ty + 2), s, C0)
+	PixelFont.draw_text(self, nome, Vector2(x0 + 60, ty), s, col.lightened(0.25))
+	var stato := ""
+	if n != null and not Necromanti.possiede(n.id):
+		stato = tr("NON ANCORA TUO: SI COMPRA NEL NEGOZIO")
+	elif n != null and n.id == Necromanti.attivo_id():
+		stato = tr("RICERCHE DEL NECROMANTE IN USO")
+	else:
+		stato = tr("RICERCHE (SCEGLILO IN PREPARA LA LEGIONE)")
+	PixelFont.draw_centered(self, stato, title_pos.x, cy + 30, 2.0, C4)
+	# frecce: quadrati di 56 pixel, comodi per il dito
+	var half := maxf(tot / 2.0 + 16.0, 250.0)
+	freccia_sx = Rect2(title_pos.x - half - 56, cy - 28, 56, 56)
+	freccia_dx = Rect2(title_pos.x + half, cy - 28, 56, 56)
+	var m := get_local_mouse_position()
+	for i in 2:
+		var r: Rect2 = freccia_sx if i == 0 else freccia_dx
+		var hot := r.grow(6).has_point(m)
+		draw_rect(r, C2 if hot else C1)
+		_border(r, 4.0, C6 if hot else C4)
+		var c := r.get_center()
+		for k in 8:  # triangolo a gradini
+			var hh := 16.0 - k * 2.0
+			var x := c.x - 8.0 + k * 2.0 if i == 1 else c.x + 6.0 - k * 2.0
+			draw_rect(Rect2(x, c.y - hh / 2.0, 2, hh), C6 if hot else C5)
 
 
 func _draw_background(vp: Vector2) -> void:
@@ -329,7 +424,7 @@ func _draw_node(id: String) -> void:
 	if affordable and not maxed and int(t * 2.0) % 2 == 0:
 		_border(r.grow(-6), 2.0, C4)  # si può comprare: bordo interno che pulsa
 	var icon_pos := r.position + Vector2((NODE - 16 * ICON_SCALE) / 2.0, (NODE - 16 * ICON_SCALE) / 2.0)
-	draw_texture_rect_region(ATLAS, Rect2(icon_pos, Vector2(16, 16) * ICON_SCALE), Rect2(n["icon"], Vector2(16, 16)), icon_mod)
+	draw_texture_rect_region(_icon_tex(n), Rect2(icon_pos, Vector2(16, 16) * ICON_SCALE), Rect2(n["icon"], Vector2(16, 16)), icon_mod)
 	if not unlocked:  # lucchetto
 		var lp := r.end - Vector2(22, 24)
 		draw_rect(Rect2(lp + Vector2(2, -6), Vector2(10, 4)), C4)
@@ -370,7 +465,7 @@ func _draw_panel(vp: Vector2) -> void:
 
 	# icona grande
 	draw_rect(Rect2(x, y, 96, 96), C2)
-	draw_texture_rect_region(ATLAS, Rect2(x + 8, y + 8, 80, 80), Rect2(n["icon"], Vector2(16, 16)))
+	draw_texture_rect_region(_icon_tex(n), Rect2(x + 8, y + 8, 80, 80), Rect2(n["icon"], Vector2(16, 16)))
 	x += 124
 
 	# spazio fino al pulsante: i testi lunghi (inglese, spagnolo) si rimpiccioliscono
@@ -380,7 +475,7 @@ func _draw_panel(vp: Vector2) -> void:
 	while ts > 3.0 and PixelFont.text_width(title, ts) > avail:
 		ts -= 1.0
 	PixelFont.draw_text(self, title, Vector2(x, y), ts, C6)
-	var branch_name: String = tr(Research.BRANCHES[n["branch"]]["name"])
+	var branch_name: String = tr(Research.branches(albero)[n["branch"]]["name"])
 	PixelFont.draw_text(self, tr("%s  -  LIVELLO %d/%d") % [branch_name, lv, m], Vector2(x, y + 48), 3.0, C4)
 	var ds := 3.0
 	var lines := _wrap(tr(n["desc"]), int(avail / (6.0 * ds)))
@@ -402,6 +497,12 @@ func _draw_panel(vp: Vector2) -> void:
 		return
 	PixelFont.draw_centered(self, tr("COSTO: %d PUNTI") % cost, bx + bw / 2.0, y + 6, 3.0, C5)
 	buy_rect = Rect2(bx, y + 44, bw, 64)
+	if not Necromanti.possiede(albero):  # albero di un necromante non ancora comprato
+		draw_rect(buy_rect, C1)
+		_border(buy_rect, 4.0, C3)
+		PixelFont.draw_centered(self, tr("BLOCCATO"), buy_rect.get_center().x, buy_rect.get_center().y - PixelFont.text_height(4.0) / 2.0, 4.0, C4)
+		PixelFont.draw_centered(self, tr("SI COMPRA NEL NEGOZIO"), buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C5)
+		return
 	var can := Research.can_buy(st, selected)
 	var hover := buy_rect.has_point(get_local_mouse_position())
 	draw_rect(buy_rect, C3 if can and hover else (C2 if can else C1))

@@ -6,7 +6,7 @@ extends Control
 ##   seleziona il nodo "Negozio" > lista "Oggetti" > "Aggiungi elemento" >
 ##   "Nuovo OggettoNegozio", poi compila nome, descrizione, icona, prezzo e
 ##   cosa si ottiene. L'anteprima nell'editor si aggiorna subito.
-##   Il pulsante "Ripristina oggetti di base" rimette i 4 pacchetti iniziali.
+##   Il pulsante "Ripristina oggetti di base" rimette i 6 oggetti iniziali.
 ##
 ## Le monete d'osso si guadagnano giocando (2 per ondata superata).
 ## Dev tool: Ctrl+Shift+M = fondi infiniti (solo nelle build di prova).
@@ -29,7 +29,7 @@ const MENU_SCENE := "res://scenes/menu.tscn"
 
 ## Gli oggetti in vendita, nell'ordine in cui compaiono.
 @export var oggetti: Array[OggettoNegozio] = []
-## Rimette i 4 oggetti di base (pergamena, fascio, scrigno, VIP). Poi salva la scena.
+## Rimette i 6 oggetti di base (pergamena, fascio, scrigno, VIP, Strega, Lich). Poi salva la scena.
 @export_tool_button("Ripristina oggetti di base", "Reload") var ripristina: Callable = _ripristina
 
 @export_group("Disposizione")
@@ -450,6 +450,14 @@ static func oggetti_di_base() -> Array[OggettoNegozio]:
 	vip.valuta = OggettoNegozio.Valuta.EURO
 	vip.id_store = "vip_pack"
 	out.append(vip)
+	var strega := _item("strega", "Strega Pestilenziale", "Necromante: la torre avvelena e maledice. Magie: nube di peste, maledizione, sciame.",
+		"strega", 500, 0, "NUOVO", false, true)
+	strega.necromante = "strega"
+	out.append(strega)
+	var lich := _item("lich", "Lich del Ghiaccio", "Necromante: la torre rallenta e congela. Magie: bufera, prigione gelida, cometa gelata.",
+		"lich", 800, 0, "NUOVO", false, true)
+	lich.necromante = "lich"
+	out.append(lich)
 	return out
 
 

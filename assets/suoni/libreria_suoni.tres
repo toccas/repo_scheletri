@@ -26,6 +26,12 @@
 [ext_resource type="AudioStream" path="res://assets/suoni/torre_colpita.wav" id="24_6628p"]
 [ext_resource type="AudioStream" path="res://assets/suoni/voce.wav" id="25_nacph"]
 
+[ext_resource type="AudioStream" path="res://assets/suoni/nube_di_peste.wav" id="n_nube_di_peste"]
+[ext_resource type="AudioStream" path="res://assets/suoni/maledizione.wav" id="n_maledizione"]
+[ext_resource type="AudioStream" path="res://assets/suoni/sciame.wav" id="n_sciame"]
+[ext_resource type="AudioStream" path="res://assets/suoni/bufera.wav" id="n_bufera"]
+[ext_resource type="AudioStream" path="res://assets/suoni/prigione_di_ghiaccio.wav" id="n_prigione_di_ghiaccio"]
+[ext_resource type="AudioStream" path="res://assets/suoni/cometa_gelata.wav" id="n_cometa_gelata"]
 [sub_resource type="Resource" id="Resource_2pjmt"]
 script = ExtResource("1_2kmvd")
 suono = ExtResource("2_orsav")
@@ -201,6 +207,54 @@ variazione_tono = 0.08
 intervallo_minimo = 0.05
 voci_massime = 2
 
+[sub_resource type="Resource" id="Resource_n_nube_di_peste"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_nube_di_peste")
+volume_db = -3.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_n_maledizione"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_maledizione")
+volume_db = 0.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_n_sciame"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_sciame")
+volume_db = -1.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_n_bufera"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_bufera")
+volume_db = -2.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_n_prigione_di_ghiaccio"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_prigione_di_ghiaccio")
+volume_db = 0.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
+[sub_resource type="Resource" id="Resource_n_cometa_gelata"]
+script = ExtResource("1_2kmvd")
+suono = ExtResource("n_cometa_gelata")
+volume_db = -3.0
+variazione_tono = 0.03
+intervallo_minimo = 0.2
+voci_massime = 2
+
 [resource]
 script = ExtResource("22_ecl2p")
 click = SubResource("Resource_68kxt")
@@ -215,6 +269,12 @@ impatto = SubResource("Resource_25wvt")
 palla_di_fuoco = SubResource("Resource_yqfw2")
 saetta = SubResource("Resource_vll4n")
 area_curativa = SubResource("Resource_2pjmt")
+nube_di_peste = SubResource("Resource_n_nube_di_peste")
+maledizione = SubResource("Resource_n_maledizione")
+sciame = SubResource("Resource_n_sciame")
+bufera = SubResource("Resource_n_bufera")
+prigione_di_ghiaccio = SubResource("Resource_n_prigione_di_ghiaccio")
+cometa_gelata = SubResource("Resource_n_cometa_gelata")
 morte_scheletro = SubResource("Resource_wootc")
 morte_eroe = SubResource("Resource_umrcg")
 assorbimento = SubResource("Resource_wawd3")

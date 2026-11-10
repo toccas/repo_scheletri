@@ -88,6 +88,8 @@ func _hit() -> void:
 		game.spawn_unit_fx(target.ground, "spark", dest_height, signf(dest.x - ground.x + 0.01), 0.22,
 			tint if look != "arrow" else C_WHITE)
 		target.take_damage(dmg, shooter)
+		if look == "necro":  # poteri del necromante: veleno, maledizione, gelo
+			game.on_necro_hit(target, dmg)
 	if to_tower:
 		game.spawn_unit_fx(dest, "spark", dest_height, -1.0, 0.25)
 	queue_free()

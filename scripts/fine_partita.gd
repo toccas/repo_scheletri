@@ -172,11 +172,20 @@ func _titolo(cx: float, y: float, testo: String, a: float) -> void:
 		x += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + spazio
 
 
+## Il necromante della partita (Signore, Strega o Lich).
+func _necro(r: Rect2, mod: Color) -> void:
+	var tex = dati.get("necro_tex")
+	if tex is Texture2D:
+		draw_texture_rect(tex, r, false, mod)
+	else:
+		draw_texture_rect_region(ATLAS, r, R_NECRO, mod)
+
+
 func _draw_sconfitta(cx: float) -> void:
 	var a := _k(0.2, 0.5)
 	# il necromante senza torre, che si sbriciola
 	var nr := Rect2(cx - 48, 64, 96, 96)
-	draw_texture_rect_region(ATLAS, nr, R_NECRO, Color(0.7, 0.7, 0.7, a))
+	_necro(nr, Color(0.7, 0.7, 0.7, a))
 	for b in briciole:
 		var v: Vector2 = b
 		var y := fmod(t * 18.0 + v.y * 40.0, 40.0)
@@ -217,7 +226,7 @@ func _draw_vittoria(cx: float) -> void:
 			draw_texture_rect_region(Data.ally_texture(k), Rect2(cx + xs[i], base_y + (84 if i % 2 else 80) + bob, 48, 48),
 				Data.ally_region(k, int(t * 3.0 + i) % 2), Color(1, 1, 1, ka))
 	draw_texture_rect_region(ATLAS, Rect2(cx - 24, base_y, 48, 48), R_CORONA, Color(1, 1, 1, ka))
-	draw_texture_rect_region(ATLAS, Rect2(cx - 48, base_y + 36, 96, 96), R_NECRO, Color(1, 1, 1, ka))
+	_necro(Rect2(cx - 48, base_y + 36, 96, 96), Color(1, 1, 1, ka))
 	var ultimo: Campione = dati.get("ultimo")
 	if ultimo != null and ultimo.sprite != null:
 		var fs := float(ultimo.sprite.get_height())

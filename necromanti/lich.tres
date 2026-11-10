@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="Necromante" format=3]
+
+[ext_resource type="Script" path="res://scripts/necromante.gd" id="1_nec"]
+[ext_resource type="Texture2D" path="res://assets/necromanti/necromanti.png" id="2_atl"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r"]
+atlas = ExtResource("2_atl")
+region = Rect2(16, 0, 16, 16)
+
+[resource]
+script = ExtResource("1_nec")
+id = "lich"
+nome = "Lich del Ghiaccio"
+titolo = "Rallenta e congela"
+descrizione = "I colpi della torre rallentano i nemici e a volte li congelano sul posto."
+ritratto = SubResource("AtlasTexture_r")
+colore = Color(0.4706, 0.8863, 0.9176, 1)
+prezzo = 800
+magie = Array[String](["bufera", "prigione_di_ghiaccio", "cometa_gelata"])
+danno = 0.9
+rallenta = 0.3
+rallenta_durata = 2.0
+congela_probabilita = 0.08
+congela_durata = 1.0

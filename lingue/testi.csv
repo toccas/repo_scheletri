@@ -785,6 +785,101 @@ Strumenti sviluppatore disattivati.,Strumenti sviluppatore disattivati.,Develope
 Strumenti sviluppatore già attivi: tasto DEV in alto a destra.,Strumenti sviluppatore già attivi: tasto DEV in alto a destra.,Developer tools already on: DEV button at the top right.,Herramientas de desarrollador ya activas: botón DEV arriba a la derecha.
 Strumenti sviluppatore attivati: tasto DEV in alto a destra.,Strumenti sviluppatore attivati: tasto DEV in alto a destra.,Developer tools on: DEV button at the top right.,Herramientas de desarrollador activadas: botón DEV arriba a la derecha.
 Codice non valido.,Codice non valido.,Invalid code.,Código no válido.
+Signore delle Ossa,Signore delle Ossa,Lord of Bones,Señor de los Huesos
+Più evocazioni,Più evocazioni,More summons,Más invocaciones
+Una squadra in più da schierare e i nemici uccisi a volte si rialzano come scheletri al tuo servizio.,Una squadra in più da schierare e i nemici uccisi a volte si rialzano come scheletri al tuo servizio.,"One extra squad to deploy, and slain enemies sometimes rise again as skeletons in your service.",Un escuadrón más para desplegar y los enemigos muertos a veces se alzan como esqueletos a tu servicio.
+Strega Pestilenziale,Strega Pestilenziale,Plague Witch,Bruja Pestilente
+Veleni e maledizioni,Veleni e maledizioni,Poisons and curses,Venenos y maldiciones
+I colpi della torre avvelenano e maledicono: i maledetti subiscono il 40% di danni in più.,I colpi della torre avvelenano e maledicono: i maledetti subiscono il 40% di danni in più.,The tower's shots poison and curse: cursed enemies take 40% more damage.,Los disparos de la torre envenenan y maldicen: los malditos reciben un 40% más de daño.
+Lich del Ghiaccio,Lich del Ghiaccio,Frost Lich,Liche de Hielo
+Rallenta e congela,Rallenta e congela,Slows and freezes,Ralentiza y congela
+I colpi della torre rallentano i nemici e a volte li congelano sul posto.,I colpi della torre rallentano i nemici e a volte li congelano sul posto.,The tower's shots slow enemies and sometimes freeze them in place.,Los disparos de la torre ralentizan a los enemigos y a veces los congelan en el sitio.
+Nube di peste,Nube di peste,Plague cloud,Nube de peste
+Maledizione,Maledizione,Curse,Maldición
+Sciame,Sciame,Swarm,Enjambre
+Bufera,Bufera,Blizzard,Ventisca
+Prigione gelida,Prigione gelida,Frost prison,Prisión helada
+Cometa gelata,Cometa gelata,Frost comet,Cometa helado
+STREGA,STREGA,WITCH,BRUJA
+MALEFICI,MALEFICI,HEXES,MALEFICIOS
+INVERNO,INVERNO,WINTER,INVIERNO
+Raccolto d'ossa,Raccolto d'ossa,Bone harvest,Cosecha de huesos
+Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello.,Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello.,Chance that a slain enemy rises as a skeleton +5% per level.,Probabilidad de que un enemigo muerto se alce como esqueleto +5% por nivel.
+Veleno potente,Veleno potente,Potent poison,Veneno potente
+Veleno dei colpi della torre +20% per livello.,Veleno dei colpi della torre +20% per livello.,Poison of the tower's shots +20% per level.,Veneno de los disparos de la torre +20% por nivel.
+Ira della strega,Ira della strega,Witch's wrath,Ira de la bruja
+Danno della torre +10% per livello.,Danno della torre +10% per livello.,Tower damage +10% per level.,Daño de la torre +10% por nivel.
+Tossine lente,Tossine lente,Slow toxins,Toxinas lentas
+Il veleno della torre dura 1 secondo in più per livello.,Il veleno della torre dura 1 secondo in più per livello.,The tower's poison lasts 1 second longer per level.,El veneno de la torre dura 1 segundo más por nivel.
+Malocchio,Malocchio,Evil eye,Mal de ojo
+I colpi della torre maledicono 1 secondo in più per livello.,I colpi della torre maledicono 1 secondo in più per livello.,The tower's shots curse for 1 second longer per level.,Los disparos de la torre maldicen 1 segundo más por nivel.
+Mura di rovi,Mura di rovi,Bramble walls,Muros de zarzas
+Rito del calderone,Rito del calderone,Cauldron rite,Rito del caldero
+Velocità d'attacco della torre +8% per livello.,Velocità d'attacco della torre +8% per livello.,Tower attack speed +8% per level.,Velocidad de ataque de la torre +8% por nivel.
+Lame avvelenate,Lame avvelenate,Poisoned blades,Hojas envenenadas
+I colpi degli scheletri avvelenano: 10% del danno al secondo per livello.,I colpi degli scheletri avvelenano: 10% del danno al secondo per livello.,Skeleton hits poison: 10% of the damage per second per level.,Los golpes de los esqueletos envenenan: 10% del daño por segundo por nivel.
+Ossa marce,Ossa marce,Rotten bones,Huesos podridos
+"Quando un nemico avvelenato muore, 20% per livello di contagiare chi gli sta vicino.","Quando un nemico avvelenato muore, 20% per livello di contagiare chi gli sta vicino.","When a poisoned enemy dies, 20% chance per level to infect those nearby.","Cuando un enemigo envenenado muere, 20% por nivel de contagiar a los que estén cerca."
+Arti della congrega,Arti della congrega,Coven arts,Artes del aquelarre
+Esercito appestato,Esercito appestato,Plagued army,Ejército apestado
+Frecce intinte,Frecce intinte,Dipped arrows,Flechas impregnadas
+"Sblocca la magia Nube di peste: una nube che avvelena, rallenta e maledice.","Sblocca la magia Nube di peste: una nube che avvelena, rallenta e maledice.","Unlocks the Plague cloud spell: a cloud that poisons, slows and curses.","Desbloquea el hechizo Nube de peste: una nube que envenena, ralentiza y maldice."
+Sblocca la magia Maledizione: i nemici nell'area subiscono il 50% di danni in più.,Sblocca la magia Maledizione: i nemici nell'area subiscono il 50% di danni in più.,Unlocks the Curse spell: enemies in the area take 50% more damage.,Desbloquea el hechizo Maldición: los enemigos del área reciben un 50% más de daño.
+Sblocca la magia Sciame: insetti velenosi su tanti nemici vicini.,Sblocca la magia Sciame: insetti velenosi su tanti nemici vicini.,Unlocks the Swarm spell: poisonous insects on many nearby enemies.,Desbloquea el hechizo Enjambre: insectos venenosos sobre muchos enemigos cercanos.
+Potere del sabba,Potere del sabba,Sabbath power,Poder del aquelarre
+Potenza delle magie +15% per livello.,Potenza delle magie +15% per livello.,Spell power +15% per level.,Potencia de los hechizos +15% por nivel.
+Luna nera,Luna nera,Black moon,Luna negra
+Tempo di ricarica delle magie -10% per livello.,Tempo di ricarica delle magie -10% per livello.,Spell cooldown -10% per level.,Tiempo de recarga de los hechizos -10% por nivel.
+Anatema,Anatema,Anathema,Anatema
+I maledetti subiscono il 10% di danni in più per livello.,I maledetti subiscono il 10% di danni in più per livello.,Cursed enemies take 10% more damage per level.,Los malditos reciben un 10% más de daño por nivel.
+Tocco gelido,Tocco gelido,Icy touch,Toque gélido
+Rallentamento dei colpi della torre +8% per livello.,Rallentamento dei colpi della torre +8% per livello.,Slow of the tower's shots +8% per level.,Ralentización de los disparos de la torre +8% por nivel.
+Furia del lich,Furia del lich,Lich's fury,Furia del liche
+Inverno lungo,Inverno lungo,Long winter,Invierno largo
+Il rallentamento della torre dura mezzo secondo in più per livello.,Il rallentamento della torre dura mezzo secondo in più per livello.,The tower's slow lasts half a second longer per level.,La ralentización de la torre dura medio segundo más por nivel.
+Morsa di ghiaccio,Morsa di ghiaccio,Ice grip,Garra de hielo
+Probabilità di congelare a ogni colpo della torre +4% per livello.,Probabilità di congelare a ogni colpo della torre +4% per livello.,Chance to freeze with each tower shot +4% per level.,Probabilidad de congelar con cada disparo de la torre +4% por nivel.
+Mura di ghiaccio,Mura di ghiaccio,Ice walls,Muros de hielo
+Cuore gelido,Cuore gelido,Frozen heart,Corazón helado
+"Il congelamento dura 0,3 secondi in più per livello.","Il congelamento dura 0,3 secondi in più per livello.",Freezing lasts 0.3 seconds longer per level.,"La congelación dura 0,3 segundos más por nivel."
+Lame di brina,Lame di brina,Rime blades,Hojas de escarcha
+I colpi degli scheletri rallentano i nemici dell'8% per livello.,I colpi degli scheletri rallentano i nemici dell'8% per livello.,Skeleton hits slow enemies by 8% per level.,Los golpes de los esqueletos ralentizan a los enemigos un 8% por nivel.
+Ossa di ghiaccio,Ossa di ghiaccio,Ice bones,Huesos de hielo
+Guardia d'inverno,Guardia d'inverno,Winter guard,Guardia invernal
+Frecce di ghiaccio,Frecce di ghiaccio,Ice arrows,Flechas de hielo
+Legione gelata,Legione gelata,Frozen legion,Legión helada
+Schegge,Schegge,Shards,Esquirlas
+I nemici congelati subiscono il 20% di danni in più per livello.,I nemici congelati subiscono il 20% di danni in più per livello.,Frozen enemies take 20% more damage per level.,Los enemigos congelados reciben un 20% más de daño por nivel.
+Sblocca la magia Bufera: una tempesta di neve che rallenta e ferisce.,Sblocca la magia Bufera: una tempesta di neve che rallenta e ferisce.,Unlocks the Blizzard spell: a snowstorm that slows and wounds.,Desbloquea el hechizo Ventisca: una tormenta de nieve que ralentiza y hiere.
+Sblocca la magia Prigione gelida: congela i nemici in una piccola area.,Sblocca la magia Prigione gelida: congela i nemici in una piccola area.,Unlocks the Frost prison spell: freezes enemies in a small area.,Desbloquea el hechizo Prisión helada: congela a los enemigos en un área pequeña.
+Sblocca la magia Cometa gelata: danni altissimi e gelo dove cade.,Sblocca la magia Cometa gelata: danni altissimi e gelo dove cade.,Unlocks the Frost comet spell: huge damage and frost where it lands.,Desbloquea el hechizo Cometa helado: daño altísimo y hielo donde cae.
+Potere del gelo,Potere del gelo,Frost power,Poder del hielo
+Notte polare,Notte polare,Polar night,Noche polar
+Inverno eterno,Inverno eterno,Eternal winter,Invierno eterno
+"Gli effetti delle magie (gelo, bufera) durano il 20% in più per livello.","Gli effetti delle magie (gelo, bufera) durano il 20% in più per livello.","Spell effects (frost, blizzard) last 20% longer per level.","Los efectos de los hechizos (hielo, ventisca) duran un 20% más por nivel."
+COMPRA PRIMA QUESTO NECROMANTE NEL NEGOZIO,COMPRA PRIMA QUESTO NECROMANTE NEL NEGOZIO,BUY THIS NECROMANCER IN THE SHOP FIRST,COMPRA PRIMERO ESTE NIGROMANTE EN LA TIENDA
+BLOCCATO,BLOCCATO,LOCKED,BLOQUEADO
+SI COMPRA NEL NEGOZIO,SI COMPRA NEL NEGOZIO,BUY IT IN THE SHOP,SE COMPRA EN LA TIENDA
+NON ANCORA TUO: SI COMPRA NEL NEGOZIO,NON ANCORA TUO: SI COMPRA NEL NEGOZIO,NOT YOURS YET: BUY IT IN THE SHOP,AÚN NO ES TUYO: SE COMPRA EN LA TIENDA
+RICERCHE DEL NECROMANTE IN USO,RICERCHE DEL NECROMANTE IN USO,RESEARCH OF THE NECROMANCER IN USE,INVESTIGACIONES DEL NIGROMANTE EN USO
+RICERCHE (SCEGLILO IN PREPARA LA LEGIONE),RICERCHE (SCEGLILO IN PREPARA LA LEGIONE),RESEARCH (PICK HIM IN PREPARE THE LEGION),INVESTIGACIONES (ELÍGELO EN PREPARA LA LEGIÓN)
+Altri necromanti si comprano nel negozio.,Altri necromanti si comprano nel negozio.,More necromancers can be bought in the shop.,Otros nigromantes se compran en la tienda.
+tocca per cambiare,tocca per cambiare,tap to change,toca para cambiar
+altri nel negozio,altri nel negozio,more in the shop,más en la tienda
+MAGIE:,MAGIE:,SPELLS:,HECHIZOS:
+Necromanti: %d/%d  ·  il loro albero è nelle Ricerche,Necromanti: %d/%d  ·  il loro albero è nelle Ricerche,Necromancers: %d/%d  ·  their trees are in Research,Nigromantes: %d/%d  ·  su árbol está en Investigación
+"Necromante: la torre avvelena e maledice. Magie: nube di peste, maledizione, sciame.","Necromante: la torre avvelena e maledice. Magie: nube di peste, maledizione, sciame.","Necromancer: the tower poisons and curses. Spells: plague cloud, curse, swarm.","Nigromante: la torre envenena y maldice. Hechizos: nube de peste, maldición, enjambre."
+"Necromante: la torre rallenta e congela. Magie: bufera, prigione gelida, cometa gelata.","Necromante: la torre rallenta e congela. Magie: bufera, prigione gelida, cometa gelata.","Necromancer: the tower slows and freezes. Spells: blizzard, frost prison, frost comet.","Nigromante: la torre ralentiza y congela. Hechizos: ventisca, prisión helada, cometa helado."
+NUOVO,NUOVO,NEW,NUEVO
+RANGO MASSIMO: +%d MONETE D'OSSO,RANGO MASSIMO: +%d MONETE D'OSSO,MAX RANK: +%d BONE COINS,RANGO MÁXIMO: +%d MONEDAS DE HUESO
+Hai già questa unità al rango massimo: il doppione diventa monete d'osso per il negozio.,Hai già questa unità al rango massimo: il doppione diventa monete d'osso per il negozio.,You already have this unit at max rank: the duplicate becomes bone coins for the shop.,Ya tienes esta unidad al rango máximo: el duplicado se convierte en monedas de hueso para la tienda.
++%d MONETE,+%d MONETE,+%d COINS,+%d MONEDAS
+SUONA IL CORNO,SUONA IL CORNO,SOUND THE HORN,TOCA EL CUERNO
+inizia l'ondata %d,inizia l'ondata %d,start wave %d,empieza la oleada %d
+schiera almeno un'unità,schiera almeno un'unità,deploy at least one unit,despliega al menos una unidad
+Schieramento completo: suona il corno per iniziare.,Schieramento completo: suona il corno per iniziare.,Deployment complete: sound the horn to begin.,Despliegue completo: toca el cuerno para empezar.
+UNITÀ EVOCABILI,UNITÀ EVOCABILI,UNITS TO SUMMON,UNIDADES INVOCABLES
+Tocca la casella che lampeggia.,Tocca la casella che lampeggia.,Tap the flashing square.,Toca la casilla que parpadea.
 Oh! Un nuovo apprendista. Finalmente!,Oh! Un nuovo apprendista. Finalmente!,Oh! A new apprentice. At last!,¡Oh! Un nuevo aprendiz. ¡Por fin!
 "Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","Io sono il Necromante, signore di questa torre e di ogni osso che la circonda.","I am the Necromancer, lord of this tower and of every bone around it.","Soy el Nigromante, señor de esta torre y de cada hueso que la rodea."
 "Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","Gli eroi del regno vogliono abbatterla. Arriveranno a ondate: cento, una più forte dell'altra.","The kingdom's heroes want to tear it down. They will come in waves: a hundred, each stronger than the last.","Los héroes del reino quieren derribarla. Llegarán en oleadas: cien, cada una más fuerte que la anterior."
@@ -799,8 +894,10 @@ Prima di ogni partita si sceglie la squadra: quattro tipi di scheletri che potra
 "Mescola i ruoli: chi combatte corpo a corpo sta davanti e ferma gli eroi, chi tira o fa magie colpisce da dietro.","Mescola i ruoli: chi combatte corpo a corpo sta davanti e ferma gli eroi, chi tira o fa magie colpisce da dietro.","Mix the roles: melee fighters stand in front and stop the heroes, archers and mages strike from behind.","Mezcla los roles: los de cuerpo a cuerpo van delante y frenan a los héroes, los que disparan o hacen magia atacan desde atrás."
 "Quando sei pronto, premi INIZIA LA RUN.","Quando sei pronto, premi INIZIA LA RUN.","When you're ready, press START THE RUN.","Cuando estés listo, pulsa EMPEZAR PARTIDA."
 Ecco il campo di battaglia. Gli eroi arrivano da destra e marciano verso la mia torre.,Ecco il campo di battaglia. Gli eroi arrivano da destra e marciano verso la mia torre.,Here is the battlefield. The heroes come from the right and march towards my tower.,Este es el campo de batalla. Los héroes llegan por la derecha y marchan hacia mi torre.
-Clicca una casella della griglia per evocare una squadra. All'inizio ne puoi schierare poche: le altre arrivano salendo di livello.,Clicca una casella della griglia per evocare una squadra. All'inizio ne puoi schierare poche: le altre arrivano salendo di livello.,Click a grid square to summon a squad. At first you can only deploy a few: more come as you level up.,Haz clic en una casilla para invocar un escuadrón. Al principio puedes desplegar pocos: los demás llegan al subir de nivel.
-Quando sei pronto premi INIZIA ONDATE. Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,Quando sei pronto premi INIZIA ONDATE. Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,When you're ready press START WAVES. I shoot from the tower on my own: you take care of your skeletons.,Cuando estés listo pulsa EMPEZAR OLEADAS. Yo disparo solo desde la torre: tú ocúpate de tus esqueletos.
+Vedi la casella che lampeggia? Toccala e scegli uno scheletro da evocare lì.,Vedi la casella che lampeggia? Toccala e scegli uno scheletro da evocare lì.,See the flashing square? Tap it and choose a skeleton to summon there.,¿Ves la casilla que parpadea? Tócala y elige un esqueleto para invocarlo allí.
+Ottimo! Ora schiera le altre truppe: la targa in alto ti dice quante unità puoi ancora evocare.,Ottimo! Ora schiera le altre truppe: la targa in alto ti dice quante unità puoi ancora evocare.,Excellent! Now deploy the rest of your troops: the plaque at the top tells you how many units you can still summon.,¡Excelente! Ahora despliega el resto de tus tropas: el cartel de arriba te dice cuántas unidades puedes invocar todavía.
+"Quando hai finito premi SUONA IL CORNO, qui sotto: gli eroi partiranno all'attacco.","Quando hai finito premi SUONA IL CORNO, qui sotto: gli eroi partiranno all'attacco.","When you're done press SOUND THE HORN, down here: the heroes will charge.","Cuando termines pulsa TOCA EL CUERNO, aquí abajo: los héroes pasarán al ataque."
+Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,Io sparo da solo dalla torre: tu pensa ai tuoi scheletri.,I shoot from the tower on my own: you take care of your skeletons.,Yo disparo solo desde la torre: tú ocúpate de tus esqueletos.
 Ogni eroe ucciso mi dà esperienza. A ogni livello scegli un dono tra tre lapidi.,Ogni eroe ucciso mi dà esperienza. A ogni livello scegli un dono tra tre lapidi.,Every hero killed gives me experience. At every level you pick a gift from three tombstones.,Cada héroe eliminado me da experiencia. En cada nivel eliges un don entre tres lápidas.
 "In basso ci sono le mie magie: clicca un'icona (o premi 1, 2, 3) e poi il punto del campo dove lanciarla. Prima vanno sbloccate nelle ricerche.","In basso ci sono le mie magie: clicca un'icona (o premi 1, 2, 3) e poi il punto del campo dove lanciarla. Prima vanno sbloccate nelle ricerche.","At the bottom are my spells: click an icon (or press 1, 2, 3), then the spot on the field to cast it. They must be unlocked in research first.","Abajo están mis hechizos: haz clic en un icono (o pulsa 1, 2, 3) y luego en el punto del campo donde lanzarlo. Antes hay que desbloquearlos en la investigación."
 "Se gli eroi distruggono la torre, la partita è finita. Non deludermi.","Se gli eroi distruggono la torre, la partita è finita. Non deludermi.","If the heroes destroy the tower, the run is over. Don't disappoint me.","Si los héroes destruyen la torre, la partida termina. No me decepciones."
@@ -809,7 +906,7 @@ Benvenuto nel mio grimorio: l'albero delle ricerche.,Benvenuto nel mio grimorio:
 "Qui li spendi per potenziamenti che restano per sempre: vita della torre, danno, le mie magie...","Qui li spendi per potenziamenti che restano per sempre: vita della torre, danno, le mie magie...","Here you spend them on upgrades that last forever: tower health, damage, my spells...","Aquí los gastas en mejoras que duran para siempre: vida de la torre, daño, mis hechizos..."
 "Alcune ricerche ne richiedono altre prima. E se cambi idea, puoi azzerarle e riavere tutti i punti.","Alcune ricerche ne richiedono altre prima. E se cambi idea, puoi azzerarle e riavere tutti i punti.","Some research needs others first. And if you change your mind, you can reset it and get all your points back.","Algunas investigaciones necesitan otras antes. Y si cambias de idea, puedes reiniciarlas y recuperar todos los puntos."
 Il portale delle anime! Qui le pergamene diventano scheletri.,Il portale delle anime! Qui le pergamene diventano scheletri.,The portal of souls! Here scrolls become skeletons.,¡El portal de las almas! Aquí los pergaminos se convierten en esqueletos.
-"Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove.","Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove.","Each scroll summons a random unit: common, rare, epic or legendary. Until the collection is complete you only get new units.","Cada pergamino invoca una unidad al azar: común, rara, épica o legendaria. Hasta completar la colección solo salen unidades nuevas."
+"Ogni pergamena evoca un'unità a caso: più è rara, più è difficile trovarla. E possono uscire anche doppioni.","Ogni pergamena evoca un'unità a caso: più è rara, più è difficile trovarla. E possono uscire anche doppioni.","Each scroll summons a random unit: the rarer it is, the harder it is to find. And you can get duplicates too.","Cada pergamino invoca una unidad al azar: cuanto más rara, más difícil es encontrarla. Y también pueden salir duplicados."
 "Se esce un'unità che hai già, sale di rango: più vita e più danno.","Se esce un'unità che hai già, sale di rango: più vita e più danno.","If you get a unit you already have, it ranks up: more health and more damage.","Si sale una unidad que ya tienes, sube de rango: más vida y más daño."
 Ogni dieci pergamene è garantita almeno un'unità epica. E con dieci pergamene puoi aprirle tutte insieme.,Ogni dieci pergamene è garantita almeno un'unità epica. E con dieci pergamene puoi aprirle tutte insieme.,Every ten scrolls at least one epic unit is guaranteed. And with ten scrolls you can open them all at once.,Cada diez pergaminos está garantizada al menos una unidad épica. Y con diez pergaminos puedes abrirlos todos a la vez.
 Il vecchio mercante... meglio non chiedergli da dove arrivi la sua merce.,Il vecchio mercante... meglio non chiedergli da dove arrivi la sua merce.,The old merchant... better not ask him where his goods come from.,El viejo mercader... mejor no preguntarle de dónde saca su mercancía.

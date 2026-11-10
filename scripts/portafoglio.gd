@@ -10,6 +10,7 @@ extends RefCounted
 
 const Collezione := preload("res://scripts/collezione.gd")
 const Lingua := preload("res://scripts/lingua.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
 const SAVE_PATH := "user://progressi.cfg"
 const DEV_TOOL := "res://scripts/dev_tool.gd"
 ## Impostazioni del giocatore che non sono progressi (per ora: dev tool sbloccato).
@@ -92,6 +93,8 @@ static func add_monete(n: int) -> void:
 
 
 static func owned(st: Dictionary, item: OggettoNegozio) -> bool:
+	if item.necromante != "" and Necromanti.possiede(item.necromante):
+		return true
 	if item.una_sola_volta and item.id != "" and item.id in st["acquistati"]:
 		return true
 	return item.sblocca_vip and item.una_sola_volta and bool(st["vip"])
@@ -128,6 +131,10 @@ static func buy(st: Dictionary, item: OggettoNegozio) -> String:
 	if item.una_sola_volta and item.id != "" and not item.id in st["acquistati"]:
 		st["acquistati"].append(item.id)
 	save_state(st)
+	if item.necromante != "":
+		Necromanti.sblocca(item.necromante)
+		var n := Necromanti.per_id(item.necromante)
+		got.append(Lingua.t(n.nome) if n != null else item.necromante)
 	if item.pergamene > 0:
 		Collezione.add_scrolls(item.pergamene)
 		got.append((Lingua.t("%d pergamena") if item.pergamene == 1 else Lingua.t("%d pergamene")) % item.pergamene)

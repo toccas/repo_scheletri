@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://cu8kvlbl1bkmp"]
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://d18nousj805jf"]
 
 [ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_y8nvp"]
 [ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_a7qhi"]
@@ -10,7 +10,7 @@ espressione = 4
 
 [sub_resource type="Resource" id="Resource_cw7na"]
 script = ExtResource("1_y8nvp")
-testo = "Ogni pergamena evoca un'unità a caso: comune, rara, epica o leggendaria. Finché la collezione non è completa escono solo unità nuove."
+testo = "Ogni pergamena evoca un'unità a caso: più è rara, più è difficile trovarla. E possono uscire anche doppioni."
 
 [sub_resource type="Resource" id="Resource_mlcuh"]
 script = ExtResource("1_y8nvp")

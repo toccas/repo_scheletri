@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Necromante" format=3]
+
+[ext_resource type="Script" path="res://scripts/necromante.gd" id="1_nec"]
+[ext_resource type="Texture2D" path="res://assets/sprites.png" id="2_atl"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r"]
+atlas = ExtResource("2_atl")
+region = Rect2(64, 32, 16, 16)
+
+[resource]
+script = ExtResource("1_nec")
+id = "ossa"
+nome = "Signore delle Ossa"
+titolo = "Più evocazioni"
+descrizione = "Una squadra in più da schierare e i nemici uccisi a volte si rialzano come scheletri al tuo servizio."
+ritratto = SubResource("AtlasTexture_r")
+colore = Color(0.6118, 0.3608, 0.8, 1)
+prezzo = 0
+magie = Array[String](["palla_di_fuoco", "area_curativa", "saetta"])
+squadre_extra = 1
+rialza_probabilita = 0.1
+rialza_durata = 20.0

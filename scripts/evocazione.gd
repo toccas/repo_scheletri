@@ -1,8 +1,10 @@
 extends Control
 ## Scena EVOCAZIONE (il portale del menu): qui si aprono le pergamene.
 ##
-##   - ogni pergamena evoca un'unità: finché la collezione non è completa è sempre
-##     un'unità nuova; dopo, i doppioni ne alzano il rango (+10% vita e danno)
+##   - ogni pergamena evoca un'unità a caso: più è rara più è difficile trovarla, e i
+##     doppioni possono uscire anche prima di avere tutta la collezione. Un doppione
+##     alza il rango (+10% vita e danno); al rango massimo diventa monete d'osso
+##     (regole in collezione.gd, probabilità in game_data.gd)
 ##   - ogni 10 pergamene è garantita un'unità epica o leggendaria
 ##   - le pergamene si guadagnano superando le ondate 10, 20, 30... (vedi main.gd)
 ##   - con almeno 10 pergamene puoi aprirne 10 insieme (pulsante APRI 10)
@@ -305,11 +307,16 @@ func _draw_reveal() -> void:
 	# rarità, nome e risultato
 	var rr := Rect2(vp.x / 2.0 - 140, 352, 280, 44)
 	Pietra.stone(self, rr, C4 if result["rarity"] in ["epico", "leggendario"] else C3, result["rarity"] == "leggendario")
-	Pietra.text_c(self, font, vp.x / 2.0, 362, Data.rarita(result["rarity"]).to_upper(), 24, C6)
+	Pietra.text_c(self, font, vp.x / 2.0, 362, Data.rarita(result["rarity"]).to_upper(), 24, Data.colore_rarita(result["rarity"]))
 	Pietra.text_c(self, font, vp.x / 2.0, 410, Data.nome(k).to_upper(), 32, C6)
 	var res := tr("NUOVA UNITÀ!") if result["new"] else tr("RANGO %d  (+%d%% vita e danno)") % [result["rank"], int(round((Collezione.rank_mult(result["rank"]) - 1.0) * 100.0))]
+	if result.get("max", false):
+		res = tr("RANGO MASSIMO: +%d MONETE D'OSSO") % int(result.get("monete", 0))
 	Pietra.text_c(self, font, vp.x / 2.0, 452, res, 24, C5)
-	if not result["new"] and int(result["rank"]) in [3, 5]:  # sblocca una specializzazione
+	if result.get("max", false):
+		Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600,
+			tr("Hai già questa unità al rango massimo: il doppione diventa monete d'osso per il negozio."), 16, C5)
+	elif not result["new"] and int(result["rank"]) in [3, 5]:  # sblocca una specializzazione
 		Pietra.text_block(self, font, Vector2(vp.x / 2.0 - 300, 488), 600,
 			tr("NUOVA SPECIALIZZAZIONE! Sceglila in preparazione (stella sulla carta)."), 16, C6)
 	else:
@@ -399,9 +406,14 @@ func _draw_card_front(r: Rect2, res: Dictionary, i: int) -> void:
 		draw_rect(r.grow(8), Color(1, 1, 1, g * 0.4))
 		draw_rect(r.grow(4), Color(1, 1, 1, g))
 	Pietra.stone(self, r, base, top)
+	# targhetta della rarità: scritta nel colore della rarità (vedi RARITY_COLORS in
+	# game_data.gd); epiche e leggendarie hanno anche il bordo colorato
 	var tag := Rect2(r.position.x + 10, r.position.y + 10, r.size.x - 20, 22)
-	draw_rect(tag, C6 if top else C1)
-	Pietra.text_c(self, font, 0.0, tag.position.y + 4, Data.rarita(rar).to_upper(), 13, C0 if top else C5, false)
+	var rcol := Data.colore_rarita(rar)
+	if top:
+		draw_rect(tag.grow(2), rcol)
+	draw_rect(tag, C0 if top else C1)
+	Pietra.text_c(self, font, 0.0, tag.position.y + 4, Data.rarita(rar).to_upper(), 13, rcol, false)
 	# l'unità, che ondeggia appena
 	var bob := roundf(sin(t * 2.5 + i) * 2.0)
 	var spr := Rect2(Vector2(-40, r.position.y + 40 + bob), Vector2(80, 80))
@@ -414,6 +426,8 @@ func _draw_card_front(r: Rect2, res: Dictionary, i: int) -> void:
 	Pietra.text_c(self, font, 0.0, r.position.y + 132 + (15 - fs) / 2.0, title, fs, C6)
 	if res["new"]:
 		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("NUOVA!"), 16, C6)
+	elif res.get("max", false):
+		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("+%d MONETE") % int(res.get("monete", 0)), 16, C5)
 	else:
 		var ramo := int(res["rank"]) in [3, 5]  # sblocca una specializzazione
 		Pietra.text_c(self, font, 0.0, r.position.y + 158, tr("RANGO %d") % res["rank"] + (" !" if ramo else ""), 16, C6 if ramo else C5)

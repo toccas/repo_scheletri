@@ -79,6 +79,8 @@ var slow_t := 0.0
 var slow_k := 0.0
 var stun_t := 0.0
 var curse_t := 0.0
+var curse_k := 0.3  # maledetto: danni in più subiti (0.3 = +30%; la Strega maledice più forte)
+var gelo_t := 0.0  # congelato dal Lich: azzurro e fermo (lo stordimento fa il resto)
 var life_left := -1.0  # scheletri rianimati: spariscono quando arriva a 0
 var summoner = null  # chi ha rianimato questo scheletro
 var run_dist := 0.0  # carica: strada percorsa dall'ultimo colpo
@@ -312,6 +314,7 @@ func _process(delta: float) -> void:
 		return
 	slow_t = maxf(0.0, slow_t - delta)
 	curse_t = maxf(0.0, curse_t - delta)
+	gelo_t = maxf(0.0, gelo_t - delta)
 	buff_t = maxf(0.0, buff_t - delta)
 	_tinta_stati()
 	if dot_t > 0.0:  # fuoco / veleno delle specializzazioni
@@ -693,7 +696,11 @@ func take_damage(amount: float, attacker = null) -> void:
 		amount = attacker._modifica_colpo(self, amount)
 	_on_attacked(attacker)
 	if curse_t > 0.0:
-		amount *= 1.3
+		amount *= 1.0 + curse_k
+	if gelo_t > 0.0 and game.schegge > 0.0:
+		amount *= 1.0 + game.schegge
+	if att_ok and team == ENEMY and attacker.team == ALLY:
+		game.on_ally_hit(self, amount)
 	if team == ALLY and special == "provoca":
 		amount *= 0.7
 	hp -= amount
@@ -731,7 +738,7 @@ func _on_attacked(attacker) -> void:
 func poison(amount: float) -> void:
 	if dead:
 		return
-	hp -= amount * (1.3 if curse_t > 0.0 else 1.0)
+	hp -= amount * (1.0 + curse_k if curse_t > 0.0 else 1.0)
 	if hp <= 0.0:
 		_die()
 
@@ -863,7 +870,9 @@ func _tinta_stati() -> void:
 	var tinta := Color.WHITE
 	if slow_t <= 0.0:
 		slow_col.a = 0.0
-	if slow_t > 0.0 and slow_col.a > 0.0:
+	if gelo_t > 0.0:  # congelato: blocco di ghiaccio azzurro
+		tinta = Color.WHITE.lerp(Color("78e2ea"), 0.75)
+	elif slow_t > 0.0 and slow_col.a > 0.0:
 		tinta = Color.WHITE.lerp(slow_col, 0.55)
 	elif dot_t > 0.0:
 		tinta = Color.WHITE.lerp(dot_col, 0.3 + 0.15 * sin(Time.get_ticks_msec() / 90.0))

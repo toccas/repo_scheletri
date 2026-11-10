@@ -6,7 +6,7 @@ extends CanvasLayer
 ## Schede:
 ##   UNITÀ     quali unità hai nella collezione e a che rango
 ##   RICERCHE  livello di ogni ricerca
-##   RISORSE   pergamene, monete d'osso, punti, VIP, fondi infiniti, tutorial
+##   RISORSE   pergamene, monete d'osso, punti, VIP, necromanti, fondi infiniti, tutorial
 ##   LIVELLI   sblocca/completa i livelli e gioca subito quello che vuoi
 ##   PARTITA   (solo in battaglia) vinci l'ondata, salta a un'ondata, livelli, torre invincibile
 ## Le modifiche si salvano subito; "Ricarica scena" le fa vedere nella scena aperta.
@@ -18,6 +18,7 @@ const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Livelli := preload("res://scripts/livelli.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
 const SAVE_PATH := "user://progressi.cfg"
 
 const C0 := Color("141414")
@@ -190,6 +191,8 @@ func _tab_ricerche() -> Control:
 		var h := HBoxContainer.new()
 		var l := Label.new()
 		l.text = tr(Research.NODES[id]["name"])
+		if Research.tree_of(id) != "ossa":
+			l.text = "[%s] %s" % [Research.tree_of(id).to_upper(), l.text]
 		l.custom_minimum_size.x = 300
 		var sp := SpinBox.new()
 		sp.min_value = 0
@@ -247,6 +250,22 @@ func _tab_risorse() -> Control:
 			s["acquistati"].erase("vip")
 		Portafoglio.save_state(s))
 	page.add_child(vip)
+	var necro_row := HBoxContainer.new()
+	necro_row.add_theme_constant_override("separation", 16)
+	for n in Necromanti.elenco():
+		if n.prezzo <= 0:
+			continue
+		var nc := CheckBox.new()
+		nc.text = "Necromante: %s" % tr(n.nome)
+		nc.button_pressed = Necromanti.possiede(n.id)
+		var nid := n.id
+		nc.toggled.connect(func(on: bool) -> void:
+			if on:
+				Necromanti.sblocca(nid)
+			else:
+				Necromanti.togli(nid))
+		necro_row.add_child(nc)
+	page.add_child(necro_row)
 	var inf := CheckBox.new()
 	inf.text = "Fondi infiniti nel negozio (anche Ctrl+Shift+M)"
 	inf.button_pressed = wal["dev_infiniti"]
@@ -372,7 +391,7 @@ func _tab_partita() -> Control:
 		m.max_deploy += 5
 		_msg("Ora puoi schierare %d squadre." % m.max_deploy)))
 	r2.add_child(_btn("Sblocca le 3 magie", func() -> void:
-		m.unlocked_abilities = Data.ABILITY_ORDER.duplicate()
+		m.unlocked_abilities = m.ability_order.duplicate()
 		for k in m.ability_cd:
 			m.ability_cd[k] = 0.0
 		_msg("Palla di fuoco, area curativa e saetta sbloccate (per questa partita).")))
