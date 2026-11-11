@@ -20,6 +20,8 @@ const SceltaLingua := preload("res://scripts/scelta_lingua.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const ATLAS := preload("res://assets/sprites.png")
+const Data := preload("res://scripts/game_data.gd")
+const Collezione := preload("res://scripts/collezione.gd")
 const FeedbackPanel := preload("res://scripts/feedback_panel.gd")
 const PannelloImpostazioni := preload("res://scripts/impostazioni.gd")
 const GAME_SCENE := "res://scenes/main.tscn"
@@ -38,7 +40,7 @@ const SHOP_SCENE := "res://scenes/negozio.tscn"
 @export_group("Animazioni")
 ## Assedianti fuori dalle mura.
 @export_range(0, 120) var nemici_orda := 54
-## Scheletri che girano nel cortile.
+## Scheletri che girano nel cortile: sono le unità della tua squadra (a turno).
 @export_range(0, 20) var scheletri_cortile := 7
 
 @export_group("Impostazioni")
@@ -47,6 +49,8 @@ const SHOP_SCENE := "res://scenes/negozio.tscn"
 ## Codice da scrivere nelle Impostazioni per avere il tasto DEV (il pannello dev)
 ## anche sul telefono. Maiuscole/minuscole non contano. Vuoto = nessun codice.
 @export var codice_sviluppatore := "LEONARDO"
+## Codice che sblocca la Torre infernale (unità leggendaria che non esce dalle pergamene).
+@export var codice_torre_infernale := "INFERNO"
 
 @export_group("Bug e consigli")
 ## La tua email: è il destinatario quando il gioco apre l'app email del giocatore.
@@ -220,14 +224,19 @@ func _new_attacker(anywhere: bool) -> Dictionary:
 
 
 func _setup_walkers() -> void:
-	var kinds := [0, 0, 2, 2, 4, 6, 0, 2, 4, 0, 6, 2, 0, 4, 0, 2, 0, 2, 4, 0]
+	var squadra: Array = Collezione.load_state()["squad"].filter(func(k: String) -> bool: return Data.UNITS.has(k))
+	if squadra.is_empty():
+		squadra = Data.STARTING_UNITS.duplicate()
 	for i in scheletri_cortile:
 		var s := Sprite2D.new()
-		s.texture = ATLAS
+		var kind: String = squadra[i % squadra.size()]
+		s.texture = Data.ally_texture(kind)
 		s.region_enabled = true
 		s.centered = false
 		s.offset = Vector2(-8, -16)
-		var w := {"node": s, "kind": kinds[i], "frame": 0, "ft": 0.0, "target": Vector2.ZERO, "wait": rnd.randf_range(0.0, 2.0)}
+		var w := {"node": s, "kind": kind, "frame": 0, "ft": 0.0, "target": Vector2.ZERO, "wait": rnd.randf_range(0.0, 2.0),
+			"fermo": float(Data.UNITS[kind]["speed"]) <= 0.0,  # catapulta, totem, muro, torre: restano dove sono
+			"vola": Data.UNITS[kind].get("special", "") == "volo"}
 		w["pos"] = _random_free_point()
 		w["target"] = w["pos"]
 		s.position = w["pos"]
@@ -388,6 +397,7 @@ func _activate(target) -> void:
 func _open_impostazioni() -> void:
 	impostazioni_panel = PannelloImpostazioni.new()
 	impostazioni_panel.codice_dev = codice_sviluppatore
+	impostazioni_panel.codice_infernale = codice_torre_infernale
 	impostazioni_panel.theme_override = tema_feedback
 	impostazioni_panel.closed.connect(func(): impostazioni_panel = null)
 	add_child(impostazioni_panel)
@@ -715,12 +725,19 @@ func _line(n: CanvasItem, a: Vector2, b: Vector2, col: Color) -> void:
 
 func _update_walker_frame(w: Dictionary) -> void:
 	var s: Sprite2D = w["node"]
-	s.region_rect = Rect2((w["kind"] + w["frame"]) * 16, 0, 16, 16)
+	s.region_rect = Data.ally_region(w["kind"], w["frame"])
 
 
 func _update_walkers(delta: float) -> void:
 	for w in walkers:
 		var s: Sprite2D = w["node"]
+		if w["fermo"]:  # unità che non si muovono: solo l'animazione (fiamme della torre)
+			w["ft"] += delta
+			if w["ft"] > 0.25 and w["kind"] == "infernale":
+				w["ft"] = 0.0
+				w["frame"] = 1 - w["frame"]
+				_update_walker_frame(w)
+			continue
 		if w["wait"] > 0.0:
 			w["wait"] -= delta
 			if w["frame"] != 0:
@@ -734,7 +751,7 @@ func _update_walkers(delta: float) -> void:
 						w["target"] = p
 						break
 			continue
-		var speed := 9.0 if w["kind"] != 6 else 6.0
+		var speed := 6.0 if w["kind"] in ["gigante", "golem"] else (14.0 if w["vola"] else 9.0)
 		var before: Vector2 = w["pos"]
 		w["pos"] = before.move_toward(w["target"], speed * delta)
 		if absf(w["pos"].x - before.x) > 0.001:
@@ -747,6 +764,8 @@ func _update_walkers(delta: float) -> void:
 		if w["pos"].distance_to(w["target"]) < 0.5:
 			w["wait"] = rnd.randf_range(1.0, 4.0)
 		s.position = (w["pos"] as Vector2).round()  # pixel interi: restano nitidi
+		if w["vola"]:  # il pteroscheletro volteggia sopra il cortile
+			s.position.y -= 8.0 + roundf(sin(t * 3.0 + s.position.x) * 1.5)
 
 
 # --- Nebbia e interfaccia --------------------------------------------------------------

@@ -57,7 +57,8 @@ const C4 := Color("707070")
 const C5 := Color("acacac")
 const C6 := Color("ececec")
 const RARITY_PIPS := {"base": 0, "comune": 1, "raro": 2, "epico": 3, "leggendario": 4}
-const CARD := Vector2(108, 112)
+const CARD := Vector2(89, 112)
+const GRID_COLS := 6  # carte per riga nella collezione
 const CARD_GAP := 6.0
 const GRID_POS := Vector2(50, 156)
 
@@ -192,8 +193,8 @@ func _ready() -> void:
 	while st["squad"].size() < Collezione.SQUAD_SIZE:
 		st["squad"].append("")
 	for i in Data.ALLY_ORDER.size():
-		var c := i % 5
-		var r := i / 5
+		var c := i % GRID_COLS
+		var r := floori(i / float(GRID_COLS))
 		card_rects[Data.ALLY_ORDER[i]] = Rect2(GRID_POS + Vector2(c * (CARD.x + CARD_GAP), r * (CARD.y + CARD_GAP)), CARD)
 	for i in Collezione.SQUAD_SIZE:
 		altar_rects.append(Rect2(672 + i * 146, 150, 136, 230))
@@ -508,7 +509,9 @@ func _draw_card(k: String, r: Rect2) -> void:
 	if owned:
 		draw_texture_rect_region(Data.ally_texture(k), icon, Data.ally_region(k), Color(1, 1, 1, 0.55 if in_squad >= 0 else 1.0))
 		var label := Data.nome_breve(k)
-		var fs := 16 if font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= rr.size.x - 10 else 12
+		var fs := 16
+		while fs > 8 and font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > rr.size.x - 8:
+			fs -= 1
 		Pietra.text_c(self, font, rr.get_center().x, rr.position.y + 64 + (16 - fs) / 2.0, label, fs, C6)
 		_draw_rarity_pips(rr.get_center().x, rr.position.y + 88, d["rarity"], Data.colore_rarita(d["rarity"]))
 		_draw_rarity_gem(rr.position + Vector2(16, rr.size.y - 24), d["rarity"], false)

@@ -9,7 +9,7 @@
 ![Lingue](https://img.shields.io/badge/lingue-IT%20%7C%20EN%20%7C%20ES-2a6)
 ![Stato](https://img.shields.io/badge/stato-prototipo%20giocabile-orange)
 ![Grafica](https://img.shields.io/badge/grafica-pixel%20art%2016x16-222)
-![Unità](https://img.shields.io/badge/scheletri-20%20unit%C3%A0-444)
+![Unità](https://img.shields.io/badge/scheletri-22%20unit%C3%A0-444)
 ![Livelli](https://img.shields.io/badge/livelli-4%20biomi-444)
 
 ![Battaglia](docs/screenshots/battaglia.gif)
@@ -68,7 +68,7 @@ L'obiettivo è arrivare all'**ondata 100** di ogni livello. Poi si continua, in 
 
 ## Caratteristiche
 
-- 🏰 **Un castello vivo come menu:** gli edifici sono i pulsanti, dietro le mura un'orda di eroi tenta l'assalto e nel cortile girano gli scheletri.
+- 🏰 **Un castello vivo come menu:** gli edifici sono i pulsanti, dietro le mura un'orda di eroi tenta l'assalto e nel cortile girano gli scheletri della tua squadra.
 - 🗺️ **4 livelli in 4 biomi** (cimitero, palude nebbiosa, cattedrale in rovina, passo di montagna innevato), con corsie, canali, colonne crollate, crepacci e massi da aggirare.
 - 💀 **20 tipi di scheletri** in 5 rarità, molti con un'abilità speciale: rianimare i caduti, nubi di peste, urli che stordiscono, totem, muri d'ossa, carcasse esplosive…
 - 🌟 **Specializzazioni:** al rango 3 e al rango 5 ogni unità sceglie tra due rami (arciere di fuoco o tiro multiplo, piromante o mago delle tempeste…).
@@ -230,7 +230,7 @@ Durante la partita arrivano altre squadre con le scelte "Evoca" del level-up. **
 
 ### Le unità scheletro
 
-Hai subito le quattro unità di **base**; le altre 16 si trovano aprendo le [pergamene](#pergamene-ed-evocazione). Valori di partenza, tutti modificabili dall'Inspector della scena di preparazione:
+Hai subito le quattro unità di **base**; altre 17 si trovano aprendo le [pergamene](#pergamene-ed-evocazione) e la Torre infernale si sblocca solo con un codice segreto. Valori di partenza, tutti modificabili dall'Inspector della scena di preparazione:
 
 <details open>
 <summary><b>Base</b>: le hai da subito</summary>
@@ -278,6 +278,7 @@ Hai subito le quattro unità di **base**; le altre 16 si trovano aprendo le [per
 | **Stregone della peste** | 1 | 45 | 4 | Lascia **nubi di peste** che avvelenano e rallentano |
 | **Banshee** | 1 | 50 | 6 | Un **urlo** che ferisce e stordisce tutti i nemici vicini |
 | **Cecchino spettrale** | 1 | 30 | 34 | Gittata enorme: mira sempre il nemico con **più vita** |
+| **Pteroscheletro** | 2 | 28 | 8 | **Vola** su tutto il campo (anche sopra canali e ostacoli) e piomba sui nemici di qualsiasi corsia, volanti compresi. Poca vita, ma **gli eroi corpo a corpo non lo possono colpire** |
 
 </details>
 
@@ -289,6 +290,7 @@ Hai subito le quattro unità di **base**; le altre 16 si trovano aprendo le [per
 | **Lich** | 1 | 80 | 18 | Magie ad area che **maledicono**: i colpiti subiscono +30% danni da tutti |
 | **Golem di ossa** | 1 | 520 | 22 | **Schianto:** ogni colpo ferisce anche chi è attorno |
 | **Mietitore** | 1 | 110 | 20 | La **falce** colpisce tutti i vicini e finisce all'istante chi ha meno del 20% di vita |
+| **Torre infernale** 🔒 | 1 | 240 | 8/s | **Raggio** di fuoco continuo: sullo stesso bersaglio i danni crescono di 2 volte al secondo, fino a 8 volte (64 al secondo). Cambiando bersaglio riparte da capo. Non si sposta. **Non esce dalle pergamene: si sblocca con un codice segreto** nelle Impostazioni |
 
 </details>
 
@@ -327,6 +329,8 @@ Al **rango 3** e al **rango 5** ogni unità sceglie tra **due rami**, che cambia
 | **Lich** | Lich del gelo · Lich della tempesta | Maledizione eterna · Filatterio |
 | **Golem di ossa** | Golem di pietra · Golem tellurico | Golem di lava · Golem sismico |
 | **Mietitore** | Mietitore d'anime · Falce insanguinata | Danza della morte · Falce maledetta |
+| **Pteroscheletro** | Artigli d'osso · Stormo | Picchiata · Ali di vampiro |
+| **Torre infernale** | Brace ardente · Torre di ossidiana | Cuore dell'inferno · Rogo dei campioni |
 
 </details>
 
@@ -465,7 +469,7 @@ Nel **portale** del castello apri le pergamene, una alla volta oppure **10 insie
   |---|:---:|:---:|:---:|
   | 🟢 Comune (con le 4 di base) | 50% | 8 | 6,25% |
   | 🔵 Raro | 30% | 5 | 6% |
-  | 🟣 Epico | 15% | 4 | 3,75% |
+  | 🟣 Epico | 15% | 5 | 3% |
   | 🟡 Leggendario | 5% | 3 | 1,67% |
 
 - **Garanzia:** ogni 10 pergamene un'unità **epica o leggendaria** è assicurata.
@@ -648,9 +652,9 @@ Se vinci puoi **continuare in modalità infinita** dalla stessa partita.
 ### Impostazioni, lingue e audio
 
 - **Lingua:** al primo avvio scegli tra **italiano, inglese e spagnolo**. Si cambia quando vuoi dal menu, in alto a destra.
-- **Impostazioni** (ingranaggio in basso a sinistra nel menu):
+- **Impostazioni** (ingranaggio in basso a sinistra nel menu, oppure **Impostazioni** nella pausa in partita):
   - tre slider: **volume generale**, **musica**, **effetti**;
-  - una casella per i **codici**.
+  - una casella per i **codici**: il codice sviluppatore e quello che sblocca la **Torre infernale**.
 
   ![Impostazioni](docs/screenshots/impostazioni.png)
 - **Audio:** effetti sonori retrò per attacchi, magie, morti, ondate, evocazioni e dialoghi. Musica ed effetti hanno bus separati («Musica», «Effetti»).
@@ -690,7 +694,7 @@ Se vinci puoi **continuare in modalità infinita** dalla stessa partita.
 | Annullare una magia | Tasto destro | *non ancora disponibile* |
 | Scegliere il level-up | Clic su una lapide o `1` `2` `3` | Tocco |
 | Velocità ×1 / ×2 / ×3 | `Spazio` o pietra in alto a destra | Tocco |
-| Pausa (riprendi, ricomincia, menu) | `Esc` o pietra in alto a destra | Tocco |
+| Pausa (riprendi, impostazioni, ricomincia, menu) | `Esc` o pietra in alto a destra | Tocco |
 | Aprire le pergamene | **APRI 1** / **APRI 10**, `Spazio` / `0` | Tocco |
 | Ricerche: cambiare albero | Frecce ◀ ▶ in alto, `Q` / `E` | Tocco |
 
@@ -730,7 +734,7 @@ Quasi tutto si regola senza toccare il codice.
 
 **Scena `preparazione.tscn`, nodo `Preparazione`: statistiche delle unità**
 
-Nella sezione **Statistiche delle unità** c'è un gruppo per ognuno dei 20 scheletri:
+Nella sezione **Statistiche delle unità** c'è un gruppo per ognuno dei 22 scheletri:
 
 | Valore | Significato |
 |---|---|
@@ -777,7 +781,7 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 **Scena `menu.tscn`, nodo `Menu`: il castello**
 
 - **Animazioni:** numero di nemici dell'orda e di scheletri nel cortile.
-- **Impostazioni:** grandezza dell'ingranaggio e codice sviluppatore.
+- **Impostazioni:** grandezza dell'ingranaggio, codice sviluppatore e codice della Torre infernale (i valori non li scriviamo qui: sono segreti).
 - **Bug e consigli:** email e indirizzo Formspree per le segnalazioni, versione del gioco, tema.
 - Gli edifici sono nodi `Sprite2D` in `Mondo/Cortile`, da spostare liberamente.
 
@@ -797,7 +801,7 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | File | Contenuto |
 |---|---|
 | `assets/sprites.png` | Scheletri e umani di base, icone, necromante, corona |
-| `assets/unita_scheletri.png` | Le 16 unità delle pergamene |
+| `assets/unita_scheletri.png` | Le 18 unità delle pergamene e dei codici |
 | `assets/biomi/` | Campi, ostacoli ed eroi di ogni bioma (elfi, guerrieri del deserto, vichinghi) |
 | `assets/nemici/volanti/` | Gli eroi volanti dei 4 biomi (2 frame: ali su, ali giù) |
 | `assets/campioni/` | Gli sprite dei 40 campioni |
@@ -917,7 +921,7 @@ Suggerimenti e contributi sono benvenuti: apri una *issue*, oppure usa **Bug e c
 - [x] 🏰 Menu a forma di castello animato, con l'assedio dietro le mura.
 - [x] 🧱 Campo di battaglia in prospettiva, con torre 3D e portale degli eroi.
 - [x] 🪦 Interfaccia dentro il campo: lapidi, stendardo dell'ondata, sfera d'anima, torre che si danneggia.
-- [x] 📜 Pergamene, evocazione e collezione di **20 scheletri** in 5 rarità, con doppioni e ranghi.
+- [x] 📜 Pergamene, evocazione e collezione di **22 scheletri** in 5 rarità, con doppioni e ranghi.
 - [x] 🌟 **Specializzazioni** di tutte le unità ai ranghi 3 e 5.
 - [x] 👑 **40 campioni unici**, 10 per livello, ognuno con le sue mosse.
 - [x] 🗺️ **4 livelli in 4 biomi**, con eroi diversi, canali, colonne, crepacci e ostacoli da aggirare.

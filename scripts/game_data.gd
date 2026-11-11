@@ -155,6 +155,24 @@ const UNITS := {
 		"role": "corpo", "rarity": "raro", "special": "esplodi", "sheet": "nuove", "sx": 15,
 		"desc": "Corre contro i nemici ed esplode, colpendo un'area. Rinasce a fine ondata.",
 	},
+	# special "volo": vola sopra il campo (anche sopra canali e ostacoli) e piomba sui nemici
+	# di qualsiasi corsia, volanti compresi. Gli eroi corpo a corpo non lo possono colpire.
+	"ptero": {
+		"ally_name": "Pteroscheletro", "count": 2, "hp": 28.0, "dmg": 8.0, "range": 4.0, "cooldown": 0.8,
+		"speed": 40.0, "melee": true, "splash": 0.0, "radius": 4.0, "xp": 1,
+		"role": "corpo", "rarity": "epico", "special": "volo", "sheet": "nuove", "sx": 16,
+		"desc": "Vola sopra il campo e piomba sui nemici dall'alto. Poca vita, ma il corpo a corpo non lo può colpire.",
+	},
+	# special "raggio": raggio continuo; "dmg" sono i danni al secondo all'inizio, poi
+	# crescono finché colpisce lo stesso bersaglio (vedi unit.gd: RAGGIO_CRESCITA, RAGGIO_MAX).
+	# "solo_codice": non esce dalle pergamene, si sblocca con un codice nelle Impostazioni.
+	"infernale": {
+		"ally_name": "Torre infernale", "count": 1, "hp": 240.0, "dmg": 8.0, "range": 64.0, "cooldown": 0.1,
+		"speed": 0.0, "melee": false, "splash": 0.0, "radius": 7.0, "xp": 1,
+		"role": "magia", "rarity": "leggendario", "special": "raggio", "sheet": "nuove", "sx": 17,
+		"solo_codice": true,
+		"desc": "Un raggio di fuoco continuo: più a lungo colpisce lo stesso nemico, più brucia. Si sblocca solo con un codice segreto.",
+	},
 }
 
 ## Tipi dei nemici (gli umani usano solo questi).
@@ -164,7 +182,7 @@ const ALLY_ORDER := ["soldato", "arciere", "mago", "gigante",
 	"lanciere", "scudiero", "balestriere", "berserker",
 	"cavaliere", "catapulta", "totem", "muro", "carcassa",
 	"negromante", "peste", "banshee", "cecchino",
-	"lich", "golem", "mietitore"]
+	"lich", "golem", "mietitore", "ptero", "infernale"]
 const STARTING_UNITS := ["soldato", "arciere", "mago", "gigante"]
 
 const ROLE_NAMES := {"corpo": "Corpo a corpo", "distanza": "A distanza", "magia": "Magia", "supporto": "Supporto"}
@@ -241,6 +259,8 @@ const ACCENTI := {
 	"mietitore": Color("ce96f6"),   # occhi lilla
 	"muro": Color("68be4c"),        # muschio
 	"carcassa": Color("ec8a30"),    # miccia accesa
+	"ptero": Color("ec8a30"),       # cresta arancio
+	"infernale": Color("d64034"),   # fiamme e occhi rossi
 }
 ## Accenti degli eroi nemici (stesse tipologie, altri colori).
 const ACCENTI_NEMICI := {

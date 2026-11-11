@@ -97,8 +97,8 @@ static func open_scroll(st: Dictionary) -> Dictionary:
 	var pick := ""
 	for r in _nearest_rarities(rarity):
 		# le 4 unità di base escono insieme alle comuni: anche loro salgono di rango
-		var pool: Array = Data.ALLY_ORDER.filter(func(k): return Data.UNITS[k]["rarity"] == r \
-			or (r == "comune" and Data.UNITS[k]["rarity"] == "base"))
+		var pool: Array = Data.ALLY_ORDER.filter(func(k): return not Data.UNITS[k].get("solo_codice", false) \
+			and (Data.UNITS[k]["rarity"] == r or (r == "comune" and Data.UNITS[k]["rarity"] == "base")))
 		if not pool.is_empty():
 			pick = pool.pick_random()
 			break
@@ -112,6 +112,17 @@ static func open_scroll(st: Dictionary) -> Dictionary:
 		coins = int(Data.MONETE_DOPPIONE.get(r_pick, 10))
 		_add_monete(coins)
 	return {"kind": pick, "rank": st["owned"][pick], "new": is_new, "rarity": r_pick, "max": was_max, "monete": coins}
+
+
+## Unità che si sblocca solo con un codice (es. la torre infernale). true = sbloccata ora,
+## false = l'avevi già.
+static func sblocca_codice(kind: String) -> bool:
+	var st := load_state()
+	if st["owned"].has(kind):
+		return false
+	st["owned"][kind] = 1
+	save_state(st)
+	return true
 
 
 ## Monete d'osso nel portafoglio (stessa voce di portafoglio.gd: [negozio] monete).

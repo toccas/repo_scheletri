@@ -20,6 +20,8 @@ extends Node2D
 ##   urlo      ferisce e stordisce chi è vicino            aura      +25% danni e velocità ai vicini
 ##   schianto  colpi ad area                               falce     colpisce i vicini, finisce i feriti
 ##   muro      barricata che attira i nemici               esplodi   esplode sui nemici (rinasce a fine ondata)
+##   volo      vola su tutto il campo e piomba sui nemici   raggio    raggio continuo che brucia sempre di più
+##             (gli eroi corpo a corpo non lo colpiscono)             finché colpisce lo stesso bersaglio
 ##
 ## SPECIALIZZAZIONI (rango 3 e 5, vedi specializzazione.gd): `spec` contiene gli effetti
 ## sommati dei rami scelti; vita/danno/cadenza/gittata/area sono già nelle statistiche,
@@ -109,6 +111,15 @@ const ALTEZZA_VOLO := 12.0
 var volo_fase := 0.0
 ## Livello della squadra (potenziamento: un'evocazione uguale sopra la squadra).
 var squad_lv := 1
+## Pteroscheletro: distanza (dalla sua casella) entro cui va a cercare i nemici.
+const VOLO_RAGGIO_CACCIA := 72.0
+## Torre infernale: i danni del raggio crescono di RAGGIO_CRESCITA volte al secondo
+## sullo stesso bersaglio, fino a RAGGIO_MAX volte i danni di partenza.
+const RAGGIO_CRESCITA := 2.0
+const RAGGIO_MAX := 8.0
+var raggio_t := 0.0  # secondi sullo stesso bersaglio
+var raggio_tick := 0.0
+var raggio_suono := 0.0
 
 var ground := Vector2.ZERO  # posizione sul terreno (vedi sopra)
 var home := Vector2.ZERO  # posizione di guardia sul terreno (alleati)
@@ -165,6 +176,10 @@ func setup_ally(kind_name: String, hp_mult: float, stats: Dictionary = {}) -> vo
 	max_hp *= hp_mult
 	hp = max_hp
 	atk_timer = randf() * base_cooldown
+	if special == "volo":  # pteroscheletro
+		in_volo = true
+		vola = true
+		volo_fase = randf() * TAU
 
 
 func setup_enemy(kind_name: String, hp_mult: float, dmg_mult: float, boss: bool) -> void:
@@ -265,7 +280,7 @@ void fragment() {
 	if team == ENEMY and game.tex_nemici != null:
 		sprite.texture = game.tex_nemici
 		_update_frame()
-	if in_volo:
+	if in_volo and team == ENEMY:
 		sprite.texture = game.tex_volante
 		_update_frame()
 	if spec_col.a > 0.0:
@@ -323,6 +338,8 @@ func _process(delta: float) -> void:
 	if in_volo:  # in alto, ondeggia
 		sprite.position.y -= ALTEZZA_VOLO + roundf(sin(Time.get_ticks_msec() / 260.0 + volo_fase) * 1.5)
 	bar.queue_redraw()
+	if special == "raggio":
+		queue_redraw()  # il raggio si ridisegna a ogni frame
 	if entering and not dead:
 		_enter_update(delta)
 		return
@@ -377,7 +394,7 @@ func _animate_walk(moving: bool, delta: float) -> void:
 			frame = 1
 			_update_frame()
 		return
-	if moving or in_volo:  # chi vola sbatte le ali anche da fermo
+	if moving or in_volo or special == "raggio":  # ali che sbattono, fiamme che tremano
 		frame_timer += delta
 		if frame_timer >= FRAME_TIME:
 			frame_timer = 0.0
@@ -424,6 +441,12 @@ func _in_range(other) -> bool:
 func _ally_update(delta: float) -> void:
 	if special == "aura" or special == "muro":
 		return  # non attaccano: restano dove li hai messi
+	if special == "raggio":
+		_raggio_update(delta)
+		return
+	if in_volo:
+		_volo_update(delta)
+		return
 	if not melee and special in ["cecchino", "catapulta"]:
 		if not _is_valid(target) or not _in_range(target) or (special == "catapulta" and ground.distance_to(target.ground) < CATAPULT_MIN):
 			target = _special_target()
@@ -451,6 +474,48 @@ func _ally_update(delta: float) -> void:
 			_move_toward(target.ground, delta)
 	elif ground.distance_to(home) > 0.5:
 		_move_toward(home, delta)
+
+
+## Pteroscheletro: caccia i nemici di qualsiasi corsia (anche i volanti) attorno alla sua
+## casella, volando sopra canali e ostacoli; senza nemici torna a volteggiare sulla casella.
+func _volo_update(delta: float) -> void:
+	if not _is_valid(target) or target.ground.distance_to(home) > VOLO_RAGGIO_CACCIA + 12.0:
+		target = game.nearest_unit(game.enemies_root, home, VOLO_RAGGIO_CACCIA, false)
+	if _is_valid(target):
+		if _in_range(target):
+			_attack(target)
+		else:
+			_move_toward(target.ground, delta)
+	elif ground.distance_to(home) > 0.5:
+		_move_toward(home, delta)
+
+
+## Torre infernale: un raggio continuo sul nemico più vicino; più resta sullo stesso
+## bersaglio più fa male. Cambiando bersaglio si riparte da capo.
+func _raggio_update(delta: float) -> void:
+	if not _is_valid(target) or ground.distance_to(target.ground) > attack_range + target.radius:
+		var nuovo = game.nearest_unit(game.enemies_root, ground, attack_range, false)
+		if nuovo != target:
+			raggio_t = 0.0
+		target = nuovo
+	if not _is_valid(target):
+		raggio_t = 0.0
+		return
+	raggio_t += delta
+	raggio_tick -= delta
+	if raggio_tick <= 0.0:
+		raggio_tick = 0.1
+		var k := minf(1.0 + RAGGIO_CRESCITA * sp("potenza_speciale", 1.0) * raggio_t, RAGGIO_MAX)
+		target.take_damage(get_dmg() * k * 0.1, self)
+	raggio_suono -= delta
+	if raggio_suono <= 0.0:
+		raggio_suono = 0.45
+		Suoni.play("palla_di_fuoco", 1.5 + minf(raggio_t, 4.0) * 0.12, -14.0)
+
+
+## Moltiplicatore attuale del raggio (per il disegno).
+func raggio_k() -> float:
+	return minf(1.0 + RAGGIO_CRESCITA * sp("potenza_speciale", 1.0) * raggio_t, RAGGIO_MAX)
 
 
 func _enemy_update(delta: float) -> void:
@@ -708,7 +773,7 @@ func take_damage(amount: float, attacker = null) -> void:
 	if dead:
 		return
 	var att_ok: bool = attacker != null and is_instance_valid(attacker) and not attacker.dead
-	if in_volo and att_ok and attacker.team != team and attacker.melee:
+	if in_volo and att_ok and attacker.team != team and attacker.melee and not attacker.in_volo:
 		return  # spade e asce non arrivano fin lassù
 	if team == ALLY and not spec.is_empty():  # difese delle specializzazioni
 		if sp("schiva") > 0.0 and randf() < sp("schiva"):
@@ -742,6 +807,9 @@ func take_damage(amount: float, attacker = null) -> void:
 		if away == 0.0:
 			away = -_face()
 	knock = Vector2(away * (1.0 if is_boss else 2.5), 0)
+	if att_ok and attacker.special == "raggio":  # il raggio brucia senza spingere
+		knock = Vector2.ZERO
+		flash = 0.06
 	if hp <= 0.0:
 		_die()
 
@@ -931,12 +999,38 @@ func _die() -> void:
 # --- Grafica (in pixel dell'arte) -------------------------------------------
 
 func _draw() -> void:
+	if special == "raggio" and team == ALLY:
+		_draw_raggio()
 	# ombra a pixel sotto i piedi
-	var w := 8.0 if not kind in ["gigante", "golem", "muro", "cavaliere", "catapulta"] else 12.0
+	var w := 8.0 if not kind in ["gigante", "golem", "muro", "cavaliere", "catapulta", "infernale"] else 12.0
 	if is_boss:
 		w *= 2.0
 	draw_rect(Rect2(-w / 2.0 + 1.0, -1, w - 2.0, 1), Color(0, 0, 0, 0.45))
 	draw_rect(Rect2(-w / 2.0, 0, w, 1), Color(0, 0, 0, 0.45))
+
+
+## Il raggio della torre infernale: dalla fiamma in cima al bersaglio, sempre più spesso
+## e chiaro man mano che i danni crescono.
+func _draw_raggio() -> void:
+	if dead or not _is_valid(target) or raggio_t <= 0.0 or not game.is_running():
+		return
+	var da := Vector2(0, -15)
+	var a: Vector2 = (game.to_screen(target.ground) - position) / game.px + Vector2(0, -target.muzzle_height())
+	var k := (raggio_k() - 1.0) / (RAGGIO_MAX - 1.0)  # 0 all'inizio, 1 al massimo
+	var col := accent()
+	var tremito := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 40.0)
+	var spessore := 1.0 + roundf(k * 2.0)
+	var dir := (a - da)
+	var n := int(dir.length())
+	for i in n:  # a pixel interi, così resta nitido
+		var p := (da + dir * (float(i) / maxf(1.0, float(n)))).round()
+		draw_rect(Rect2(p - Vector2(spessore, spessore) * 0.5, Vector2(spessore, spessore)), Color(col, 0.55 + 0.35 * tremito))
+		if k > 0.4 and i % 2 == 0:
+			draw_rect(Rect2(p, Vector2.ONE), Color(C_WHITE, 0.5 + 0.5 * k))
+	# fiammata sul bersaglio
+	var r := 1.0 + roundf(k * 2.0 + tremito)
+	draw_rect(Rect2(a.round() - Vector2(r, r), Vector2(r * 2.0 + 1.0, r * 2.0 + 1.0)), Color(col, 0.5))
+	draw_rect(Rect2(a.round(), Vector2.ONE), C_WHITE)
 
 
 func _draw_bar() -> void:

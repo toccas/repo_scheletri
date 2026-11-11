@@ -8,6 +8,7 @@
 [node name="Montagna" unique_id=1845545193 instance=ExtResource("1_main")]
 id_livello = "montagna"
 bioma = ExtResource("2_bio")
+file_bloccate = [2]
 ostacoli = Array[Vector2i]([Vector2i(3, 0), Vector2i(6, 4), Vector2i(8, 1)])
 campioni = ExtResource("3_camp")
 colonne = 10

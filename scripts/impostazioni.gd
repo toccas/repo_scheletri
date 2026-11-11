@@ -7,12 +7,17 @@ extends CanvasLayer
 ##    Menu, "Codice Sviluppatore") sblocca il dev tool anche sul telefono e nelle
 ##    build finali: in alto a destra compare il tasto DEV (vedi dev_tool.gd).
 ##    Lo sblocco resta salvato in user://impostazioni.cfg; "Disattiva" lo toglie.
+##    Il codice della Torre infernale (Inspector del nodo Menu, "Codice Torre Infernale")
+##    aggiunge la Torre infernale alla collezione: non esce dalle pergamene.
+##  - si apre dall'ingranaggio del menu e dal pulsante IMPOSTAZIONI della pausa in partita.
 ##
 ## Sul telefono, quando si apre la tastiera il pannello sale da solo per non
 ## restare coperto.
 
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
+const Collezione := preload("res://scripts/collezione.gd")
+const MENU_SCENE := "res://scenes/menu.tscn"
 
 const C0 := Color("141414")
 const C1 := Color("242424")
@@ -26,6 +31,8 @@ signal closed
 
 ## Codice che sblocca il dev tool (maiuscole/minuscole non contano).
 var codice_dev := "LEONARDO"
+## Codice che sblocca la Torre infernale.
+var codice_infernale := "INFERNO"
 var theme_override: Theme
 
 var overlay: ColorRect
@@ -158,11 +165,34 @@ func close() -> void:
 	queue_free()
 
 
+## I codici scritti nell'Inspector del nodo Menu (per il pannello aperto dalla pausa in
+## partita, che non ha il menu a portata di mano). {"dev": ..., "infernale": ...}
+static func codici_dal_menu() -> Dictionary:
+	var out := {}
+	var ps := load(MENU_SCENE) as PackedScene
+	if ps == null:
+		return out
+	var s := ps.get_state()
+	for i in s.get_node_property_count(0):
+		var nome := s.get_node_property_name(0, i)
+		if nome == "codice_sviluppatore":
+			out["dev"] = String(s.get_node_property_value(0, i))
+		elif nome == "codice_torre_infernale":
+			out["infernale"] = String(s.get_node_property_value(0, i))
+	return out
+
+
 func _prova_codice() -> void:
 	var t := code_edit.text.strip_edges().trim_suffix(".").to_upper()
 	if t == "":
 		return
-	if codice_dev.strip_edges() != "" and t == codice_dev.strip_edges().to_upper():
+	if codice_infernale.strip_edges() != "" and t == codice_infernale.strip_edges().to_upper():
+		if Collezione.sblocca_codice("infernale"):
+			status_label.text = tr("Hai sbloccato la TORRE INFERNALE! Mettila nella squadra in preparazione.")
+			Suoni.play("livello")
+		else:
+			status_label.text = tr("La Torre infernale è già nella tua collezione.")
+	elif codice_dev.strip_edges() != "" and t == codice_dev.strip_edges().to_upper():
 		if Portafoglio.dev_sbloccato():
 			status_label.text = tr("Strumenti sviluppatore già attivi: tasto DEV in alto a destra.")
 		else:

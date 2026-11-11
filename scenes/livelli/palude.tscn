@@ -1,22 +1,22 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bcnuuiumo3jav"]
 
-[ext_resource type="PackedScene" path="res://scenes/main.tscn" id="1_main"]
-[ext_resource type="Resource" path="res://biomi/palude.tres" id="2_bio"]
+[ext_resource type="PackedScene" uid="uid://c6j11ieushd3v" path="res://scenes/main.tscn" id="1_main"]
+[ext_resource type="Resource" uid="uid://bmltkakrti35r" path="res://biomi/palude.tres" id="2_bio"]
 [ext_resource type="Resource" path="res://campioni/palude/elenco_campioni.tres" id="3_camp"]
-[ext_resource type="AudioStream" path="res://assets/music/palude.ogg" id="9_mus"]
+[ext_resource type="AudioStream" uid="uid://ct2e25ho4wkdq" path="res://assets/music/palude.ogg" id="9_mus"]
 
-[node name="Palude" instance=ExtResource("1_main")]
+[node name="Palude" unique_id=1351495599 instance=ExtResource("1_main")]
 id_livello = "palude"
 bioma = ExtResource("2_bio")
+file_bloccate = [3, 1]
 campioni = ExtResource("3_camp")
-ondate_totali = 100
-file_bloccate = PackedInt32Array(1, 3)
-ostacoli = Array[Vector2i]([])
-colonne = 9
 file = 5
 
-[node name="Griglia" parent="." index="0"]
+[node name="Griglia" parent="." index="0" unique_id=1689771535]
 position = Vector2(266, 129)
 
-[node name="AudioStreamPlayer2D" parent="." index="2"]
+[node name="Torre" parent="." index="1" unique_id=219738757]
+position = Vector2(183, 561)
+
+[node name="AudioStreamPlayer2D" parent="." index="2" unique_id=1602212194]
 stream = ExtResource("9_mus")

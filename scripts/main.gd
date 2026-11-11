@@ -33,6 +33,7 @@ const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Necromanti := preload("res://scripts/necromanti.gd")
+const PannelloImpostazioni := preload("res://scripts/impostazioni.gd")
 const NECRO_ATLAS := preload("res://assets/necromanti/necromanti.png")
 ## Eroi volanti del cimitero (gli altri biomi hanno i loro, vedi Bioma > sprite_volante).
 const TEX_VOLANTE := preload("res://assets/nemici/volanti/cimitero.png")
@@ -2594,6 +2595,7 @@ func _build_pause_overlay() -> Control:
 	box.add_child(title)
 	for opt in [
 		[tr("Riprendi"), toggle_pause],
+		[tr("Impostazioni"), _apri_impostazioni],
 		[tr("Ricomincia partita"), _restart_game],
 		[tr("Torna al menu"), _go_to_menu],
 	]:
@@ -2605,6 +2607,20 @@ func _build_pause_overlay() -> Control:
 		box.add_child(btn)
 	overlay.hide()
 	return overlay
+
+
+## Volumi e codici, come dall'ingranaggio del menu (la partita resta in pausa).
+func _apri_impostazioni() -> void:
+	if get_node_or_null("Impostazioni") != null:
+		return
+	var p := PannelloImpostazioni.new()
+	p.name = "Impostazioni"
+	var cod := PannelloImpostazioni.codici_dal_menu()
+	p.codice_dev = String(cod.get("dev", p.codice_dev))
+	p.codice_infernale = String(cod.get("infernale", p.codice_infernale))
+	if tema_ui:
+		p.theme_override = tema_ui
+	add_child(p)
 
 
 func toggle_pause() -> void:
