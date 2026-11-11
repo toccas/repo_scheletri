@@ -36,5 +36,9 @@ enum Ambiente { CIMITERO, PALUDE, CATTEDRALE, MONTAGNA }
 ## Vuoto = i cavalieri normali. I campioni restano sempre gli stessi.
 @export var sprite_nemici: Texture2D
 ## Colore d'accento di ogni tipo di eroe (frecce, magie, scintille), per abbinarlo
-## alle sprite. Chiavi: soldato, arciere, mago, gigante. Un tipo assente = colore normale.
+## alle sprite. Chiavi: soldato, arciere, mago, gigante, volante. Un tipo assente = colore normale.
 @export var colori_nemici: Dictionary[String, Color] = {}
+## Eroi volanti di questo campo: striscia 32x16 con 2 frame (ali su, ali giù), che
+## guardano a destra. Vuoto = gli angeli guerrieri del cimitero. Il loro colore d'accento va
+## in "Colori nemici" con la chiave "volante".
+@export var sprite_volante: Texture2D

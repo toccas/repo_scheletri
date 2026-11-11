@@ -125,7 +125,7 @@ L'obiettivo è arrivare all'**ondata 100** di ogni livello. Poi si continua, in 
 - **Vittoria:** sopravvivi fino all'**ondata 100**. Il livello è finito: si sblocca il successivo e la sua modalità infinita.
 - **Sconfitta:** la vita della torre arriva a zero. La torre non si cura mai da sola.
 - A fine partita guadagni:
-  - **punti ricerca:** uno per ondata superata, uno ogni 20 nemici uccisi, 50 di bonus se vinci;
+  - **punti ricerca:** uno per ondata superata, uno ogni 50 nemici uccisi, 50 di bonus se vinci;
   - **monete d'osso:** 2 per ondata superata, 300 di bonus se vinci;
   - **pergamene:** una ogni 10 ondate superate, salvata subito.
 
@@ -210,16 +210,21 @@ Il campo è una corsia vista di tre quarti:
 
 ### Schieramento
 
-1. Clicca una casella della griglia: attorno spuntano **quattro lapidi**, una per ogni unità della tua squadra.
+1. Clicca una casella della griglia **a portata della torre**: attorno spuntano **quattro lapidi**, una per ogni unità della tua squadra. Si schiera solo dentro la linea tratteggiata (la gittata del necromante); le caselle più lontane sono scure.
 2. Passa sopra una lapide per vedere le statistiche e, per le unità a distanza, la **gittata** disegnata sul campo.
 3. Clicca la lapide (o premi `1`–`4`): gli scheletri **escono dal portone della torre** e marciano fino alla casella.
 4. La targa in alto mostra quante **unità evocabili** hai usato (es. *1/4*). Di base sono 3; il Signore delle Ossa ne aggiunge una e la ricerca *Legione* altre. Tasto destro su una squadra per rimuoverla.
-5. Premi **SUONA IL CORNO** per far partire le ondate. Se non hai schierato tutte le unità compare un avviso per qualche secondo: premendo di nuovo il corno si parte lo stesso.
+5. **Potenziare una squadra:** clicca una squadra già schierata ed evoca sopra un'unità dello stesso tipo. La squadra sale di livello (fino al 3): +40% vita e +30% danni per livello, torna a piena vita e chi era caduto esce subito dalla torre. Costa un'evocazione come una squadra nuova, e funziona anche con le evocazioni del level-up. I livelli si vedono dalle tacche sopra le teste.
+
+   ![Potenziamento di una squadra](docs/screenshots/potenziamento.png)
+
+6. Premi **SUONA IL CORNO** per far partire le ondate. Se non hai schierato tutte le unità compare un avviso per qualche secondo: premendo di nuovo il corno si parte lo stesso.
 
 **Al primo avvio** il necromante guida il giocatore:
 
 - una casella lampeggia, con una freccia sopra, e finché non la tocchi le altre non rispondono;
-- dopo la prima unità schierata, il necromante spiega il resto.
+- dopo la prima unità schierata, il necromante spiega il resto;
+- alla seconda squadra spiega il potenziamento e fa lampeggiare le squadre che si possono potenziare.
 
 Durante la partita arrivano altre squadre con le scelte "Evoca" del level-up. **A fine ondata il necromante rianima i caduti:** ogni squadra torna al completo e a piena vita.
 
@@ -329,17 +334,31 @@ I rami si modificano dall'Inspector: un file per unità in `specializzazioni/`.
 
 ### Gli eroi nemici
 
-Gli eroi hanno quattro classi, **soldati**, **arcieri**, **maghi** e **giganti**, con un aspetto diverso in ogni bioma: cavalieri nel cimitero, elfi nella palude, guerrieri del deserto nella cattedrale, vichinghi in montagna. Le ondate diventano più numerose e i nemici più forti:
+Gli eroi hanno quattro classi, **soldati**, **arcieri**, **maghi** e **giganti**, con un aspetto diverso in ogni bioma: cavalieri nel cimitero, elfi nella palude, guerrieri del deserto nella cattedrale, vichinghi in montagna. Le ondate crescono poco a poco: più eroi, più vita e più danni a ogni ondata. Arcieri, maghi e giganti entrano piano piano nelle ondate invece di comparire tutti insieme.
 
 | Ondata | Cosa cambia |
 |---|---|
 | 1–2 | Solo soldati |
-| 3+ | Arrivano gli arcieri |
-| 7+ | Arrivano i maghi |
-| 12+ | Arrivano i giganti |
-| ogni 10 | 👑 Arriva un **campione** |
+| 3+ | Arrivano gli arcieri (fino al 30% dell'ondata) |
+| 7+ | Arrivano i maghi (fino al 15%) |
+| 11+ | Arrivano i giganti (fino all'8%) |
+| …7, …8, …9 | **Rampa verso il campione:** le 3 ondate prima di ogni campione sono sempre più numerose (+15%, +30%, +45%) |
+| …1 | **Respiro:** l'ondata dopo un campione ha un quarto di eroi in meno |
+| 5, 15, 25… | ⚔️ **Ondata speciale** a tema, a giro: *Assalto* (tanti soldati), *Pioggia di frecce*, *Circolo dei maghi*, *Carica dei giganti* |
+| 5, 8, 13… | 🪽 Arrivano gli **eroi volanti** (ondate scelte dall'Inspector) |
+| ogni 10 | 👑 Arriva un **campione**, con una scorta più piccola del solito |
 
 I nemici attaccano gli scheletri che incontrano (prima chi li provoca, come scudieri e muri d'ossa); arrivati alla torre la colpiscono. Frecce e magie le fanno solo metà del danno, perché le mura reggono.
+
+**Eroi volanti.** In alcune ondate (la prima è la 5) arrivano eroi che **volano dritti verso la torre**, sopra ostacoli, canali e scheletri. Spade e asce non li raggiungono: li colpiscono solo le **unità a distanza**, la **torre** e le **magie**. Al primo incontro il necromante ferma la partita per avvisarti.
+
+| ⚰️ Cimitero | 🌫️ Palude | ⛪ Cattedrale | 🏔️ Montagna |
+|---|---|---|---|
+| Angeli guerrieri con l'aureola e la spada | Fate dalle ali lilla | Guerrieri su tappeti volanti | Corvi da guerra |
+
+Le ondate con i volanti si scelgono dall'Inspector di ogni livello (gruppo *Eroi volanti*).
+
+![Eroi volanti nel cimitero](docs/screenshots/volanti.png)
 
 ### I campioni degli eroi
 
@@ -444,7 +463,7 @@ Nel **portale** del castello apri le pergamene, una alla volta oppure **10 insie
 
   | Rarità | Probabilità | Unità | Ognuna |
   |---|:---:|:---:|:---:|
-  | 🟢 Comune | 50% | 4 | 12,5% |
+  | 🟢 Comune (con le 4 di base) | 50% | 8 | 6,25% |
   | 🔵 Raro | 30% | 5 | 6% |
   | 🟣 Epico | 15% | 4 | 3,75% |
   | 🟡 Leggendario | 5% | 3 | 1,67% |
@@ -476,6 +495,8 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 - **I punti sono in comune.** Gli alberi dei necromanti non ancora comprati si possono guardare ma non sbloccare.
 - **Come si compra:** clicca un nodo e poi **SBLOCCA** o **POTENZIA**.
 - **Azzera ricerche** restituisce i punti dell'albero che stai guardando.
+- **I costi crescono a ogni livello**: completare un albero richiede molte partite.
+- **Ascesa:** quando un albero è tutto al massimo si sblocca la sua ricerca **senza fine** (+2% danni e vita di torre e scheletri per livello, ogni livello costa 20 punti in più). Lì finiscono i punti che avanzano.
 
 <details>
 <summary><b>Signore delle Ossa</b>: albero completo</summary>
@@ -484,23 +505,23 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Mura rinforzate | Vita della torre +20 per livello. | 5 | 4 · 6 · 9 · 12 · 16 | — |
-| Furia oscura | Danno del necromante +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Occhio della notte | Gittata del necromante +10% per livello. | 3 | 6 · 10 · 15 | Mura rinforzate |
-| Rito rapido | Velocità d'attacco del necromante +8% per livello. | 3 | 8 · 12 · 18 | Furia oscura |
-| Saggezza proibita | Esperienza guadagnata +10% per livello: sali di livello prima. | 3 | 6 · 10 · 15 | Rito rapido |
-| Raccolto d'ossa | Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello. | 3 | 8 · 12 · 18 | Occhio della notte |
+| Mura rinforzate | Vita della torre +20 per livello. | 5 | 4 · 8 · 16 · 26 · 42 | — |
+| Furia oscura | Danno del necromante +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Occhio della notte | Gittata del necromante +20% per livello: si schiera anche più lontano dalla torre. | 6 | 6 · 14 · 27 · 41 · 57 · 66 | Mura rinforzate |
+| Rito rapido | Velocità d'attacco del necromante +8% per livello. | 3 | 8 · 17 · 32 | Furia oscura |
+| Saggezza proibita | Esperienza guadagnata +10% per livello: sali di livello prima. | 3 | 6 · 14 · 27 | Rito rapido |
+| Raccolto d'ossa | Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello. | 3 | 8 · 17 · 32 | Occhio della notte |
 
 **Ramo Evocazioni**
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Lame d'osso | Danno delle unità scheletro +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Ossa robuste | Vita delle unità scheletro +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Disciplina d'osso | Vita delle unità corpo a corpo +12% per livello. | 3 | 6 · 10 · 15 | Lame d'osso |
-| Mira spettrale | Danno delle unità a distanza +12% per livello. | 3 | 8 · 12 · 18 | Disciplina d'osso |
-| Arti occulte | Danno delle unità magiche +12% per livello. | 3 | 8 · 12 · 18 | Ossa robuste |
-| Legione | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 40 | Arti occulte |
+| Lame d'osso | Danno delle unità scheletro +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Ossa robuste | Vita delle unità scheletro +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Disciplina d'osso | Vita delle unità corpo a corpo +12% per livello. | 3 | 6 · 14 · 27 | Lame d'osso |
+| Mira spettrale | Danno delle unità a distanza +12% per livello. | 3 | 8 · 17 · 32 | Disciplina d'osso |
+| Arti occulte | Danno delle unità magiche +12% per livello. | 3 | 8 · 17 · 32 | Ossa robuste |
+| Legione | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 56 | Arti occulte |
 
 **Ramo Arcano**
 
@@ -509,8 +530,14 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 | Palla di fuoco | Sblocca l'abilità Palla di fuoco: danni alti in un'area media. | 1 | 8 | — |
 | Area curativa | Sblocca l'abilità Area curativa: cura gli scheletri in un'area ampia. | 1 | 8 | — |
 | Saetta | Sblocca l'abilità Saetta: danni altissimi in un'area piccola. | 1 | 14 | Palla di fuoco |
-| Potere arcano | Potenza delle abilità +15% per livello. | 3 | 10 · 16 · 24 | Saetta |
-| Concentrazione | Tempo di ricarica delle abilità -10% per livello. | 3 | 10 · 16 · 24 | Area curativa |
+| Potere arcano | Potenza delle abilità +15% per livello. | 3 | 10 · 22 · 43 | Saetta |
+| Concentrazione | Tempo di ricarica delle abilità -10% per livello. | 3 | 10 · 22 · 43 | Area curativa |
+
+**Ramo Ascesa**
+
+| Ricerca | Effetto | Livelli | Costi | Richiede |
+|---|---|:---:|---|---|
+| Patto immortale | Danni e vita di torre e scheletri +2% per livello. | senza fine | 40 · 60 · 80 · … (+20 a livello) | tutto il resto dell'albero al massimo |
 
 </details>
 
@@ -521,23 +548,23 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Veleno potente | Veleno dei colpi della torre +20% per livello. | 5 | 4 · 6 · 9 · 12 · 16 | — |
-| Ira della strega | Danno della torre +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Tossine lente | Il veleno della torre dura 1 secondo in più per livello. | 3 | 6 · 10 · 15 | Veleno potente |
-| Malocchio | I colpi della torre maledicono 1 secondo in più per livello. | 3 | 6 · 10 · 15 | Ira della strega |
-| Mura di rovi | Vita della torre +20 per livello. | 5 | 4 · 6 · 9 · 12 · 16 | Tossine lente |
-| Rito del calderone | Velocità d'attacco della torre +8% per livello. | 3 | 8 · 12 · 18 | Malocchio |
+| Veleno potente | Veleno dei colpi della torre +20% per livello. | 5 | 4 · 8 · 16 · 26 · 42 | — |
+| Ira della strega | Danno della torre +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Tossine lente | Il veleno della torre dura 1 secondo in più per livello. | 3 | 6 · 14 · 27 | Veleno potente |
+| Malocchio | I colpi della torre maledicono 1 secondo in più per livello. | 3 | 6 · 14 · 27 | Ira della strega |
+| Mura di rovi | Vita della torre +20 per livello. | 5 | 4 · 8 · 16 · 26 · 42 | Tossine lente |
+| Rito del calderone | Velocità d'attacco della torre +8% per livello. | 3 | 8 · 17 · 32 | Malocchio |
 
 **Ramo Evocazioni**
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Lame avvelenate | I colpi degli scheletri avvelenano: 10% del danno al secondo per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Ossa marce | Vita delle unità scheletro +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Contagio | Quando un nemico avvelenato muore, 20% per livello di contagiare chi gli sta vicino. | 3 | 6 · 10 · 15 | Lame avvelenate |
-| Arti della congrega | Danno delle unità magiche +12% per livello. | 3 | 8 · 12 · 18 | Ossa marce |
-| Esercito appestato | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 40 | Contagio |
-| Frecce intinte | Danno delle unità a distanza +12% per livello. | 3 | 8 · 12 · 18 | Arti della congrega |
+| Lame avvelenate | I colpi degli scheletri avvelenano: 10% del danno al secondo per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Ossa marce | Vita delle unità scheletro +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Contagio | Quando un nemico avvelenato muore, 20% per livello di contagiare chi gli sta vicino. | 3 | 6 · 14 · 27 | Lame avvelenate |
+| Arti della congrega | Danno delle unità magiche +12% per livello. | 3 | 8 · 17 · 32 | Ossa marce |
+| Esercito appestato | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 56 | Contagio |
+| Frecce intinte | Danno delle unità a distanza +12% per livello. | 3 | 8 · 17 · 32 | Arti della congrega |
 
 **Ramo Malefici**
 
@@ -546,9 +573,15 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 | Nube di peste | Sblocca la magia Nube di peste: una nube che avvelena, rallenta e maledice. | 1 | 8 | — |
 | Maledizione | Sblocca la magia Maledizione: i nemici nell'area subiscono il 50% di danni in più. | 1 | 8 | — |
 | Sciame | Sblocca la magia Sciame: insetti velenosi su tanti nemici vicini. | 1 | 14 | Nube di peste |
-| Potere del sabba | Potenza delle magie +15% per livello. | 3 | 10 · 16 · 24 | Sciame |
-| Luna nera | Tempo di ricarica delle magie -10% per livello. | 3 | 10 · 16 · 24 | Maledizione |
-| Anatema | I maledetti subiscono il 10% di danni in più per livello. | 3 | 10 · 16 · 24 | Luna nera |
+| Potere del sabba | Potenza delle magie +15% per livello. | 3 | 10 · 22 · 43 | Sciame |
+| Luna nera | Tempo di ricarica delle magie -10% per livello. | 3 | 10 · 22 · 43 | Maledizione |
+| Anatema | I maledetti subiscono il 10% di danni in più per livello. | 3 | 10 · 22 · 43 | Luna nera |
+
+**Ramo Ascesa**
+
+| Ricerca | Effetto | Livelli | Costi | Richiede |
+|---|---|:---:|---|---|
+| Pestilenza senza fine | Danni e vita di torre e scheletri +2% per livello. | senza fine | 40 · 60 · 80 · … (+20 a livello) | tutto il resto dell'albero al massimo |
 
 </details>
 
@@ -559,23 +592,23 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Tocco gelido | Rallentamento dei colpi della torre +8% per livello. | 5 | 4 · 6 · 9 · 12 · 16 | — |
-| Furia del lich | Danno della torre +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Inverno lungo | Il rallentamento della torre dura mezzo secondo in più per livello. | 3 | 6 · 10 · 15 | Tocco gelido |
-| Morsa di ghiaccio | Probabilità di congelare a ogni colpo della torre +4% per livello. | 3 | 6 · 10 · 15 | Furia del lich |
-| Mura di ghiaccio | Vita della torre +20 per livello. | 5 | 4 · 6 · 9 · 12 · 16 | Inverno lungo |
-| Cuore gelido | Il congelamento dura 0,3 secondi in più per livello. | 3 | 8 · 12 · 18 | Morsa di ghiaccio |
+| Tocco gelido | Rallentamento dei colpi della torre +8% per livello. | 5 | 4 · 8 · 16 · 26 · 42 | — |
+| Furia del lich | Danno della torre +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Inverno lungo | Il rallentamento della torre dura mezzo secondo in più per livello. | 3 | 6 · 14 · 27 | Tocco gelido |
+| Morsa di ghiaccio | Probabilità di congelare a ogni colpo della torre +4% per livello. | 3 | 6 · 14 · 27 | Furia del lich |
+| Mura di ghiaccio | Vita della torre +20 per livello. | 5 | 4 · 8 · 16 · 26 · 42 | Inverno lungo |
+| Cuore gelido | Il congelamento dura 0,3 secondi in più per livello. | 3 | 8 · 17 · 32 | Morsa di ghiaccio |
 
 **Ramo Evocazioni**
 
 | Ricerca | Effetto | Livelli | Costi | Richiede |
 |---|---|:---:|---|---|
-| Lame di brina | I colpi degli scheletri rallentano i nemici dell'8% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Ossa di ghiaccio | Vita delle unità scheletro +10% per livello. | 5 | 5 · 8 · 12 · 16 · 22 | — |
-| Guardia d'inverno | Vita delle unità corpo a corpo +12% per livello. | 3 | 6 · 10 · 15 | Lame di brina |
-| Frecce di ghiaccio | Danno delle unità a distanza +12% per livello. | 3 | 8 · 12 · 18 | Ossa di ghiaccio |
-| Legione gelata | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 40 | Guardia d'inverno |
-| Schegge | I nemici congelati subiscono il 20% di danni in più per livello. | 3 | 8 · 12 · 18 | Frecce di ghiaccio |
+| Lame di brina | I colpi degli scheletri rallentano i nemici dell'8% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Ossa di ghiaccio | Vita delle unità scheletro +10% per livello. | 5 | 5 · 11 · 22 · 35 · 57 | — |
+| Guardia d'inverno | Vita delle unità corpo a corpo +12% per livello. | 3 | 6 · 14 · 27 | Lame di brina |
+| Frecce di ghiaccio | Danno delle unità a distanza +12% per livello. | 3 | 8 · 17 · 32 | Ossa di ghiaccio |
+| Legione gelata | Squadre schierabili a inizio partita +1 per livello. | 2 | 25 · 56 | Guardia d'inverno |
+| Schegge | I nemici congelati subiscono il 20% di danni in più per livello. | 3 | 8 · 17 · 32 | Frecce di ghiaccio |
 
 **Ramo Inverno**
 
@@ -584,9 +617,15 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 | Bufera | Sblocca la magia Bufera: una tempesta di neve che rallenta e ferisce. | 1 | 8 | — |
 | Prigione gelida | Sblocca la magia Prigione gelida: congela i nemici in una piccola area. | 1 | 8 | — |
 | Cometa gelata | Sblocca la magia Cometa gelata: danni altissimi e gelo dove cade. | 1 | 14 | Bufera |
-| Potere del gelo | Potenza delle magie +15% per livello. | 3 | 10 · 16 · 24 | Cometa gelata |
-| Notte polare | Tempo di ricarica delle magie -10% per livello. | 3 | 10 · 16 · 24 | Prigione gelida |
-| Inverno eterno | Gli effetti delle magie (gelo, bufera) durano il 20% in più per livello. | 3 | 10 · 16 · 24 | Notte polare |
+| Potere del gelo | Potenza delle magie +15% per livello. | 3 | 10 · 22 · 43 | Cometa gelata |
+| Notte polare | Tempo di ricarica delle magie -10% per livello. | 3 | 10 · 22 · 43 | Prigione gelida |
+| Inverno eterno | Gli effetti delle magie (gelo, bufera) durano il 20% in più per livello. | 3 | 10 · 22 · 43 | Notte polare |
+
+**Ramo Ascesa**
+
+| Ricerca | Effetto | Livelli | Costi | Richiede |
+|---|---|:---:|---|---|
+| Era glaciale | Danni e vita di torre e scheletri +2% per livello. | senza fine | 40 · 60 · 80 · … (+20 a livello) | tutto il resto dell'albero al massimo |
 
 </details>
 
@@ -614,7 +653,21 @@ Se vinci puoi **continuare in modalità infinita** dalla stessa partita.
   - una casella per i **codici**.
 
   ![Impostazioni](docs/screenshots/impostazioni.png)
-- **Audio:** effetti sonori retrò per attacchi, magie, morti, ondate, evocazioni e dialoghi, più la musica. Musica ed effetti hanno bus separati («Musica», «Effetti»).
+- **Audio:** effetti sonori retrò per attacchi, magie, morti, ondate, evocazioni e dialoghi. Musica ed effetti hanno bus separati («Musica», «Effetti»).
+- **Musica:** 8 brani chiptune in loop, composti per il gioco:
+
+  | Brano | Dove suona | Carattere |
+  |---|---|---|
+  | `ricerca.ogg` | Ricerche | Lento e misterioso, campane ed eco |
+  | `evocazione.ogg` | Portale delle pergamene | Arpeggi mistici che salgono |
+  | `schieramento.ogg` | Preparazione e schieramento in battaglia, fino al corno | Marcia con rullante |
+  | `negozio.ogg` | Negozio | Saltellante, basso "um-pa" |
+  | `cimitero.ogg` | Battaglia nel Cimitero | Cupa e incalzante |
+  | `palude.ogg` | Battaglia nella Palude | Ondeggiante, flauto |
+  | `cattedrale.ogg` | Battaglia nella Cattedrale | Organo e timpani |
+  | `montagna.ogg` | Battaglia in Montagna | Epica, tamburi di guerra |
+
+  Quando suoni il corno la musica dello schieramento sfuma in quella del livello.
 - **Tutorial:** in ogni schermata il necromante spiega cosa fare la prima volta, con un dialogo a fumetto. Si può saltare con **SALTA**.
 
 ---
@@ -696,9 +749,14 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | Gruppo / campo | Cosa controlla |
 |---|---|
 | Griglia di schieramento | **Colonne**, **File**, **Tile Per Casella**, file bloccate (canali) e ostacoli |
+| Schieramento | **Entro gittata** (schierare solo vicino alla torre) e **Gittata schieramento** (0 = quella della torre) |
+| Potenziamento delle squadre | Attivo, livello massimo, vita e danni in più per livello, dialogo che lo spiega |
+| Eroi volanti | Attivi, **ondate** in cui arrivano, quanti, quanti in più ogni 10 ondate, ogni quante ondate in modalità infinita, dialogo |
 | Bioma | Sfondo, terreno, ostacoli, meteo e **sprite degli eroi** del livello (`biomi/*.tres`) |
 | Campioni degli eroi | L'elenco dei 10 campioni del livello (`campioni/…/elenco_campioni.tres`) |
 | Ondate totali | Di solito 100 |
+| Difficoltà delle ondate | Crescita di vita e danni degli eroi, quanti eroi, rampa prima dei campioni, respiro dopo, ondate speciali, forza e scorta dei campioni |
+| Musica | **Musica Schieramento** (prima del corno); la musica del livello è lo stream del nodo `AudioStreamPlayer2D` |
 | Interfaccia | **Tema Ui**, fine partita cinematica, grandezza del pulsante **SUONA IL CORNO**, durata dell'avviso |
 | Torre del necromante | **Attaccata alla griglia**, **Fila**, **Gittata** |
 | Colori degli effetti | Palla di fuoco, saetta, area curativa, nube di peste |
@@ -709,7 +767,7 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | Cartella | Cosa c'è |
 |---|---|
 | `livelli/elenco_livelli.tres` | Ordine, nomi e descrizioni dei livelli |
-| `biomi/` | Un file per bioma: grafica, colori, eroi |
+| `biomi/` | Un file per bioma: grafica, colori, eroi ed eroi volanti (*Sprite Volante*) |
 | `campioni/` | Un file per campione: statistiche, sprite, frasi e mosse |
 | `necromanti/` | Signore delle Ossa, Strega, Lich: nome, colore, prezzo, magie e poteri |
 | `specializzazioni/` | I rami di ogni unità |
@@ -741,6 +799,7 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | `assets/sprites.png` | Scheletri e umani di base, icone, necromante, corona |
 | `assets/unita_scheletri.png` | Le 16 unità delle pergamene |
 | `assets/biomi/` | Campi, ostacoli ed eroi di ogni bioma (elfi, guerrieri del deserto, vichinghi) |
+| `assets/nemici/volanti/` | Gli eroi volanti dei 4 biomi (2 frame: ali su, ali giù) |
 | `assets/campioni/` | Gli sprite dei 40 campioni |
 | `assets/necromanti/` | Strega e Lich, icone delle loro magie e ricerche |
 | `assets/campo/`, `assets/menu/`, `assets/negozio/` | Campo di battaglia, castello, bancarella |
@@ -901,7 +960,7 @@ Suggerimenti e contributi sono benvenuti: apri una *issue*, oppure usa **Bug e c
 - **Motore:** [Godot Engine](https://godotengine.org) (licenza MIT)
 - **Effetti sonori:** sintetizzati per il gioco
 - **Font:** `Minecraft.ttf`, `The Inquisition.ttf` *(aggiungi autori e licenze)*
-- **Musica:** `chiptune-grooving` *(aggiungi autore e licenza)*
+- **Musica:** 8 brani sintetizzati per il gioco (`assets/music/*.ogg`); menu e scelta del livello usano ancora `chiptune-grooving` *(aggiungi autore e licenza)*
 - **Ispirazione:** *Outhold*
 
 ## Licenza

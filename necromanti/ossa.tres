@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="Necromante" format=3]
+[gd_resource type="Resource" script_class="Necromante" format=3 uid="uid://e1dt20php27q"]
 
-[ext_resource type="Script" path="res://scripts/necromante.gd" id="1_nec"]
-[ext_resource type="Texture2D" path="res://assets/sprites.png" id="2_atl"]
+[ext_resource type="Script" uid="uid://ccygaw4lu48x5" path="res://scripts/necromante.gd" id="1_nec"]
+[ext_resource type="Texture2D" uid="uid://cn14hadw4g6ml" path="res://assets/sprites.png" id="2_atl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_r"]
 atlas = ExtResource("2_atl")
@@ -15,8 +15,5 @@ titolo = "Più evocazioni"
 descrizione = "Una squadra in più da schierare e i nemici uccisi a volte si rialzano come scheletri al tuo servizio."
 ritratto = SubResource("AtlasTexture_r")
 colore = Color(0.6118, 0.3608, 0.8, 1)
-prezzo = 0
-magie = Array[String](["palla_di_fuoco", "area_curativa", "saetta"])
 squadre_extra = 1
 rialza_probabilita = 0.1
-rialza_durata = 20.0

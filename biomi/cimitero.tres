@@ -1,20 +1,20 @@
-[gd_resource type="Resource" script_class="Bioma" format=3]
+[gd_resource type="Resource" script_class="Bioma" format=3 uid="uid://chpy8442p48kl"]
 
-[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
-[ext_resource type="Texture2D" path="res://assets/campo/cielo.png" id="2_cie"]
-[ext_resource type="Texture2D" path="res://assets/campo/terreno.png" id="3_ter"]
-[ext_resource type="Texture2D" path="res://assets/campo/lastre.png" id="4_las"]
-[ext_resource type="Texture2D" path="res://assets/biomi/cimitero/ostacoli.png" id="5_ost"]
+[ext_resource type="Script" uid="uid://cbseq6shyvorj" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" uid="uid://b2ej48j86hvho" path="res://assets/campo/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" uid="uid://dxg43xa0acev6" path="res://assets/campo/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" uid="uid://cnhg8nw2fja70" path="res://assets/campo/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" uid="uid://bxnbo2w4y7y54" path="res://assets/biomi/cimitero/ostacoli.png" id="5_ost"]
+[ext_resource type="Texture2D" uid="uid://c1cru26imnhuw" path="res://assets/nemici/volanti/cimitero.png" id="9_vol"]
 
 [resource]
 script = ExtResource("1_bio")
-nome = "Cimitero"
 cielo = ExtResource("2_cie")
 terreno = ExtResource("3_ter")
 lastre = ExtResource("4_las")
 ostacoli = ExtResource("5_ost")
-ambiente = 0
-stelle = true
-pipistrelli = true
-eroi_lontani = true
 colore_barriera = Color(0.102, 0.11, 0.118, 1)
+colori_nemici = Dictionary[String, Color]({
+"volante": Color(0.9412, 0.8078, 0.3216, 1)
+})
+sprite_volante = ExtResource("9_vol")

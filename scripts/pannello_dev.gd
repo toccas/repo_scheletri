@@ -198,7 +198,7 @@ func _tab_ricerche() -> Control:
 		sp.min_value = 0
 		sp.max_value = Research.max_level(id)
 		sp.value = Research.level(st, id)
-		sp.suffix = "/ %d" % Research.max_level(id)
+		sp.suffix = "(senza fine)" if Research.infinito(id) else "/ %d" % Research.max_level(id)
 		sp.value_changed.connect(func(v: float) -> void:
 			var s := Research.load_state()
 			s["levels"][id] = int(v)
@@ -209,7 +209,8 @@ func _tab_ricerche() -> Control:
 		grid.add_child(h)
 	row.add_child(_btn("Tutte al massimo", func() -> void:
 		for id in spins:
-			spins[id].value = Research.max_level(id)
+			if not Research.infinito(id):  # quelle senza fine restano come sono
+				spins[id].value = Research.max_level(id)
 		_msg("Tutte le ricerche al massimo (magie comprese).")))
 	row.add_child(_btn("Azzera (senza rimborso)", func() -> void:
 		for id in spins:
@@ -408,7 +409,7 @@ func _tab_partita() -> Control:
 	var r4 := HBoxContainer.new()
 	page.add_child(r4)
 	var x5 := CheckBox.new()
-	x5.text = "Velocità x5 nel pulsante (x1 > x2 > x3 > x5)"
+	x5.text = "Velocità x5 e x10 nel pulsante (x1 > x2 > x3 > x5 > x10)"
 	x5.button_pressed = m.dev_x5
 	x5.toggled.connect(func(on: bool) -> void:
 		m.dev_x5 = on
@@ -419,9 +420,9 @@ func _tab_partita() -> Control:
 		if not on and Engine.time_scale > 3.0:
 			Engine.time_scale = 1.0)
 	r4.add_child(x5)
-	for sp in [1, 2, 3, 5]:
+	for sp: int in [1, 2, 3, 5, 10]:
 		r4.add_child(_btn("x%d" % sp, func() -> void:
-			if sp == 5:
+			if sp >= 5:
 				m.dev_x5 = true
 				x5.button_pressed = true
 			Engine.time_scale = float(sp)

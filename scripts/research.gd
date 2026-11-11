@@ -433,7 +433,16 @@ func _draw_node(id: String) -> void:
 		draw_rect(Rect2(lp, Vector2(14, 12)), C4)
 		draw_rect(Rect2(lp + Vector2(6, 4), Vector2(2, 4)), C0)
 
-	# livelli: un quadratino per livello sotto il nodo
+	# livelli: un quadratino per livello sotto il nodo (senza fine: il numero)
+	if Research.infinito(id):
+		PixelFont.draw_centered(self, tr("LIV. %d") % lv, r.get_center().x, r.end.y + 6, 2.0, C6 if lv > 0 else C4)
+		if id == selected:
+			var s0 := r.grow(8.0 + (2.0 if int(t * 3.0) % 2 == 0 else 0.0))
+			for c in [s0.position, Vector2(s0.end.x - 10, s0.position.y), Vector2(s0.position.x, s0.end.y - 10), s0.end - Vector2(10, 10)]:
+				draw_rect(Rect2(c, Vector2(10, 10)), C6)
+		elif id == hovered:
+			_border(r.grow(4), 2.0, C5)
+		return
 	var m := Research.max_level(id)
 	var pip := 8.0
 	var gap := 4.0
@@ -476,7 +485,8 @@ func _draw_panel(vp: Vector2) -> void:
 		ts -= 1.0
 	PixelFont.draw_text(self, title, Vector2(x, y), ts, C6)
 	var branch_name: String = tr(Research.branches(albero)[n["branch"]]["name"])
-	PixelFont.draw_text(self, tr("%s  -  LIVELLO %d/%d") % [branch_name, lv, m], Vector2(x, y + 48), 3.0, C4)
+	var liv_txt := tr("%s  -  LIVELLO %d") % [branch_name, lv] if Research.infinito(selected) else tr("%s  -  LIVELLO %d/%d") % [branch_name, lv, m]
+	PixelFont.draw_text(self, liv_txt, Vector2(x, y + 48), 3.0, C4)
 	var ds := 3.0
 	var lines := _wrap(tr(n["desc"]), int(avail / (6.0 * ds)))
 	if lines.size() > 3:
@@ -513,7 +523,10 @@ func _draw_panel(vp: Vector2) -> void:
 		ls -= 1.0
 	PixelFont.draw_centered(self, label, buy_rect.get_center().x, buy_rect.get_center().y - PixelFont.text_height(ls) / 2.0, ls, C6 if can else C3)
 	var req: Array = n["requires"]
-	if not Research.requirements_met(st, selected):
+	if not Research.requirements_met(st, selected) and Research.infinito(selected):
+		PixelFont.draw_centered(self, tr("COMPLETA PRIMA"), buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C6)
+		PixelFont.draw_centered(self, tr("TUTTO L'ALBERO"), buy_rect.get_center().x, buy_rect.end.y + 34, 2.0, C6)
+	elif not Research.requirements_met(st, selected):
 		var rn: String = tr(Research.NODES[req[0]]["name"])
 		PixelFont.draw_centered(self, tr("RICHIEDE: %s") % rn, buy_rect.get_center().x, buy_rect.end.y + 14, 2.0, C6)
 		PixelFont.draw_centered(self, tr("LIVELLO %d") % req[1], buy_rect.get_center().x, buy_rect.end.y + 34, 2.0, C6)

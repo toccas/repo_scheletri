@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://bl8gp03io0ilf" path="res://scripts/elenco_livelli.gd" id="1_ele"]
 [ext_resource type="Script" uid="uid://b7asnhwmmpbbt" path="res://scripts/info_livello.gd" id="2_inf"]
-[ext_resource type="Resource" path="res://biomi/cimitero.tres" id="3_cim"]
-[ext_resource type="Resource" path="res://biomi/palude.tres" id="4_pal"]
-[ext_resource type="Resource" path="res://biomi/cattedrale.tres" id="5_cat"]
-[ext_resource type="Resource" path="res://biomi/montagna.tres" id="6_mon"]
+[ext_resource type="Resource" uid="uid://chpy8442p48kl" path="res://biomi/cimitero.tres" id="3_cim"]
+[ext_resource type="Resource" uid="uid://bmltkakrti35r" path="res://biomi/palude.tres" id="4_pal"]
+[ext_resource type="Resource" uid="uid://c14wcs8tbq18y" path="res://biomi/cattedrale.tres" id="5_cat"]
+[ext_resource type="Resource" uid="uid://c6ro0hrorp3xx" path="res://biomi/montagna.tres" id="6_mon"]
 
 [sub_resource type="Resource" id="Resource_cim"]
 script = ExtResource("2_inf")

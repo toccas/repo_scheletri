@@ -96,7 +96,9 @@ static func open_scroll(st: Dictionary) -> Dictionary:
 	# non ci fossero unità si passa alla rarità più vicina)
 	var pick := ""
 	for r in _nearest_rarities(rarity):
-		var pool: Array = Data.ALLY_ORDER.filter(func(k): return Data.UNITS[k]["rarity"] == r)
+		# le 4 unità di base escono insieme alle comuni: anche loro salgono di rango
+		var pool: Array = Data.ALLY_ORDER.filter(func(k): return Data.UNITS[k]["rarity"] == r \
+			or (r == "comune" and Data.UNITS[k]["rarity"] == "base"))
 		if not pool.is_empty():
 			pick = pool.pick_random()
 			break

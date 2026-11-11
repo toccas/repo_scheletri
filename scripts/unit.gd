@@ -102,6 +102,13 @@ var buff_k := 0.0
 var buff_col := Color(1, 1, 1)
 ## Vola sopra acqua, crepacci e ostacoli (l'arcangelo).
 var vola := false
+## EROE VOLANTE: vola dritto verso la torre, in alto. Il corpo a corpo non lo
+## raggiunge: lo colpiscono solo le unità a distanza, la torre e le magie.
+var in_volo := false
+const ALTEZZA_VOLO := 12.0
+var volo_fase := 0.0
+## Livello della squadra (potenziamento: un'evocazione uguale sopra la squadra).
+var squad_lv := 1
 
 var ground := Vector2.ZERO  # posizione sul terreno (vedi sopra)
 var home := Vector2.ZERO  # posizione di guardia sul terreno (alleati)
@@ -173,6 +180,10 @@ func setup_enemy(kind_name: String, hp_mult: float, dmg_mult: float, boss: bool)
 	max_hp *= hp_mult
 	hp = max_hp
 	base_dmg *= dmg_mult
+	if kind_name == "volante":
+		in_volo = true
+		vola = true
+		volo_fase = randf() * TAU
 
 
 func get_dmg() -> float:
@@ -212,7 +223,7 @@ func is_static() -> bool:
 
 ## Altezza da terra (in pixel dell'arte) da cui partono e arrivano i proiettili.
 func muzzle_height() -> float:
-	return MUZZLE * (2.0 if is_boss else 1.0)
+	return MUZZLE * (2.0 if is_boss else 1.0) + (ALTEZZA_VOLO if in_volo else 0.0)
 
 
 func _ready() -> void:
@@ -254,6 +265,9 @@ void fragment() {
 	if team == ENEMY and game.tex_nemici != null:
 		sprite.texture = game.tex_nemici
 		_update_frame()
+	if in_volo:
+		sprite.texture = game.tex_volante
+		_update_frame()
 	if spec_col.a > 0.0:
 		var base_col := Data.accent(kind, team)
 		sprite.material.set_shader_parameter("swap", 1.0)
@@ -283,6 +297,8 @@ func _face() -> float:
 func _update_frame() -> void:
 	if team == ALLY:
 		sprite.region_rect = Data.ally_region(kind, frame)
+	elif in_volo:  # striscia 32x16: ali su, ali giù
+		sprite.region_rect = Rect2(frame * 16, 0, 16, 16)
 	else:
 		# eroi del bioma (elfi, vichinghi...): la loro striscia ha una riga sola
 		var y := 0 if sprite.texture != ATLAS else team * 16
@@ -304,6 +320,8 @@ func _process(delta: float) -> void:
 		sprite.position.y = -roundf((3.0 if melee else -1.0) * k)
 	else:
 		sprite.position.y = 0.0
+	if in_volo:  # in alto, ondeggia
+		sprite.position.y -= ALTEZZA_VOLO + roundf(sin(Time.get_ticks_msec() / 260.0 + volo_fase) * 1.5)
 	bar.queue_redraw()
 	if entering and not dead:
 		_enter_update(delta)
@@ -359,7 +377,7 @@ func _animate_walk(moving: bool, delta: float) -> void:
 			frame = 1
 			_update_frame()
 		return
-	if moving:
+	if moving or in_volo:  # chi vola sbatte le ali anche da fermo
 		frame_timer += delta
 		if frame_timer >= FRAME_TIME:
 			frame_timer = 0.0
@@ -436,6 +454,12 @@ func _ally_update(delta: float) -> void:
 
 
 func _enemy_update(delta: float) -> void:
+	if in_volo:  # dritto verso la torre, sopra scheletri e ostacoli
+		if game.tower_distance(ground) - radius <= attack_range:
+			_attack_tower()
+		else:
+			ground = ground.move_toward(Vector2(game.wall_x, game.tower_base_y), get_speed() * delta)
+		return
 	# 1) scheletri vicini (prima chi provoca: scudieri e muri)  2) la torre  3) avanza verso sinistra
 	var engage := radius + 13.0 if melee else attack_range
 	var taunter = game.nearest_taunter(ground, engage + 22.0)
@@ -665,8 +689,8 @@ func _separate(delta: float) -> void:
 	if team == ALLY and is_static():
 		return  # catapulta, totem e muro non si spostano
 	for o in get_parent().get_children():
-		if o == self or o.dead or not o.visible:
-			continue
+		if o == self or o.dead or not o.visible or o.in_volo != in_volo:
+			continue  # chi vola non spinge chi cammina
 		var diff: Vector2 = ground - o.ground
 		var min_d: float = radius + o.radius
 		var dsq := diff.length_squared()
@@ -684,6 +708,8 @@ func take_damage(amount: float, attacker = null) -> void:
 	if dead:
 		return
 	var att_ok: bool = attacker != null and is_instance_valid(attacker) and not attacker.dead
+	if in_volo and att_ok and attacker.team != team and attacker.melee:
+		return  # spade e asce non arrivano fin lassù
 	if team == ALLY and not spec.is_empty():  # difese delle specializzazioni
 		if sp("schiva") > 0.0 and randf() < sp("schiva"):
 			game.spawn_unit_fx(ground, "spark", muzzle_height(), -_face(), 0.2, C_WHITE)
@@ -914,7 +940,12 @@ func _draw() -> void:
 
 
 func _draw_bar() -> void:
-	var size := 32.0 if is_boss else 16.0
+	var size := (32.0 if is_boss else 16.0) + (ALTEZZA_VOLO if in_volo else 0.0)
+	if squad_lv > 1 and team == ALLY:  # gradi del potenziamento sopra la testa
+		for k in squad_lv - 1:
+			var gy := -size - 6.0 - k * 2.0
+			bar.draw_rect(Rect2(-2, gy - 1.0, 5, 3), C_BLACK)
+			bar.draw_rect(Rect2(-1, gy, 3, 1), accent())
 	if curse_t > 0.0:  # teschietto della maledizione sopra la testa
 		bar.draw_rect(Rect2(-1, -size - 7, 3, 2), C_BLACK)
 		bar.draw_rect(Rect2(-1, -size - 8, 3, 1), Data.accent("lich"))  # fuoco verde del lich

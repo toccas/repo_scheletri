@@ -49,6 +49,15 @@ const UNITS := {
 		"role": "magia", "rarity": "base", "special": "", "sheet": "base", "sx": 4,
 		"desc": "Sfere magiche che esplodono e colpiscono un'area.",
 	},
+	# Eroe volante (solo nemici): vola dritto alla torre, lo colpiscono solo le unità
+	# a distanza, la torre e le magie. Aspetto e colore dal bioma (sprite_volante).
+	"volante": {
+		"ally_name": "Volante", "enemy_name": "Eroe volante",
+		"count": 1, "hp": 20.0, "dmg": 4.0, "range": 3.0, "cooldown": 1.3,
+		"speed": 28.0, "melee": true, "splash": 0.0, "radius": 4.0, "xp": 2,
+		"role": "corpo", "rarity": "nemico", "special": "", "sheet": "base", "sx": 0,
+		"desc": "",
+	},
 	# --- Unità da evocare con le pergamene (solo scheletri) --------------------
 	"lanciere": {
 		"ally_name": "Lanciere", "count": 3, "hp": 55.0, "dmg": 7.0, "range": 9.0, "cooldown": 1.0,
@@ -182,6 +191,9 @@ const WAVES_PER_SCROLL := 10
 const MONETE_PER_ONDATA := 2
 ## Monete d'osso in più se resisti a tutte le 100 ondate.
 const MONETE_VITTORIA := 300
+## Punti ricerca: uno per ondata superata, uno ogni UCCISIONI_PER_PUNTO nemici uccisi, 50 se vinci.
+## (Era 20: con le partite lunghe i punti crescevano troppo e le ricerche finivano subito.)
+const UCCISIONI_PER_PUNTO := 50
 ## Pergamene in regalo alla prima partita (per provare subito l'evocazione).
 const STARTING_SCROLLS := 3
 ## Rango massimo di un'unità (i doppioni lo alzano): +10% vita e danno per rango.
@@ -236,6 +248,7 @@ const ACCENTI_NEMICI := {
 	"arciere": Color("96643a"),     # cappuccio di cuoio
 	"mago": Color("d64034"),        # cappello rosso (magia di fuoco)
 	"gigante": Color("f0ce52"),     # elmo con la fascia d'oro
+	"volante": Color("f0ce52"),     # aureola dell'angelo guerriero
 }
 ## Viola della veste del necromante (colpi della torre).
 const ACCENTO_NECROMANTE := Color("9c5ccc")
@@ -349,6 +362,8 @@ const BOSS_DMG_MULT := 1.2
 const BOSS_SPEED_MULT := 0.7
 
 
+## (La partita usa vita_eroi / danno_eroi / numero_eroi di main.gd, regolabili dall'Inspector
+## in "Difficoltà delle ondate". Queste funzioni restano per i vecchi strumenti di prova.)
 ## Moltiplicatore della vita dei nemici in base all'ondata.
 static func enemy_hp_mult(wave: int) -> float:
 	var w := float(wave - 1)

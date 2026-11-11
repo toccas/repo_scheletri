@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="Necromante" format=3]
+[gd_resource type="Resource" script_class="Necromante" format=3 uid="uid://bsmemjvn4um0a"]
 
-[ext_resource type="Script" path="res://scripts/necromante.gd" id="1_nec"]
-[ext_resource type="Texture2D" path="res://assets/necromanti/necromanti.png" id="2_atl"]
+[ext_resource type="Script" uid="uid://ccygaw4lu48x5" path="res://scripts/necromante.gd" id="1_nec"]
+[ext_resource type="Texture2D" uid="uid://dha4v8ctsjv7u" path="res://assets/necromanti/necromanti.png" id="2_atl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_r"]
 atlas = ExtResource("2_atl")
@@ -19,6 +19,5 @@ prezzo = 500
 magie = Array[String](["nube_di_peste", "maledizione", "sciame"])
 danno = 0.8
 veleno = 0.35
-veleno_durata = 3.0
 maledizione_durata = 1.5
 maledizione_forza = 0.4

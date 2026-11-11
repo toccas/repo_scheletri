@@ -178,6 +178,7 @@ func _segnale(g: Vector2, r: float, ritardo: float, fatto: Callable, forma: Stri
 	s.position = game.to_screen(g)
 	s.z_index = 1
 	game.segnali_root.add_child(s)
+	tree_exiting.connect(s.queue_free)  # campione sconfitto: i suoi preavvisi spariscono
 
 
 func _colpisci_area(centro: Vector2, r: float, dmg: float, stun: float = 0.0) -> void:

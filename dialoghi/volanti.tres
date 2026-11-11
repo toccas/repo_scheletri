@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://b05i3w27intbf"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_a2oli"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_8x4u6"]
+
+[sub_resource type="Resource" id="Resource_vol0"]
+script = ExtResource("1_a2oli")
+testo = "Guarda il cielo! Arrivano eroi volanti: puntano dritti alla torre, sopra ostacoli e scheletri."
+espressione = 4
+
+[sub_resource type="Resource" id="Resource_vol1"]
+script = ExtResource("1_a2oli")
+testo = "Spade e asce non ci arrivano. Li colpiscono solo le unità a distanza, la mia torre e le magie: tieni qualche arciere in squadra."
+
+[resource]
+script = ExtResource("2_8x4u6")
+id = "volanti"
+battute = Array[ExtResource("1_a2oli")]([SubResource("Resource_vol0"), SubResource("Resource_vol1")])

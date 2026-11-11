@@ -27,7 +27,8 @@ func _process(delta: float) -> void:
 		return
 	t += delta
 	if t >= ritardo:
-		if fatto.is_valid():
+		# il campione può essere morto nel frattempo: il colpo non parte più
+		if fatto.is_valid() and is_instance_valid(fatto.get_object()):
 			fatto.call()
 		lampo = 0.18
 	queue_redraw()

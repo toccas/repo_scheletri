@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ci1n4yv2itffx" path="res://assets/negozio/vip.png" id="6_kmrl8"]
 [ext_resource type="Texture2D" path="res://assets/negozio/strega.png" id="9_strega"]
 [ext_resource type="Texture2D" path="res://assets/negozio/lich.png" id="10_lich"]
-[ext_resource type="AudioStream" uid="uid://dn7if4fkksfhv" path="res://assets/music/8059346-chiptune-grooving-142242.mp3" id="8_w72ry"]
+[ext_resource type="AudioStream" path="res://assets/music/negozio.ogg" id="8_w72ry"]
 
 [sub_resource type="Resource" id="Resource_s473i"]
 script = ExtResource("2_mo37h")

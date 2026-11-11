@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="Bioma" format=3]
+[gd_resource type="Resource" script_class="Bioma" format=3 uid="uid://c6ro0hrorp3xx"]
 
-[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
-[ext_resource type="Texture2D" path="res://assets/biomi/montagna/cielo.png" id="2_cie"]
-[ext_resource type="Texture2D" path="res://assets/biomi/montagna/terreno.png" id="3_ter"]
-[ext_resource type="Texture2D" path="res://assets/biomi/montagna/lastre.png" id="4_las"]
-[ext_resource type="Texture2D" path="res://assets/biomi/montagna/ostacoli.png" id="5_ost"]
-[ext_resource type="Texture2D" path="res://assets/biomi/montagna/nemici.png" id="6_nem"]
+[ext_resource type="Script" uid="uid://cbseq6shyvorj" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" uid="uid://byobx74r1a5id" path="res://assets/biomi/montagna/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" uid="uid://dwb4h3rlld3lf" path="res://assets/biomi/montagna/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" uid="uid://qe35qi2cxdgo" path="res://assets/biomi/montagna/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" uid="uid://b8x2wauobv0rr" path="res://assets/biomi/montagna/ostacoli.png" id="5_ost"]
+[ext_resource type="Texture2D" uid="uid://cnwlq4r11p5qf" path="res://assets/biomi/montagna/nemici.png" id="6_nem"]
+[ext_resource type="Texture2D" uid="uid://danqa2c2vks6f" path="res://assets/nemici/volanti/montagna.png" id="9_vol"]
 
 [resource]
 script = ExtResource("1_bio")
@@ -15,9 +16,14 @@ terreno = ExtResource("3_ter")
 lastre = ExtResource("4_las")
 ostacoli = ExtResource("5_ost")
 ambiente = 3
-stelle = true
 pipistrelli = false
-eroi_lontani = true
 colore_barriera = Color(0.05, 0.06, 0.09, 1)
 sprite_nemici = ExtResource("6_nem")
-colori_nemici = Dictionary[String, Color]({"soldato": Color(0.8392, 0.251, 0.2039, 1), "arciere": Color(0.3216, 0.5725, 0.9255, 1), "mago": Color(0.4706, 0.8863, 0.9176, 1), "gigante": Color(0.9255, 0.5412, 0.1882, 1)})
+colori_nemici = Dictionary[String, Color]({
+"arciere": Color(0.3216, 0.5725, 0.9255, 1),
+"gigante": Color(0.9255, 0.5412, 0.1882, 1),
+"mago": Color(0.4706, 0.8863, 0.9176, 1),
+"soldato": Color(0.8392, 0.251, 0.2039, 1),
+"volante": Color(0.4706, 0.8863, 0.9176, 1)
+})
+sprite_volante = ExtResource("9_vol")

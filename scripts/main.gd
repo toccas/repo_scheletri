@@ -34,6 +34,8 @@ const Suoni := preload("res://scripts/suoni.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Necromanti := preload("res://scripts/necromanti.gd")
 const NECRO_ATLAS := preload("res://assets/necromanti/necromanti.png")
+## Eroi volanti del cimitero (gli altri biomi hanno i loro, vedi Bioma > sprite_volante).
+const TEX_VOLANTE := preload("res://assets/nemici/volanti/cimitero.png")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -89,6 +91,67 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export_range(1, 10) var file := 4
 ## Lato di una casella, in tile da 16x16 pixel.
 @export_range(1, 4) var tile_per_casella := 2
+@export_group("Schieramento")
+## Le squadre si schierano solo nelle caselle a portata della torre: il centro della
+## casella deve stare dentro la linea tratteggiata. Le caselle fuori portata sono scure.
+@export var schieramento_entro_gittata := true
+## Distanza massima dalla torre per schierare, in pixel dell'arte (32 = una casella).
+## 0 = uguale alla gittata della torre (con i bonus delle ricerche).
+@export_range(0, 600, 1) var gittata_schieramento := 0.0
+@export_group("Potenziamento delle squadre", "potenziamento_")
+## Evocando un'unità dello stesso tipo sopra una squadra già schierata la si potenzia
+## (costa un'evocazione, come una squadra nuova). Chi era caduto torna subito in campo.
+@export var potenziamento_attivo := true
+## Livello massimo di una squadra.
+@export_range(2, 10) var potenziamento_livello_max := 3
+## Vita in più per ogni livello oltre il primo (0.4 = +40%).
+@export_range(0.0, 3.0, 0.05) var potenziamento_vita := 0.4
+## Danni in più per ogni livello oltre il primo (0.3 = +30%).
+@export_range(0.0, 3.0, 0.05) var potenziamento_danno := 0.3
+## Dialogo che lo spiega: parte alla seconda squadra schierata, una volta sola.
+@export var potenziamento_dialogo: Dialogo = preload("res://dialoghi/potenziamento.tres")
+@export_group("Difficoltà delle ondate", "difficolta_")
+## Vita degli eroi a ogni ondata: 1 + lineare x (ondata-1) + quadratica x (ondata-1)².
+## Con i valori di partenza: ondata 10 x2,3 · ondata 30 x6,3 · ondata 50 x11,7 · ondata 100 x31.
+@export_range(0.0, 1.0, 0.005) var difficolta_vita_lineare := 0.13
+@export_range(0.0, 0.02, 0.0001) var difficolta_vita_quadratica := 0.0018
+## Danni degli eroi: +X per ondata (0.05 = +5% a ondata).
+@export_range(0.0, 0.5, 0.005) var difficolta_danno := 0.05
+## Quanti eroi: iniziali + per ondata x numero dell'ondata, fino al massimo.
+@export_range(1, 30) var difficolta_eroi_iniziali := 4
+@export_range(0.0, 5.0, 0.05) var difficolta_eroi_per_ondata := 1.4
+@export_range(10, 200) var difficolta_eroi_massimi := 70
+## Le 3 ondate prima di un campione si fanno più numerose: +X, +2X, +3X (rampa verso il campione).
+@export_range(0.0, 1.0, 0.05) var difficolta_rampa_campione := 0.15
+## L'ondata subito dopo un campione ha meno eroi (0.25 = -25%): un attimo per riprendere fiato.
+@export_range(0.0, 0.9, 0.05) var difficolta_respiro := 0.25
+## Ogni N ondate (non quelle dei campioni) un'ondata speciale a tema: assalto, pioggia di
+## frecce, circolo dei maghi, carica dei giganti. 0 = mai.
+@export_range(0, 20) var difficolta_ondate_speciali_ogni := 5
+## Campioni: vita e danni rispetto al file del campione (1 = invariati).
+@export_range(0.1, 3.0, 0.05) var difficolta_vita_campioni := 0.75
+@export_range(0.1, 3.0, 0.05) var difficolta_danno_campioni := 0.85
+## Eroi che accompagnano il campione, rispetto a un'ondata normale.
+@export_range(0.0, 1.5, 0.05) var difficolta_scorta_campione := 0.6
+@export_group("Eroi volanti", "volanti_")
+## Volano dritti verso la torre, sopra ostacoli e scheletri: li colpiscono solo le unità
+## a distanza, la torre e le magie (il corpo a corpo non ci arriva).
+@export var volanti_attivi := true
+## Ondate in cui arrivano gli eroi volanti (aggiungi o togli i numeri che vuoi).
+@export var volanti_ondate: PackedInt32Array = [5, 8, 13, 16, 19, 24, 27, 33, 36, 39, 44, 47,
+	53, 56, 59, 64, 67, 73, 76, 79, 84, 87, 93, 96, 99]
+## Quanti volanti in ognuna di quelle ondate...
+@export_range(1, 30) var volanti_numero := 3
+## ...più questi ogni 10 ondate (es. ondata 36: 3 + 3 x 1 = 6).
+@export_range(0, 10) var volanti_in_piu_ogni_10_ondate := 1
+## Modalità infinita (oltre le ondate totali): volanti ogni N ondate. 0 = mai.
+@export_range(0, 20) var volanti_infinita_ogni := 5
+## Dialogo della prima ondata con i volanti (una volta sola; la partita si ferma).
+@export var volanti_dialogo: Dialogo = preload("res://dialoghi/volanti.tres")
+@export_group("Musica")
+## Musica dello schieramento: suona finché non suoni il corno, poi parte quella del
+## livello (lo stream del nodo AudioStreamPlayer2D della scena). Vuoto = sempre quella del livello.
+@export var musica_schieramento: AudioStream = preload("res://assets/music/schieramento.ogg")
 @export_group("Schermo")
 ## Quanti pixel dello schermo per ogni pixel dell'arte. Se la mappa non entra
 ## nello schermo, il gioco usa automaticamente la scala più grande che entra.
@@ -245,10 +308,15 @@ var hover_slot := -1
 ## prima unità schierata per far partire la seconda parte del dialogo.
 var tut_cella := -1
 var tut_attesa := false
-var deploy_counter: Control  # targa "UNITÀ EVOCABILI 0/3" durante lo schieramento
+var deploy_counter: Control  # targa con lo scheletrino e il conto (es. 2/4) durante lo schieramento
 var avviso_popup: Control  # "non hai schierato tutte le unità"
 var avviso_t := 0.0  # secondi rimasti dell'avviso
 var avviso_dato := false  # già avvisato: il prossimo tocco sul corno fa partire le ondate
+var tut_potenzia := false  # tutorial del potenziamento: le squadre schierate lampeggiano
+var dialogo_pausa := false  # un dialogo a metà partita ferma il gioco
+var tex_volante: Texture2D = TEX_VOLANTE
+var musica: AudioStreamPlayer2D  # il nodo AudioStreamPlayer2D della scena
+var musica_livello: AudioStream
 
 var allies_root: Node2D
 var enemies_root: Node2D
@@ -283,7 +351,7 @@ var obstacle_rects: Array[Rect2] = []  # caselle con un ostacolo, in coordinate 
 var weather: Array = []  # neve, polvere, fuochi fatui
 var dev_invincibile := false  # pannello dev (Ctrl+Shift+D): la torre non perde vita
 var dev_senza_ricarica := false  # pannello dev: le magie si ricaricano subito
-var dev_x5 := false  # pannello dev: il pulsante della velocità arriva fino a x5
+var dev_x5 := false  # pannello dev: il pulsante della velocità arriva fino a x5 e x10
 var remains_root: Node2D
 var remains: Array = []  # resti per terra (scripts/resti.gd)
 var shake_t := 0.0
@@ -404,6 +472,9 @@ var next_queue_wave := 0
 var smoke: Array = []  # fumo della torre danneggiata
 var picker_slot := -1
 var picker_hover := ""  # unità sotto il mouse nella scelta (per l'anteprima della gittata)
+var picker_kinds: Array = []  # unità mostrate nella scelta (una sola se si potenzia)
+var picker_potenzia := false  # la scelta è sopra una squadra già schierata
+var picker_aperto_ms := 0  # quando si è aperta la scelta (contro il doppio tocco)
 var pause_overlay: Control
 var pause_button: Button
 var soul_orb: Control  # sfera d'anima del necromante (livello + esperienza)
@@ -439,7 +510,7 @@ func _ready() -> void:
 			slots.append({
 				"cell": Vector2i(c, r),
 				"center": Vector2((c + 0.5) * cell, (r + 0.5) * cell),
-				"kind": "", "units": [],
+				"kind": "", "units": [], "lv": 1,
 				"blocked": barrier or obstacle, "barrier": barrier, "obstacle": obstacle,
 			})
 	_build_lanes()
@@ -480,8 +551,42 @@ func _ready() -> void:
 		tut_cella = _cella_tutorial()
 		tut_attesa = tut_cella >= 0
 	_show_deploy_hint()
+	_prepara_musica()
 	if "--autotest" in OS.get_cmdline_user_args():
 		_start_autotest()
+
+
+## Durante lo schieramento suona la musica dello schieramento; al corno quella del livello.
+func _prepara_musica() -> void:
+	musica = get_node_or_null("AudioStreamPlayer2D") as AudioStreamPlayer2D
+	if musica == null:
+		return
+	musica_livello = musica.stream
+	_in_loop(musica_livello)
+	if musica_schieramento != null and musica_livello != null:
+		_in_loop(musica_schieramento)
+		musica.stream = musica_schieramento
+		musica.play()
+
+
+static func _in_loop(s: AudioStream) -> void:
+	if s is AudioStreamOggVorbis:
+		(s as AudioStreamOggVorbis).loop = true
+	elif s is AudioStreamMP3:
+		(s as AudioStreamMP3).loop = true
+
+
+## Dissolvenza verso un'altra musica.
+func _cambia_musica(s: AudioStream) -> void:
+	if musica == null or s == null or musica.stream == s:
+		return
+	var vol := musica.volume_db
+	var tw := create_tween()
+	tw.tween_property(musica, "volume_db", vol - 30.0, 0.6)
+	tw.tween_callback(func() -> void:
+		musica.stream = s
+		musica.play())
+	tw.tween_property(musica, "volume_db", vol, 0.5)
 
 
 # --- Layout, proiezione e griglia --------------------------------------------
@@ -566,13 +671,17 @@ func _apply_research() -> void:
 		for k in ability_order:
 			b["unlock_" + k] = 1.0
 	tower_max_hp += b.get("tower_hp", 0.0)
+	# ASCESA (ricerca senza fine): danni e vita di torre e scheletri
+	var ascesa: float = b.get("ascesa", 0.0)
+	tower_max_hp = roundf(tower_max_hp * (1.0 + ascesa))
 	tower_hp = tower_max_hp
 	necro_dmg *= 1.0 + b.get("necro_dmg", 0.0)
 	necro_cooldown /= 1.0 + b.get("necro_rate", 0.0)
 	necro_range = torre_gittata * (1.0 + b.get("necro_range", 0.0))
 	xp_mult = 1.0 + b.get("xp", 0.0)
-	mods["ally_dmg"] *= 1.0 + b.get("ally_dmg", 0.0)
-	mods["ally_hp"] *= 1.0 + b.get("ally_hp", 0.0)
+	mods["ally_dmg"] *= (1.0 + b.get("ally_dmg", 0.0)) * (1.0 + ascesa)
+	mods["ally_hp"] *= (1.0 + b.get("ally_hp", 0.0)) * (1.0 + ascesa)
+	necro_dmg *= 1.0 + ascesa
 	max_deploy = MAX_DEPLOY + int(b.get("deploy", 0.0)) + necromante.squadre_extra
 	# poteri del necromante scelto, potenziati dal suo albero
 	necro_dmg *= necromante.danno
@@ -687,7 +796,17 @@ func slot_at_screen(p: Vector2) -> int:
 	return r * cols + c
 
 
+## Evocazioni usate: una per squadra più una per ogni potenziamento.
 func deployed_count() -> int:
+	var n := 0
+	for s in slots:
+		if s["kind"] != "":
+			n += int(s["lv"])
+	return n
+
+
+## Squadre schierate (caselle occupate).
+func squad_count() -> int:
 	var n := 0
 	for s in slots:
 		if s["kind"] != "":
@@ -697,10 +816,38 @@ func deployed_count() -> int:
 
 func free_slot_count() -> int:
 	var n := 0
-	for s in slots:
-		if s["kind"] == "" and not s["blocked"]:
+	for i in slots.size():
+		if slots[i]["kind"] == "" and not slots[i]["blocked"] and slot_in_portata(i):
 			n += 1
 	return n
+
+
+## Distanza massima dalla torre a cui si può schierare (pixel dell'arte).
+func portata_schieramento() -> float:
+	return gittata_schieramento if gittata_schieramento > 0.0 else necro_range
+
+
+## La casella è abbastanza vicina alla torre per schierarci una squadra?
+func slot_in_portata(i: int) -> bool:
+	return not schieramento_entro_gittata or tower_distance(slots[i]["center"]) <= portata_schieramento() + 0.5
+
+
+## Sulla casella c'è una squadra di `kind` che si può ancora potenziare?
+func potenziabile(i: int, kind: String) -> bool:
+	return potenziamento_attivo and kind != "" and slots[i]["kind"] == kind and int(slots[i]["lv"]) < potenziamento_livello_max
+
+
+## Dove si può mettere un'evocazione di `kind` (level-up): casella libera a portata o squadra uguale.
+func slot_per_evocazione(i: int, kind: String) -> bool:
+	var s: Dictionary = slots[i]
+	return (s["kind"] == "" and not s["blocked"] and slot_in_portata(i)) or potenziabile(i, kind)
+
+
+func can_summon(kind: String) -> bool:
+	for i in slots.size():
+		if slot_per_evocazione(i, kind):
+			return true
+	return false
 
 
 # --- Biomi, corsie e ostacoli ----------------------------------------------------
@@ -719,6 +866,7 @@ func _apply_bioma() -> void:
 	ambiente = b.ambiente
 	tex_nemici = b.sprite_nemici
 	colori_nemici = b.colori_nemici
+	tex_volante = b.sprite_volante if b.sprite_volante else TEX_VOLANTE
 
 
 ## Corsie = gruppi di file vicine non bloccate.
@@ -839,7 +987,7 @@ func _spawn_point() -> Vector2:
 # --- Ciclo di gioco ----------------------------------------------------------
 
 func is_running() -> bool:
-	return state == State.PLAYING and not paused
+	return state == State.PLAYING and not paused and not dialogo_pausa
 
 
 func _process(delta: float) -> void:
@@ -917,10 +1065,21 @@ func _start_wave(n: int) -> void:
 	spawn_timer = 0.0
 	wave_running = true
 	Suoni.play("ondata", 0.85 if n % Data.BOSS_EVERY == 0 else 1.0)
+	var volanti := spawn_queue.any(func(e) -> bool: return e["kind"] == "volante")
+	if volanti and volanti_dialogo != null:
+		var w := Dialoghi.avvia(self, volanti_dialogo)
+		if w != null:  # prima ondata con i volanti: il necromante avvisa, la partita aspetta
+			dialogo_pausa = true
+			w.finito.connect(func() -> void: dialogo_pausa = false)
 	if n % Data.BOSS_EVERY == 0 and not _campione_in_coda(spawn_queue):
 		set_hint(tr("Ondata %d: arriva un campione degli eroi!") % n, 3.0)
 	elif n % Data.BOSS_EVERY == 0:
 		set_hint(tr("Ondata %d · arriva un campione: %s") % [n, tr(_campione_in_coda(spawn_queue).nome)], 3.0)
+	elif volanti:
+		set_hint(tr("Ondata %d: arrivano eroi volanti! Li colpiscono solo le unità a distanza, la torre e le magie.") % n, 4.0)
+	elif tema_ondata(n) != "":
+		set_hint(tr("Ondata %d · %s") % [n, nome_tema(tema_ondata(n))], 3.0)
+		Suoni.play("ondata", 0.92)
 	else:
 		set_hint(tr("Ondata %d") % n, 1.5)
 	if autotest and n % 5 == 0:
@@ -929,18 +1088,22 @@ func _start_wave(n: int) -> void:
 
 
 func _spawn_enemy(entry: Dictionary) -> void:
-	var hp_mult: float = Data.enemy_hp_mult(wave) * mods["enemy_hp"]
+	var hp_mult: float = vita_eroi(wave) * mods["enemy_hp"]
+	var dmg_mult: float = danno_eroi(wave)
+	if entry["boss"]:  # campioni (e boss generici): forza dall'Inspector
+		hp_mult *= difficolta_vita_campioni
+		dmg_mult *= difficolta_danno_campioni
 	if entry.get("campione") is Campione:
 		var c := CampioneScript.new()
 		c.game = self
-		c.setup_campione(entry["campione"], hp_mult, Data.enemy_dmg_mult(wave))
+		c.setup_campione(entry["campione"], hp_mult, dmg_mult)
 		c.ground = _spawn_point()
 		enemies_root.add_child(c)
 		_annuncia_campione(c)
 		return
 	var u := UnitScript.new()
 	u.game = self
-	u.setup_enemy(entry["kind"], hp_mult, Data.enemy_dmg_mult(wave), entry["boss"])
+	u.setup_enemy(entry["kind"], hp_mult, dmg_mult, entry["boss"])
 	# punto qualsiasi della striscia di spawn
 	u.ground = _spawn_point()
 	enemies_root.add_child(u)
@@ -980,8 +1143,8 @@ func nearest_unit(root: Node, from: Vector2, max_dist: float, stessa_corsia: boo
 	for c in root.get_children():
 		if c.dead or not c.visible:  # chi è ancora dentro la torre non si può colpire
 			continue
-		if stessa_corsia and not same_lane(from, c.ground):
-			continue
+		if stessa_corsia and (c.in_volo or not same_lane(from, c.ground)):
+			continue  # il corpo a corpo non raggiunge un'altra corsia né chi vola
 		var d := from.distance_to(c.ground)
 		if d <= best_d:
 			best_d = d
@@ -1154,26 +1317,74 @@ func on_ally_died(u) -> void:
 
 # --- Schieramento ------------------------------------------------------------
 
-func _spawn_squad(idx: int, kind: String) -> void:
+func _spawn_squad(idx: int, kind: String, lv: int = 1) -> void:
 	var s: Dictionary = slots[idx]
 	s["kind"] = kind
 	s["units"] = []
+	s["lv"] = lv
 	var n: int = unit_count(kind)
-	var spread := cell * 0.22
 	for i in n:
-		var u := UnitScript.new()
-		u.game = self
-		u.setup_ally(kind, mods["ally_hp"], ally_stats(kind))
-		var off := Vector2.ZERO if n == 1 else Vector2.from_angle(TAU * i / n - PI / 2.0) * spread
-		u.home = s["center"] + off
-		# escono dalla porta della torre uno dopo l'altro e marciano fino alla casella
-		u.ground = tower_door() + Vector2(0, randf_range(0.0, 2.0))
-		u.entering = true
-		u.enter_delay = 0.05 + i * 0.22
-		u.visible = false
-		allies_root.add_child(u)
-		s["units"].append(u)
+		_evoca_membro(s, i, n, 0.05 + i * 0.22)
 	spawn_ground_fx(s["center"], cell * 0.45, C6, 0.45)
+
+
+## Uno scheletro della squadra `s` (posto `i` di `n`): esce dalla porta della torre
+## dopo `ritardo` secondi e marcia fino alla casella.
+func _evoca_membro(s: Dictionary, i: int, n: int, ritardo: float) -> void:
+	var kind: String = s["kind"]
+	var u := UnitScript.new()
+	u.game = self
+	u.setup_ally(kind, mods["ally_hp"], ally_stats(kind))
+	_applica_livello(u, int(s["lv"]))
+	var off := Vector2.ZERO if n == 1 else Vector2.from_angle(TAU * i / n - PI / 2.0) * cell * 0.22
+	u.home = s["center"] + off
+	u.ground = tower_door() + Vector2(0, randf_range(0.0, 2.0))
+	u.entering = true
+	u.enter_delay = ritardo
+	u.visible = false
+	allies_root.add_child(u)
+	s["units"].append(u)
+
+
+## Moltiplicatori del livello di squadra (potenziamento) per vita e danni.
+func mult_livello(lv: int) -> Vector2:
+	return Vector2(1.0 + potenziamento_vita * (lv - 1), 1.0 + potenziamento_danno * (lv - 1))
+
+
+func _applica_livello(u, lv: int) -> void:
+	var m := mult_livello(lv)
+	u.squad_lv = lv
+	u.max_hp *= m.x
+	u.hp = u.max_hp
+	u.base_dmg *= m.y
+
+
+## Un'evocazione dello stesso tipo sopra una squadra: sale di livello, guarisce
+## e chi era caduto esce subito dalla torre.
+func _potenzia_squadra(idx: int) -> void:
+	var s: Dictionary = slots[idx]
+	var prima := mult_livello(int(s["lv"]))
+	s["lv"] = int(s["lv"]) + 1
+	var dopo := mult_livello(int(s["lv"]))
+	for u in s["units"]:
+		if u.dead:
+			continue
+		u.squad_lv = s["lv"]
+		u.max_hp *= dopo.x / prima.x
+		u.hp = u.max_hp
+		u.base_dmg *= dopo.y / prima.y
+		u.flash = 0.18
+		if u.visible:
+			spawn_unit_fx(u.ground, "spark", 12.0, 1.0, 0.45, u.accent())
+	var n := unit_count(s["kind"])
+	for i in range(s["units"].size(), n):
+		_evoca_membro(s, i, n, 0.05 + (i - s["units"].size()) * 0.22)
+	spawn_ground_fx(s["center"], cell * 0.55, C6, 0.5)
+	spawn_ground_fx(s["center"], cell * 0.35, Data.accent(s["kind"]), 0.7)
+	Suoni.play("livello", 1.35)
+	tut_potenzia = false
+	if potenziamento_dialogo != null and not autotest:  # l'ha scoperto da solo: niente spiegazione
+		Dialoghi.segna_visto(potenziamento_dialogo.chiave())
 
 
 ## A fine ondata ogni squadra torna al completo e a piena vita.
@@ -1188,8 +1399,9 @@ func _revive_squads() -> void:
 			for u in slots[i]["units"]:
 				u.hp = u.max_hp
 		else:
+			var lv: int = slots[i]["lv"]
 			_remove_squad(i)
-			_spawn_squad(i, kind)
+			_spawn_squad(i, kind, lv)
 
 
 func _remove_squad(idx: int) -> void:
@@ -1198,6 +1410,7 @@ func _remove_squad(idx: int) -> void:
 		u.queue_free()
 	s["units"] = []
 	s["kind"] = ""
+	s["lv"] = 1
 
 
 ## Statistiche base di uno scheletro, prese dall'Inspector del nodo Main.
@@ -1403,6 +1616,8 @@ func _range_cells(kind: String) -> String:
 func _open_unit_picker(idx: int) -> void:
 	picker_slot = idx
 	picker_hover = ""
+	picker_potenzia = slots[idx]["kind"] != ""
+	picker_kinds = [slots[idx]["kind"]] if picker_potenzia else unlocked_units.duplicate()
 	for c in picker.get_children():
 		if c != picker_tip:
 			picker.remove_child(c)
@@ -1410,19 +1625,11 @@ func _open_unit_picker(idx: int) -> void:
 	var vp := get_viewport_rect().size
 	var cell_rect := Rect2(to_screen(slots[idx]["center"] - Vector2.ONE * cell / 2.0), Vector2.ONE * cell * px)
 	var size := Vector2(94, 104)
-	var c := cell_rect.get_center()
-	var gap := 6.0
-	var spots := [
-		Vector2(c.x - size.x / 2.0, cell_rect.position.y - size.y - gap),  # sopra
-		Vector2(cell_rect.end.x + gap, c.y - size.y / 2.0),  # destra
-		Vector2(c.x - size.x / 2.0, cell_rect.end.y + gap),  # sotto
-		Vector2(cell_rect.position.x - size.x - gap, c.y - size.y / 2.0),  # sinistra
-	]
-	for i in unlocked_units.size():
-		var k: String = unlocked_units[i]
-		var p: Vector2 = spots[i % spots.size()]
-		p.x = clampf(p.x, 8.0, vp.x - size.x - 8.0)
-		p.y = clampf(p.y, UI_TOP + 8.0, vp.y - size.y - 8.0)
+	var spots := _posti_lapidi(cell_rect, size, picker_kinds.size(), vp)
+	picker_aperto_ms = Time.get_ticks_msec()
+	for i in picker_kinds.size():
+		var k: String = picker_kinds[i]
+		var p: Vector2 = spots[i]
 		var b := _flat_button()
 		b.position = p.round()
 		b.size = size
@@ -1434,12 +1641,63 @@ func _open_unit_picker(idx: int) -> void:
 			if picker_hover == k:
 				picker_hover = ""
 			picker.queue_redraw())
-		b.pressed.connect(_pick_unit.bind(idx, k))
+		b.pressed.connect(_tocca_lapide.bind(idx, k))
 		b.draw.connect(_draw_unit_tomb.bind(b, k, i))
 		b.set_meta("kind", k)
 		picker.add_child(b)
 	picker.move_child(picker_tip, -1)
 	picker.show()
+
+
+## Dove mettere `n` lapidi attorno alla casella: mai sopra la casella stessa (sul
+## telefono il dito la sta ancora toccando), né una sull'altra o sulla targa in alto.
+## Prima sopra, destra, sotto, sinistra; se non c'è posto (bordi dello schermo) in diagonale.
+func _posti_lapidi(cella: Rect2, size: Vector2, n: int, vp: Vector2) -> Array[Vector2]:
+	var c := cella.get_center()
+	var gap := 6.0
+	var su := cella.position.y - size.y - gap
+	var giu := cella.end.y + gap
+	var dx := cella.end.x + gap
+	var sx := cella.position.x - size.x - gap
+	var candidati: Array[Vector2] = [
+		Vector2(c.x - size.x / 2.0, su), Vector2(dx, c.y - size.y / 2.0),
+		Vector2(c.x - size.x / 2.0, giu), Vector2(sx, c.y - size.y / 2.0),
+		Vector2(dx, su), Vector2(sx, su), Vector2(dx, giu), Vector2(sx, giu),
+		Vector2(dx + size.x + gap, c.y - size.y / 2.0), Vector2(sx - size.x - gap, c.y - size.y / 2.0),
+		Vector2(dx + size.x + gap, giu), Vector2(sx - size.x - gap, giu),
+		Vector2(dx + size.x + gap, su), Vector2(sx - size.x - gap, su),
+	]
+	var vietati: Array[Rect2] = [cella.grow(4.0)]
+	if deploy_counter != null and deploy_counter.visible:
+		vietati.append(deploy_counter.get_global_rect().grow(4.0))
+	var presi: Array[Vector2] = []
+	for p0 in candidati:
+		if presi.size() >= n:
+			break
+		var p := Vector2(clampf(p0.x, 8.0, vp.x - size.x - 8.0), clampf(p0.y, UI_TOP + 8.0, vp.y - size.y - 8.0))
+		var r := Rect2(p, size)
+		var libero := true
+		for v in vietati:
+			if r.intersects(v):
+				libero = false
+				break
+		if libero:
+			presi.append(p.round())
+			vietati.append(r.grow(2.0))
+	var k := 0
+	while presi.size() < n:  # schermo troppo piccolo: almeno fuori dalla casella
+		var p := Vector2(clampf(candidati[k].x, 8.0, vp.x - size.x - 8.0), clampf(candidati[k].y, UI_TOP + 8.0, vp.y - size.y - 8.0))
+		presi.append(p.round())
+		k += 1
+	return presi
+
+
+## Tocco su una lapide della scelta. Un tocco arrivato subito dopo l'apertura
+## è lo stesso dito che ha aperto la scelta: si ignora.
+func _tocca_lapide(idx: int, kind: String) -> void:
+	if Time.get_ticks_msec() - picker_aperto_ms < 250:
+		return
+	_pick_unit(idx, kind)
 
 
 func _flat_button() -> Button:
@@ -1461,7 +1719,10 @@ func _draw_unit_tomb(b: Button, k: String, i: int) -> void:
 	var label := Data.nome_breve(k)
 	var fs := 16 if ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x <= r.size.x - 10 else 12
 	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 60 + (16 - fs) / 2.0, label, fs, C5 if locked else C6)
-	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 79, tr("ricerca") if locked else "[%d]" % (i + 1), 16, C1, false)
+	var sotto := tr("ricerca") if locked else "[%d]" % (i + 1)
+	if picker_potenzia and not locked:
+		sotto = tr("LIV. %d") % (int(slots[picker_slot]["lv"]) + 1)
+	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 79, sotto, 16, C1, false)
 	if locked:  # catene incrociate e lucchetto
 		var a := r.position + Vector2(10, 14)
 		var z := r.position + Vector2(r.size.x - 10, 54)
@@ -1499,6 +1760,11 @@ func _draw_picker_tip() -> void:
 		if is_ranged(picker_hover):
 			l3 += tr(" · gittata %d") % int(st["range"])
 		lines.append(l3)
+		if picker_potenzia:
+			var lv := int(slots[picker_slot]["lv"]) + 1
+			var m := mult_livello(lv)
+			lines[0] = tr("POTENZIA AL LIVELLO %d") % lv
+			lines.append(tr("Vita +%d%% · Attacco +%d%%") % [roundi((m.x - 1.0) * 100.0), roundi((m.y - 1.0) * 100.0)])
 	else:
 		lines.append(tr("Sbloccalo nell'albero"))
 		lines.append(tr("delle ricerche"))
@@ -1527,19 +1793,27 @@ func _close_picker() -> void:
 
 func _pick_unit(idx: int, kind: String) -> void:
 	_close_picker()
-	_spawn_squad(idx, kind)
+	if slots[idx]["kind"] == kind:
+		Suoni.play("conferma")
+		_potenzia_squadra(idx)
+	else:
+		_spawn_squad(idx, kind)
 	_show_deploy_hint()
 
 
 func _show_deploy_hint() -> void:
 	var n := deployed_count()
-	set_hint("", 0.0)  # il conto delle unità sta nella targa "UNITÀ EVOCABILI"
+	set_hint("", 0.0)  # il conto delle unità sta nella targa in alto
 	if start_button:
 		start_button.disabled = n == 0
 	if tut_attesa and n > 0:  # prima unità schierata: seconda parte del tutorial
 		tut_attesa = false
 		tut_cella = -1
 		Dialoghi.avvia(self, dialogo_schieramento)
+	elif state == State.DEPLOY and potenziamento_attivo and squad_count() >= 2 and n < max_deploy and not tut_potenzia:
+		# seconda squadra: il necromante spiega il potenziamento (una volta sola)
+		if Dialoghi.avvia(self, potenziamento_dialogo) != null:
+			tut_potenzia = true
 
 
 ## Casella del tutorial: la seconda colonna, nella fila di mezzo (o la più vicina libera).
@@ -1549,7 +1823,7 @@ func _cella_tutorial() -> int:
 	var target := Vector2i(mini(1, cols - 1), int(floor(rows / 2.0)))
 	for i in slots.size():
 		var s: Dictionary = slots[i]
-		if s["blocked"] or s["kind"] != "":
+		if s["blocked"] or s["kind"] != "" or not slot_in_portata(i):
 			continue
 		var c: Vector2i = s["cell"]
 		var d := absf(c.x - target.x) * 1.5 + absf(c.y - target.y)
@@ -1569,7 +1843,9 @@ func _on_start_pressed() -> void:
 		Suoni.play("errore")
 		return
 	avviso_t = 0.0
+	tut_potenzia = false
 	state = State.PLAYING
+	_cambia_musica(musica_livello)
 	start_button.hide()
 	next_wave_timer = 1.0
 	set_hint(tr("Arrivano gli eroi!"), 2.0)
@@ -1591,9 +1867,8 @@ func _level_up_options() -> Array:
 		{"title": tr("Peste"), "icon": R_IC_EYE, "text": tr("Nemici: vita -10%"), "fn": func(): _scale_hp(enemies_root, "enemy_hp", 0.9)},
 		{"title": tr("Terrore"), "icon": R_IC_EYE, "text": tr("Nemici: attacco -10%"), "fn": func(): mods["enemy_dmg"] *= 0.9},
 	]
-	if free_slot_count() > 0:
-		for k in unlocked_units:
-			var d: Dictionary = Data.UNITS[k]
+	for k in unlocked_units:
+		if can_summon(k):
 			pool.append({"title": tr("Evocazione"), "text": tr("Evoca: %s (x%d)") % [Data.nome(k), unit_count(k)], "summon": k})
 	return pool
 
@@ -1687,11 +1962,11 @@ func _choose_level_up(o: Dictionary) -> void:
 	if o.has("summon"):
 		pending_summon = o["summon"]
 		if autotest:
-			_spawn_squad(_autotest_free_slot(), pending_summon)
+			_autotest_evoca(pending_summon)
 			pending_summon = ""
 		else:
 			state = State.PLACING
-			set_hint(tr("Clicca una casella libera della griglia per evocare: %s") % Data.nome(pending_summon))
+			set_hint(tr("Evoca %s: tocca una casella libera vicino alla torre, o una squadra uguale per potenziarla.") % Data.nome(pending_summon))
 			return
 	else:
 		o["fn"].call()
@@ -1815,8 +2090,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if levelup.visible and num >= 0 and num < levelup_opts.size():
 			_choose_level_up(levelup_opts[num])
 			return
-		if picker.visible and num >= 0 and num < unlocked_units.size():
-			_pick_unit(picker_slot, unlocked_units[num])
+		if picker.visible and num >= 0 and num < picker_kinds.size():
+			_pick_unit(picker_slot, picker_kinds[num])
 			return
 		match event.keycode:
 			KEY_1, KEY_2, KEY_3:
@@ -1850,6 +2125,23 @@ func _unhandled_input(event: InputEvent) -> void:
 				Suoni.play("errore")
 				set_hint(tr("Tocca la casella che lampeggia."), 2.0)
 				return
+			if idx >= 0 and slots[idx]["kind"] != "":  # sopra una squadra: potenziamento
+				if not potenziamento_attivo:
+					return
+				if int(slots[idx]["lv"]) >= potenziamento_livello_max:
+					Suoni.play("errore")
+					set_hint(tr("Questa squadra è già al livello massimo."), 2.5)
+				elif deployed_count() >= max_deploy:
+					Suoni.play("errore")
+					set_hint(tr("Non hai più evocazioni: le altre arrivano col level-up."), 3.0)
+				else:
+					Suoni.play("click")
+					_open_unit_picker(idx)
+				return
+			if idx >= 0 and not slot_in_portata(idx):
+				Suoni.play("errore")
+				set_hint(tr("Troppo lontano dalla torre: schiera dentro la linea tratteggiata."), 3.0)
+				return
 			if idx >= 0 and slots[idx]["kind"] == "":
 				if deployed_count() < max_deploy:
 					Suoni.play("click")
@@ -1858,21 +2150,36 @@ func _unhandled_input(event: InputEvent) -> void:
 					Suoni.play("errore")
 					set_hint(tr("Puoi schierare %d squadre a inizio partita: togline una (tasto destro) per evocarne un'altra. Le altre arrivano col level-up.") % max_deploy, 4.0)
 		State.PLACING:
-			if idx >= 0 and slots[idx]["kind"] == "":
+			if idx < 0:
+				return
+			if potenziabile(idx, pending_summon):
+				Suoni.play("conferma")
+				_potenzia_squadra(idx)
+				pending_summon = ""
+				_resume_after_choice()
+			elif slots[idx]["kind"] == "" and slot_in_portata(idx):
 				Suoni.play("conferma")
 				_spawn_squad(idx, pending_summon)
 				pending_summon = ""
 				_resume_after_choice()
+			else:
+				Suoni.play("errore")
+				if slots[idx]["kind"] == "":
+					set_hint(tr("Troppo lontano dalla torre: schiera dentro la linea tratteggiata."), 3.0)
+				elif slots[idx]["kind"] == pending_summon:
+					set_hint(tr("Questa squadra è già al livello massimo."), 2.5)
+				else:
+					set_hint(tr("Qui c'è un'altra squadra: puoi potenziare solo una squadra dello stesso tipo."), 3.0)
 		State.PLAYING:
 			if selected_ability != "":
 				_cast(selected_ability, to_ground(p))
 
 
 func _cycle_speed() -> void:
-	# x1 -> x2 -> x3 (VIP) -> x5 (solo modalità dev) -> x1
+	# x1 -> x2 -> x3 (VIP) -> x5 -> x10 (solo modalità dev) -> x1
 	var speeds: Array[float] = [1.0, 2.0, 3.0]
 	if dev_x5:
-		speeds.append(5.0)
+		speeds.append_array([5.0, 10.0])
 	var i := speeds.find(Engine.time_scale)
 	var next: float = speeds[(i + 1) % speeds.size()] if i >= 0 else 1.0
 	if next == 3.0 and not Portafoglio.has_vip() and not dev_x5:
@@ -1896,7 +2203,7 @@ func _end_run(won: bool) -> void:
 		Suoni.play("torre_colpita", 0.7)
 	var cleared := wave if won else maxi(0, wave - 1)
 	# solo la parte non ancora premiata (se hai continuato dopo la vittoria)
-	var earned := (cleared - ondate_pagate) + int((kills - uccisioni_pagate) / 20.0) + (50 if won else 0)
+	var earned := (cleared - ondate_pagate) + int((kills - uccisioni_pagate) / float(Data.UCCISIONI_PER_PUNTO)) + (50 if won else 0)
 	var cfg := ConfigFile.new()
 	cfg.load(SAVE_PATH)  # se non esiste ancora parte da zero
 	var total: int = cfg.get_value("progressi", "punti", 0) + earned
@@ -1988,6 +2295,7 @@ func _testo_classifica(posto: int) -> String:
 
 func _start_autotest() -> void:
 	autotest = true
+	avviso_dato = true  # niente avviso "unità non schierate": parte subito
 	if Array(OS.get_cmdline_user_args()).any(func(x): return x.begins_with("--squadra=")):
 		# prova di una squadra precisa: tutte e quattro le unità in campo
 		var spots := [slot_index(2, 1), slot_index(1, 2), slot_index(1, 1), slot_index(2, 2)]
@@ -2012,7 +2320,7 @@ func _slot_libero(c: int, r: int) -> int:
 func _autotest_free_slot() -> int:
 	var choices := []
 	for i in slots.size():
-		if slots[i]["kind"] == "" and not slots[i]["blocked"] and slots[i]["cell"].x <= 3:
+		if slots[i]["kind"] == "" and not slots[i]["blocked"] and slots[i]["cell"].x <= 3 and slot_in_portata(i):
 			choices.append(i)
 	if not choices.is_empty():
 		return choices.pick_random()
@@ -2020,6 +2328,18 @@ func _autotest_free_slot() -> int:
 		if slots[i]["kind"] == "" and not slots[i]["blocked"]:
 			return i
 	return 0
+
+
+## Autotest: un'evocazione del level-up va in una casella libera o potenzia una squadra uguale.
+func _autotest_evoca(kind: String) -> void:
+	for i in slots.size():
+		if slots[i]["kind"] == "" and not slots[i]["blocked"] and slot_in_portata(i):
+			_spawn_squad(_autotest_free_slot(), kind)
+			return
+	for i in slots.size():
+		if potenziabile(i, kind):
+			_potenzia_squadra(i)
+			return
 
 
 ## Simula un giocatore semplice: lancia le abilità appena sono pronte.
@@ -2132,14 +2452,14 @@ func _build_ui() -> void:
 	ui_root.add_child(soul_orb)
 
 	# Pulsante grande in basso al centro, visibile solo durante lo schieramento.
-	# targa "UNITÀ EVOCABILI 0/3" in alto al centro durante lo schieramento
+	# targa piccola in alto al centro durante lo schieramento: scheletrino e conto (es. 2/4)
 	deploy_counter = Control.new()
 	deploy_counter.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	deploy_counter.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	deploy_counter.offset_left = -200
-	deploy_counter.offset_right = 200
-	deploy_counter.offset_top = 64
-	deploy_counter.offset_bottom = 128
+	deploy_counter.offset_left = -76
+	deploy_counter.offset_right = 76
+	deploy_counter.offset_top = 66
+	deploy_counter.offset_bottom = 118
 	deploy_counter.draw.connect(_draw_deploy_counter)
 	ui_root.add_child(deploy_counter)
 
@@ -2426,22 +2746,20 @@ func _ability_rect(k: String) -> Rect2:
 	return ABILITY_ICONS_NECRO[k] if ABILITY_ICONS_NECRO.has(k) else ABILITY_ICONS.get(k, R_IC_STAR)
 
 
-## Targa dello schieramento: scheletro, "UNITÀ EVOCABILI" e il conto grande (es. 1/3).
+## Targa dello schieramento: scheletrino e conto delle evocazioni usate (es. 2/4).
 func _draw_deploy_counter() -> void:
 	var c := deploy_counter
 	var r := Rect2(Vector2.ZERO, c.size)
 	var n := deployed_count()
 	var pieno := n >= max_deploy
 	Pietra.stone(c, r, C4 if pieno else C3, pieno)
-	c.draw_texture_rect_region(Data.ally_texture("soldato"), Rect2(Vector2(12, 8), Vector2(48, 48)), Data.ally_region("soldato"))
-	var titolo := tr("UNITÀ EVOCABILI")
-	var fs := 22
-	while fs > 14 and ui_font.get_string_size(titolo, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 190.0:
-		fs -= 2
-	Pietra.text(c, ui_font, Vector2(70, r.size.y / 2.0 - fs * 0.62), titolo, fs, C6 if pieno else C5)
+	c.draw_texture_rect_region(Data.ally_texture("soldato"), Rect2(Vector2(10, 6), Vector2(40, 40)), Data.ally_region("soldato"))
 	var conto := "%d/%d" % [n, max_deploy]
-	var cw := ui_font.get_string_size(conto, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
-	Pietra.text(c, ui_font, Vector2(r.size.x - cw - 18.0, r.size.y / 2.0 - 25.0), conto, 40, C6)
+	var fs := 32
+	while fs > 18 and ui_font.get_string_size(conto, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 66.0:
+		fs -= 2
+	var cw := ui_font.get_string_size(conto, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	Pietra.text(c, ui_font, Vector2(56.0 + (r.size.x - 66.0 - cw) / 2.0, r.size.y / 2.0 - fs * 0.62), conto, fs, C6)
 
 
 ## Avviso a comparsa: unità ancora da schierare. Entra ingrandendosi e svanisce.
@@ -2558,7 +2876,7 @@ func _wave_counts() -> Array:
 					champs[key] = u.dati
 				counts[key] = counts.get(key, 0) + 1
 	var out := []
-	for k in ["soldato", "arciere", "mago", "gigante", "soldato!", "arciere!", "mago!", "gigante!"]:
+	for k in ["soldato", "arciere", "mago", "gigante", "volante", "soldato!", "arciere!", "mago!", "gigante!"]:
 		if counts.has(k):
 			out.append([k.trim_suffix("!"), counts[k], k.ends_with("!"), null])
 	for k in champs:
@@ -2586,17 +2904,18 @@ func _draw_wave_banner() -> void:
 	for i in counts.size():
 		var e: Array = counts[i]
 		var y := 74.0 + i * 36.0
-		var col: int = UnitScript.ATLAS_COL[e[0]]
 		var camp: Campione = e[3]
-		if camp != null and camp.sprite != null:  # il campione con la sua sprite (girata verso sinistra)
+		if e[0] == "volante":
+			n.draw_texture_rect_region(tex_volante, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(0, 0, 16, 16))
+		elif camp != null and camp.sprite != null:  # il campione con la sua sprite (girata verso sinistra)
 			var fs := camp.sprite.get_height()
 			n.draw_set_transform(Vector2(40, y - 4), 0.0, Vector2(-1, 1))  # girato verso sinistra
 			n.draw_texture_rect_region(camp.sprite, Rect2(Vector2.ZERO, Vector2(36, 36)), Rect2(0, 0, fs, fs))
 			n.draw_set_transform(Vector2.ZERO)
 		elif tex_nemici != null:
-			n.draw_texture_rect_region(tex_nemici, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 0, 16, 16))
+			n.draw_texture_rect_region(tex_nemici, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(UnitScript.ATLAS_COL[e[0]] * 16, 0, 16, 16))
 		else:
-			n.draw_texture_rect_region(ATLAS, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(col * 16, 16, 16, 16))
+			n.draw_texture_rect_region(ATLAS, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(UnitScript.ATLAS_COL[e[0]] * 16, 16, 16, 16))
 		if e[2]:  # corona del campione
 			n.draw_rect(Rect2(14, y - 4, 16, 4), C0)
 			n.draw_rect(Rect2(14, y - 8, 4, 4), C0)
@@ -2638,12 +2957,22 @@ func _draw() -> void:
 				draw_texture_rect_region(tex_tiles, dst, R_SLABS[h], tint)
 		var rect := Rect2(origin + Vector2(c.x * cell, c.y * cell), Vector2(cell, cell))
 		_draw_bevel(self, rect)
+		var scegli := state == State.DEPLOY or state == State.PLACING
+		if scegli and s["kind"] == "" and not s["blocked"] and not slot_in_portata(i):
+			draw_rect(rect, Color(0, 0, 0, 0.38))  # fuori dalla portata della torre
 		if s["kind"] != "":
 			draw_rect(rect, Color(C6, 0.12))
 			# icona della squadra solo mentre scegli dove schierare
-			if state == State.DEPLOY or state == State.PLACING:
-				_draw_cell_badge(rect, s["kind"])
-		elif placing and i == hover_slot:
+			if scegli:
+				_draw_cell_badge(rect, s["kind"], int(s["lv"]))
+			var lampo := 0.5 + 0.5 * sin(amb_t * 6.0)
+			if (state == State.PLACING and potenziabile(i, pending_summon)) or (tut_potenzia and potenziabile(i, s["kind"])):
+				draw_rect(rect, Color(C6, 0.08 + 0.2 * lampo))  # si può potenziare: lampeggia
+				_px_outline(self, rect, Color(C6, 0.5 + 0.5 * lampo))
+				_draw_piu(rect.position + Vector2(rect.size.x - 9.0, 2.0), lampo)
+			elif placing and i == hover_slot and state == State.DEPLOY and potenziabile(i, s["kind"]):
+				_px_outline(self, rect, C6)
+		elif placing and i == hover_slot and slot_in_portata(i):
 			draw_rect(rect, Color(C6, 0.2))
 			_px_outline(self, rect, C6)
 		if i == tut_cella:  # tutorial: la casella lampeggia e una freccia la indica
@@ -2695,13 +3024,27 @@ func _draw() -> void:
 		FxScript.draw_pixel_circle(self, origin + g, ab["radius"], C6)
 
 
-## Piccola icona (la testa dello scheletro) nell'angolo di una casella occupata.
-func _draw_cell_badge(rect: Rect2, kind: String) -> void:
+## Piccola icona (la testa dello scheletro) nell'angolo di una casella occupata,
+## con una tacca per ogni livello di potenziamento.
+func _draw_cell_badge(rect: Rect2, kind: String, lv: int = 1) -> void:
 	var top := 3 if kind in ["soldato", "arciere"] else (0 if kind in ["mago", "gigante"] else 2)
 	var src := Data.ally_region(kind)
 	var p := rect.position + Vector2(2, 2)
 	draw_rect(Rect2(p - Vector2.ONE, Vector2(10, 10)), Color(C0, 0.8))
 	draw_texture_rect_region(Data.ally_texture(kind), Rect2(p, Vector2(8, 8)), Rect2(src.position + Vector2(4, top), Vector2(8, 8)))
+	for k in lv - 1:  # tacche del livello sotto l'icona
+		var q := p + Vector2(k * 3.0, 9.0)
+		draw_rect(Rect2(q - Vector2.ONE, Vector2(4, 3)), C0)
+		draw_rect(Rect2(q, Vector2(2, 1)), Data.accent(kind))
+
+
+## "+" a pixel: la squadra si può potenziare.
+func _draw_piu(p: Vector2, lampo: float) -> void:
+	draw_rect(Rect2(p + Vector2(-1, 1), Vector2(7, 3)), C0)
+	draw_rect(Rect2(p + Vector2(1, -1), Vector2(3, 7)), C0)
+	var col := Color(C6, 0.6 + 0.4 * lampo)
+	draw_rect(Rect2(p + Vector2(0, 2), Vector2(5, 1)), col)
+	draw_rect(Rect2(p + Vector2(2, 0), Vector2(1, 5)), col)
 
 
 ## Il mouse è sopra la torre (o sul necromante in cima)?
@@ -2725,7 +3068,7 @@ func _range_preview() -> Array:
 	if modal.visible or levelup.visible or paused or selected_ability != "" or hover_slot < 0:
 		return []
 	var s: Dictionary = slots[hover_slot]
-	if state == State.PLACING and s["kind"] == "" and is_ranged(pending_summon):
+	if state == State.PLACING and s["kind"] == "" and is_ranged(pending_summon) and slot_in_portata(hover_slot):
 		return [s["center"], ally_stats(pending_summon)["range"]]
 	if is_ranged(s["kind"]) and state in [State.DEPLOY, State.PLACING, State.PLAYING]:
 		return [s["center"], ally_stats(s["kind"])["range"]]
@@ -3295,9 +3638,106 @@ func _draw_weather_front(n: CanvasItem, t: float) -> void:
 
 # --- Campioni degli eroi ------------------------------------------------------------
 
-## Ondata da Data.build_wave, con il campione dell'ondata al posto del primo boss.
+## Moltiplicatore della vita degli eroi all'ondata `w` (vedi "Difficoltà delle ondate").
+func vita_eroi(w: int) -> float:
+	var x := float(w - 1)
+	return 1.0 + difficolta_vita_lineare * x + difficolta_vita_quadratica * x * x
+
+
+func danno_eroi(w: int) -> float:
+	return 1.0 + difficolta_danno * float(w - 1)
+
+
+const TEMI_ONDATE: Array[String] = ["assalto", "frecce", "maghi", "giganti"]
+
+
+## Tema dell'ondata speciale `n` ("" = ondata normale). I temi girano in ordine.
+func tema_ondata(n: int) -> String:
+	var ogni := difficolta_ondate_speciali_ogni
+	if ogni <= 0 or n % ogni != 0 or n % Data.BOSS_EVERY == 0:
+		return ""
+	var k := 0
+	for m in range(ogni, n + 1, ogni):
+		if m % Data.BOSS_EVERY != 0:
+			k += 1
+	var tema: String = TEMI_ONDATE[(k - 1) % TEMI_ONDATE.size()]
+	if tema == "giganti" and n < 15:
+		tema = "assalto"
+	return tema
+
+
+func nome_tema(tema: String) -> String:
+	match tema:
+		"assalto":
+			return tr("Assalto!")
+		"frecce":
+			return tr("Pioggia di frecce!")
+		"maghi":
+			return tr("Circolo dei maghi!")
+		"giganti":
+			return tr("Carica dei giganti!")
+	return ""
+
+
+## Quanti eroi (senza campioni e volanti) nell'ondata `n`: cresce piano, sale nelle 3 ondate
+## prima di un campione e cala in quella dopo.
+func numero_eroi(n: int) -> int:
+	var extra := maxi(0, n - Data.FINAL_WAVE)  # modalità infinita: il tetto sale piano
+	var tetto := float(difficolta_eroi_massimi + mini(40, floori(extra / 4.0)))
+	var base := minf(float(difficolta_eroi_iniziali) + difficolta_eroi_per_ondata * float(n), tetto)
+	var r := n % Data.BOSS_EVERY
+	var k := 1.0
+	if r == 0:
+		k = difficolta_scorta_campione
+	elif r >= Data.BOSS_EVERY - 3:
+		k = 1.0 + difficolta_rampa_campione * float(r - (Data.BOSS_EVERY - 4))
+	elif r == 1 and n > 1:
+		k = 1.0 - difficolta_respiro
+	if tema_ondata(n) == "assalto":
+		k *= 1.4
+	return maxi(1, roundi(base * k))
+
+
+## Gli eroi di un'ondata: soldati, poi arcieri, maghi e giganti che entrano poco a poco.
+func _eroi_ondata(n: int) -> Array:
+	var tema := tema_ondata(n)
+	var arc := clampf((n - 2) / 20.0, 0.0, 0.30)
+	var mag := clampf((n - 6) / 30.0, 0.0, 0.15)
+	var gig := clampf((n - 10) / 40.0, 0.0, 0.08)
+	match tema:
+		"assalto":
+			arc *= 0.5
+			mag = 0.0
+			gig = 0.0
+		"frecce":
+			arc = 0.6
+		"maghi":
+			mag = 0.4
+		"giganti":
+			gig = 0.25
+	var q: Array = []
+	for i in numero_eroi(n):
+		var x := randf()
+		var kind := "soldato"
+		if x < gig:
+			kind = "gigante"
+		elif x < gig + mag:
+			kind = "mago"
+		elif x < gig + mag + arc:
+			kind = "arciere"
+		q.append({"kind": kind, "boss": false})
+	if n % Data.BOSS_EVERY == 0:
+		# un campione in più ogni 30 ondate oltre la finale
+		for _b in 1 + floori(maxi(0, n - Data.FINAL_WAVE) / 30.0):
+			q.append({"kind": "gigante", "boss": true})
+	return q
+
+
+## Ondata con il campione dell'ondata al posto del primo boss e i volanti mescolati.
 func _coda_ondata(n: int) -> Array:
-	var q := Data.build_wave(n)
+	var q := _eroi_ondata(n)
+	for _v in volanti_in_ondata(n):  # mescolati agli altri (il campione resta in fondo)
+		q.insert(randi_range(0, maxi(0, q.size() - 1)), {"kind": "volante", "boss": false})
 	if not campioni_attivi or campioni == null or n % Data.BOSS_EVERY != 0:
 		return q
 	var c := campioni.per_ondata(n)
@@ -3308,6 +3748,18 @@ func _coda_ondata(n: int) -> Array:
 			q[i] = {"kind": c.tipo_base, "boss": true, "campione": c}
 			break
 	return q
+
+
+## Quanti eroi volanti nell'ondata `n` (vedi "Eroi volanti" nell'Inspector).
+func volanti_in_ondata(n: int) -> int:
+	if not volanti_attivi:
+		return 0
+	var si := n in volanti_ondate
+	if not si and volanti_infinita_ogni > 0 and n > ondate_totali:
+		si = (n - ondate_totali) % volanti_infinita_ogni == 0
+	if not si:
+		return 0
+	return volanti_numero + volanti_in_piu_ogni_10_ondate * floori(n / 10.0)
 
 
 func _campione_in_coda(q: Array) -> Campione:
@@ -3377,7 +3829,7 @@ func lampo_schermo(dur: float) -> void:
 func spawn_enemy_at(kind: String, g: Vector2, boss: bool = false):
 	var u := UnitScript.new()
 	u.game = self
-	u.setup_enemy(kind, Data.enemy_hp_mult(wave) * mods["enemy_hp"], Data.enemy_dmg_mult(wave), boss)
+	u.setup_enemy(kind, vita_eroi(wave) * mods["enemy_hp"], danno_eroi(wave), boss)
 	u.ground = Vector2(clampf(g.x, 20.0, lane_len + SPAWN_W), clampf(g.y, 2.0, depth - 2.0))
 	u.ground = constrain(u.ground, u.radius)
 	enemies_root.add_child(u)
