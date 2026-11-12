@@ -9,7 +9,7 @@
 ![Lingue](https://img.shields.io/badge/lingue-IT%20%7C%20EN%20%7C%20ES-2a6)
 ![Stato](https://img.shields.io/badge/stato-prototipo%20giocabile-orange)
 ![Grafica](https://img.shields.io/badge/grafica-pixel%20art%2016x16-222)
-![Unità](https://img.shields.io/badge/scheletri-22%20unit%C3%A0-444)
+![Unità](https://img.shields.io/badge/scheletri-23%20unit%C3%A0-444)
 ![Livelli](https://img.shields.io/badge/livelli-4%20biomi-444)
 
 ![Battaglia](docs/screenshots/battaglia.gif)
@@ -131,14 +131,14 @@ L'obiettivo è arrivare all'**ondata 100** di ogni livello. Poi si continua, in 
 
 ### Il castello: il menu principale
 
-Il menu è il cortile del castello del necromante. Gli edifici sono i pulsanti e si illuminano al passaggio del mouse (o al tocco):
+Il menu è il cortile del castello del necromante. Gli edifici sono i pulsanti e si illuminano al passaggio del mouse (o al tocco). Come le unità, ognuno ha un solo elemento colorato che lo fa riconoscere al volo:
 
 | Edificio | Cosa fa |
 |---|---|
-| 🏰 **Alloggio del necromante** · *AVVIA RUN* | Scelta del livello, poi preparazione della squadra |
-| 📖 **Altare con il libro** · *RICERCA* | Gli alberi delle ricerche |
-| 🌀 **Portale** · *EVOCAZIONE* | Apre le pergamene |
-| 🛒 **Bancarella** · *NEGOZIO* | Pergamene, scrigni e necromanti con le monete d'osso |
+| 🏰 **Alloggio del necromante** · *AVVIA RUN* | Scelta del livello, poi preparazione della squadra. In cima alla torre c'è il **necromante che hai scelto**, con il bastone del suo colore |
+| 📖 **Altare con il libro** · *RICERCA* | Gli alberi delle ricerche. Fiammelle delle candele **rosse** |
+| 🌀 **Portale** · *EVOCAZIONE* | Apre le pergamene. Vortice **blu** |
+| 🛒 **Bancarella** · *NEGOZIO* | Pergamene, scrigni e necromanti con le monete d'osso. Moneta dell'insegna e lanterna **d'oro** |
 
 Intorno agli edifici ci sono:
 
@@ -262,10 +262,11 @@ Hai subito le quattro unità di **base**; altre 17 si trovano aprendo le [pergam
 | Unità | Squadra | Vita | Attacco | Abilità |
 |---|:---:|:---:|:---:|---|
 | **Cavaliere scheletro** | 1 | 150 | 16 | **Carica:** dopo una corsa il colpo fa danno doppio |
-| **Catapulta d'ossa** | 1 | 60 | 24 | Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino |
+| **Catapulta d'ossa** | 1 | 60 | 24 | Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino né **chi vola** |
 | **Totem d'ossa** | 1 | 90 | — | **Aura:** gli scheletri vicini fanno +25% danni e attaccano più veloce |
 | **Muro d'ossa** | 1 | 420 | — | Barricata: i nemici vicini devono abbatterla per passare |
 | **Carcassa esplosiva** | 2 | 30 | 45 | Corre contro i nemici ed **esplode**; rinasce a fine ondata |
+| **Guaritore scheletro** | 1 | 40 | 3 | **Cura** lo scheletro più ferito a portata (12 vita a colpo, di più con ranghi, ricerche e potenziamento). Se nessuno è ferito tira un debole colpo magico |
 
 </details>
 
@@ -304,6 +305,8 @@ Comportamento in battaglia:
 
 Al **rango 3** e al **rango 5** ogni unità sceglie tra **due rami**, che cambiano il suo modo di combattere (il rango sale con i doppioni delle pergamene). Si sceglie in preparazione, toccando la stella sulla carta, e si può cambiare quando vuoi, fuori dalla battaglia.
 
+**La prima volta che trovi tre unità uguali** (rango 3) parte una guida passo per passo: il necromante spiega le specializzazioni e una **freccia** mostra dove toccare, oscurando il resto dello schermo. Prima *PREPARA LA SQUADRA* nel portale, poi la **stella** sulla carta dell'unità, poi uno dei **due rami** del rango 3 e infine *CHIUDI*. Durante ogni passo risponde solo il punto indicato. Le battute sono in `dialoghi/tre_uguali.tres`.
+
 <details>
 <summary><b>Tutti i rami</b> (clicca per aprire)</summary>
 
@@ -322,6 +325,7 @@ Al **rango 3** e al **rango 5** ogni unità sceglie tra **due rami**, che cambia
 | **Totem d'ossa** | Totem di guerra · Totem della vita | Grande totem · Totem del gelo |
 | **Muro d'ossa** | Muro spinato · Ossa antiche | Muro vivente · Muro gelido |
 | **Carcassa esplosiva** | Carcassa incendiaria · Carcasse gemelle | Grande botto · Carcassa infetta |
+| **Guaritore scheletro** | Mani sante (+50% cura) · Cura di gruppo (cura anche un secondo ferito) | Fonte di vita (aura che cura i vicini) · Occhio vigile (più gittata e più veloce) |
 | **Negromante minore** | Signore dei morti · Patto oscuro | Maledettore · Congrega |
 | **Stregone della peste** | Nube densa · Morbo lento | Contagio · Nubi gemelle |
 | **Banshee** | Urlo agghiacciante · Lamento lontano | Urlo straziante · Urlo gelido |
@@ -350,11 +354,12 @@ Gli eroi hanno quattro classi, **soldati**, **arcieri**, **maghi** e **giganti**
 | …1 | **Respiro:** l'ondata dopo un campione ha un quarto di eroi in meno |
 | 5, 15, 25… | ⚔️ **Ondata speciale** a tema, a giro: *Assalto* (tanti soldati), *Pioggia di frecce*, *Circolo dei maghi*, *Carica dei giganti* |
 | 5, 8, 13… | 🪽 Arrivano gli **eroi volanti** (ondate scelte dall'Inspector) |
+| 12+ | ✚ Arrivano gli **eroi guaritori**: uno ogni 14 eroi, fino a 6 per ondata |
 | ogni 10 | 👑 Arriva un **campione**, con una scorta più piccola del solito |
 
 I nemici attaccano gli scheletri che incontrano (prima chi li provoca, come scudieri e muri d'ossa); arrivati alla torre la colpiscono. Frecce e magie le fanno solo metà del danno, perché le mura reggono.
 
-**Eroi volanti.** In alcune ondate (la prima è la 5) arrivano eroi che **volano dritti verso la torre**, sopra ostacoli, canali e scheletri. Spade e asce non li raggiungono: li colpiscono solo le **unità a distanza**, la **torre** e le **magie**. Al primo incontro il necromante ferma la partita per avvisarti.
+**Eroi volanti.** In alcune ondate (la prima è la 5) arrivano eroi che **volano dritti verso la torre**, sopra ostacoli, canali e scheletri. Spade e asce non li raggiungono: li colpiscono solo le **unità a distanza** (non la catapulta, i suoi teschi ricadono a terra), la **torre** e le **magie**. Al primo incontro il necromante ferma la partita per avvisarti.
 
 | ⚰️ Cimitero | 🌫️ Palude | ⛪ Cattedrale | 🏔️ Montagna |
 |---|---|---|---|
@@ -363,6 +368,14 @@ I nemici attaccano gli scheletri che incontrano (prima chi li provoca, come scud
 Le ondate con i volanti si scelgono dall'Inspector di ogni livello (gruppo *Eroi volanti*).
 
 ![Eroi volanti nel cimitero](docs/screenshots/volanti.png)
+
+**Eroi guaritori.** Dall'ondata 12 alcuni eroi vestiti di bianco arrivano in fondo alla fila e **curano il compagno più ferito** che hanno a portata (anche i campioni); la cura cresce con le ondate. Hanno poca vita: conviene abbatterli per primi con le unità a distanza e le magie. Se nessuno è ferito tirano un debole colpo magico. Al primo incontro il necromante ferma la partita per avvisarti.
+
+| ⚰️ Cimitero | 🌫️ Palude | ⛪ Cattedrale | 🏔️ Montagna |
+|---|---|---|---|
+| Chierici con la croce d'oro | Druidi elfi col bastone che germoglia | Sacerdoti del sole col turbante | Veggenti vichinghe con la runa |
+
+Quando arrivano e quanti sono si sceglie dall'Inspector di ogni livello (gruppo *Eroi guaritori*).
 
 ### I campioni degli eroi
 
@@ -396,7 +409,7 @@ Il necromante sulla torre si sceglie in preparazione. Ognuno ha il suo **potere*
 | | 🟣 Signore delle Ossa | 🟢 Strega Pestilenziale | 🔵 Lich del Ghiaccio |
 |---|---|---|---|
 | **Come si ottiene** | Dall'inizio | Negozio, 500 monete d'osso | Negozio, 800 monete d'osso |
-| **Potere** | +1 squadra da schierare; il 10% dei nemici uccisi si rialza come scheletro per 20 s (max 6 insieme) | I colpi della torre avvelenano e maledicono: i maledetti subiscono +40% danni | I colpi della torre rallentano del 30% e nell'8% dei casi congelano (metà del tempo su boss e campioni) |
+| **Potere** | +1 squadra da schierare; il 10% dei nemici **uccisi dal necromante** (colpi della torre e magie) si rialza come scheletro per 20 s (max 6 insieme). Quelli finiti dagli scheletri no: solo il Negromante minore, con la sua abilità, rialza i nemici che muoiono vicino a lui | I colpi della torre avvelenano e maledicono: i maledetti subiscono +40% danni | I colpi della torre rallentano del 30% e nell'8% dei casi congelano (metà del tempo su boss e campioni) |
 | **Magie** | Palla di fuoco, Area curativa, Saetta | Nube di peste, Maledizione, Sciame | Bufera, Prigione gelida, Cometa gelata |
 
 ![I necromanti](docs/screenshots/necromanti.png)
@@ -435,7 +448,7 @@ Uccidere eroi dà esperienza al necromante. A ogni livello il campo si scurisce 
 | 👁️ Nebbia gelida · Peste · Terrore | Velocità, vita o attacco dei nemici −10% |
 | 💀 Evocazione | Una nuova squadra della tua squadra, da piazzare dove vuoi |
 
-Si sceglie con il mouse o con i tasti `1` `2` `3`.
+La scelta è in **due passi**, così un tocco partito mentre lanciavi una magia non prende un dono per sbaglio: tocca una lapide per selezionarla (si alza, le altre si scuriscono) e poi premi **CONFERMA**, il pulsantino che compare sotto. Per un attimo, appena compaiono, le lapidi non rispondono ai tocchi. Da tastiera: `1` `2` `3` selezionano, lo stesso tasto di nuovo o `Invio` confermano.
 
 ### Le magie
 
@@ -514,7 +527,7 @@ L'**altare con il libro** apre gli alberi delle ricerche: la progressione perman
 | Occhio della notte | Gittata del necromante +20% per livello: si schiera anche più lontano dalla torre. | 6 | 6 · 14 · 27 · 41 · 57 · 66 | Mura rinforzate |
 | Rito rapido | Velocità d'attacco del necromante +8% per livello. | 3 | 8 · 17 · 32 | Furia oscura |
 | Saggezza proibita | Esperienza guadagnata +10% per livello: sali di livello prima. | 3 | 6 · 14 · 27 | Rito rapido |
-| Raccolto d'ossa | Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello. | 3 | 8 · 17 · 32 | Occhio della notte |
+| Raccolto d'ossa | Probabilità che un nemico ucciso dal necromante si rialzi come scheletro +5% per livello. | 3 | 8 · 17 · 32 | Occhio della notte |
 
 **Ramo Evocazioni**
 
@@ -756,6 +769,8 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | Schieramento | **Entro gittata** (schierare solo vicino alla torre) e **Gittata schieramento** (0 = quella della torre) |
 | Potenziamento delle squadre | Attivo, livello massimo, vita e danni in più per livello, dialogo che lo spiega |
 | Eroi volanti | Attivi, **ondate** in cui arrivano, quanti, quanti in più ogni 10 ondate, ogni quante ondate in modalità infinita, dialogo |
+| Eroi guaritori | Attivi, **prima ondata**, un guaritore ogni quanti eroi, quanti al massimo per ondata, dialogo |
+| Ondate su misura | **Quali e quanti eroi** arrivano in certe ondate (vedi sotto) |
 | Bioma | Sfondo, terreno, ostacoli, meteo e **sprite degli eroi** del livello (`biomi/*.tres`) |
 | Campioni degli eroi | L'elenco dei 10 campioni del livello (`campioni/…/elenco_campioni.tres`) |
 | Ondate totali | Di solito 100 |
@@ -766,12 +781,25 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | Colori degli effetti | Palla di fuoco, saetta, area curativa, nube di peste |
 | Dialoghi | **Dialogo Tutorial** e **Dialogo Schieramento** |
 
+**Ondate su misura.** Nel nodo `Main` di ogni livello, gruppo *Ondate su misura*: *Aggiungi elemento* > *Nuovo OndataNemici*. Ogni riga dice:
+
+| Campo | Cosa decide |
+|---|---|
+| Dalla ondata · Alla ondata · Ogni | Per quali ondate vale: una sola, un intervallo (es. dalla 20 alla 60) o una ogni N (es. ogni 5) |
+| Modo | **SOSTITUISCI**: arrivano solo questi eroi · **AGGIUNGI**: si sommano a quelli normali |
+| Soldati · Arcieri · Maghi · Giganti · Guaritori · Volanti | Quanti eroi di ogni tipo |
+| Tieni campione | Nelle ondate 10, 20, 30… il campione arriva comunque |
+| Mescola | Eroi in ordine casuale, oppure in fila (soldati, arcieri, maghi, giganti) |
+| Nota | Un promemoria per te |
+
+Vita e danni crescono comunque con l'ondata. Se più righe valgono per la stessa ondata vince l'ultima *SOSTITUISCI* e le *AGGIUNGI* si sommano. Senza righe le ondate restano automatiche.
+
 **Le risorse da modificare con un doppio clic**
 
 | Cartella | Cosa c'è |
 |---|---|
 | `livelli/elenco_livelli.tres` | Ordine, nomi e descrizioni dei livelli |
-| `biomi/` | Un file per bioma: grafica, colori, eroi ed eroi volanti (*Sprite Volante*) |
+| `biomi/` | Un file per bioma: grafica, colori, eroi, eroi volanti (*Sprite Volante*) ed eroi guaritori (*Sprite Guaritore*) |
 | `campioni/` | Un file per campione: statistiche, sprite, frasi e mosse |
 | `necromanti/` | Signore delle Ossa, Strega, Lich: nome, colore, prezzo, magie e poteri |
 | `specializzazioni/` | I rami di ogni unità |
@@ -783,7 +811,7 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 - **Animazioni:** numero di nemici dell'orda e di scheletri nel cortile.
 - **Impostazioni:** grandezza dell'ingranaggio, codice sviluppatore e codice della Torre infernale (i valori non li scriviamo qui: sono segreti).
 - **Bug e consigli:** email e indirizzo Formspree per le segnalazioni, versione del gioco, tema.
-- Gli edifici sono nodi `Sprite2D` in `Mondo/Cortile`, da spostare liberamente.
+- Gli edifici sono nodi `Sprite2D` in `Mondo/Cortile`, da spostare liberamente. **Colore accento** cambia il colore del loro elemento colorato; **Zona accento** sceglie quale parte del disegno si colora (es. la moneta del negozio).
 
 **Scena `negozio.tscn`:** la lista degli oggetti in vendita.
 
@@ -801,9 +829,10 @@ La partita legge questi valori anche se avvii direttamente una scena di livello.
 | File | Contenuto |
 |---|---|
 | `assets/sprites.png` | Scheletri e umani di base, icone, necromante, corona |
-| `assets/unita_scheletri.png` | Le 18 unità delle pergamene e dei codici |
+| `assets/unita_scheletri.png` | Le 19 unità delle pergamene e dei codici |
 | `assets/biomi/` | Campi, ostacoli ed eroi di ogni bioma (elfi, guerrieri del deserto, vichinghi) |
 | `assets/nemici/volanti/` | Gli eroi volanti dei 4 biomi (2 frame: ali su, ali giù) |
+| `assets/nemici/guaritori/` | Gli eroi guaritori dei 4 biomi (2 frame) |
 | `assets/campioni/` | Gli sprite dei 40 campioni |
 | `assets/necromanti/` | Strega e Lich, icone delle loro magie e ricerche |
 | `assets/campo/`, `assets/menu/`, `assets/negozio/` | Campo di battaglia, castello, bancarella |
@@ -820,13 +849,21 @@ Nelle build di prova (editor ed *Export With Debug*) c'è il **dev tool**:
 | `Ctrl` + `Shift` + `M` | Fondi infiniti nel negozio |
 | `Ctrl` + `Shift` + `T` | Rifà il primo avvio: scelta della lingua e dialoghi |
 
-Il pannello dev ha cinque schede:
+Il pannello dev ha sei schede:
 
 - **Unità:** collezione e ranghi;
 - **Ricerche:** livello di ogni nodo dei tre alberi;
 - **Risorse:** pergamene, monete, punti, VIP, necromanti, tutorial;
 - **Livelli:** sblocca o completa i livelli e gioca subito quello che vuoi;
-- **Partita:** solo in battaglia; vinci l'ondata, salta a un'ondata, evoca un campione, torre invincibile, magie senza ricarica, velocità x5.
+- **Partita:** solo in battaglia; vinci l'ondata, salta a un'ondata, evoca un campione, torre invincibile, magie senza ricarica, velocità x5;
+- **Report:** il registro di tutto quello che succede (vedi sotto).
+
+**Report delle partite.** Con la modalità dev attiva il gioco scrive da solo un registro (`user://report_dev.log`) di tutto quello che succede:
+
+- **in battaglia:** livello, necromante, squadra con ranghi e rami, ricerche; ogni squadra schierata, potenziata o tolta; il corno; ogni ondata, con i nemici in arrivo all'inizio e, alla fine, durata, vita della torre, danni subiti, uccisioni, scheletri caduti e magie usate; level-up con le tre opzioni e la scelta; magie (con quanti nemici c'erano nell'area); campioni arrivati e sconfitti; pausa e velocità; il risultato finale con punti, monete e pergamene;
+- **fuori dalla battaglia:** le schermate aperte, le ricerche comprate, gli acquisti nel negozio, le pergamene aperte, i cambi di squadra, di ramo e di necromante, il livello scelto.
+
+Nella scheda **Report** lo leggi direttamente nel gioco. **SALVA REPORT** crea un file `.txt` con le informazioni del dispositivo, tutto il salvataggio e il registro (sul computer nella cartella Documenti, sul telefono nella cartella dei dati del gioco) e lo **copia negli appunti**, pronto da incollare in un messaggio. **INVIA REPORT** lo manda con il modulo di *Bug e consigli* (se hai impostato l'indirizzo Formspree nel nodo `Menu`), altrimenti apre l'app email. Il registro tiene al massimo 3 MB: oltre, toglie le righe più vecchie.
 
 **Sul telefono:** scrivi il **codice sviluppatore** nelle Impostazioni (si imposta nell'Inspector del nodo `Menu`). In alto a destra compare il tasto **DEV**, che apre il pannello in ogni schermata, anche nelle build finali. Prima di pubblicare, svuota il campo del codice.
 

@@ -7,6 +7,11 @@ extends Sprite2D
 ## con gli scheletri del cortile (Y Sort) funziona da solo.
 ## Al passaggio del mouse compare un contorno bianco attorno alla sagoma.
 ##
+## COLORE D'ACCENTO: come le unità, ogni edificio ha un solo elemento colorato
+## (portale: vortice blu, negozio: moneta d'oro, ricerca: fiammelle rosse delle candele).
+## Si cambia da "Colore accento"; "Zona accento" colora i pixel chiari del PNG in quel
+## rettangolo (coordinate dell'immagine, es. la moneta dell'insegna del negozio).
+##
 ## Le animazioni (finestre, libro, vortice...) usano punti dell'immagine: se
 ## ridisegni un PNG mantieni le stesse proporzioni o aggiorna le coordinate qui sotto.
 ##
@@ -16,6 +21,7 @@ extends Sprite2D
 
 const ATLAS := preload("res://assets/sprites.png")
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const Necromanti := preload("res://scripts/necromanti.gd")
 
 enum Azione { PARTITA, RICERCHE, EVOCAZIONE, NEGOZIO }
 
@@ -44,6 +50,19 @@ const LABEL_NODE := "Etichetta"
 		spostamento_etichetta = v
 		if _label:
 			_label.queue_redraw()
+## Colore dell'elemento colorato dell'edificio. Trasparente = quello predefinito
+## (portale blu, negozio oro, ricerca rosso, alloggio nessuno).
+@export var colore_accento := Color(0, 0, 0, 0)
+## Rettangolo del PNG (in pixel dell'immagine) i cui pixel chiari prendono il colore
+## d'accento. Vuoto = quello predefinito (la moneta dell'insegna per il negozio).
+@export var zona_accento := Rect2()
+
+const ACCENTI := {
+	Azione.EVOCAZIONE: Color("5292ec"),  # vortice del portale
+	Azione.NEGOZIO: Color("f0ce52"),  # moneta d'oro dell'insegna e lanterna
+	Azione.RICERCHE: Color("d64034"),  # fiammelle delle candele
+}
+const ZONE := {Azione.NEGOZIO: Rect2(34, 21, 5, 6)}
 
 const C0 := Color("141414")
 const C2 := Color("343434")
@@ -55,8 +74,19 @@ const OUTLINE_SHADER := """shader_type canvas_item;
 uniform bool outline = false;
 uniform vec4 outline_color : source_color = vec4(1.0);
 uniform float brighten = 1.0;
+// elemento colorato: i pixel chiari dentro accent_rect (pixel dell'immagine) prendono accent_col
+uniform vec4 accent_rect = vec4(0.0);
+uniform vec4 accent_col : source_color = vec4(1.0);
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
+	vec2 px = floor(UV / TEXTURE_PIXEL_SIZE);
+	if (c.a > 0.5 && accent_rect.z > 0.0 && px.x >= accent_rect.x && px.y >= accent_rect.y
+			&& px.x < accent_rect.x + accent_rect.z && px.y < accent_rect.y + accent_rect.w) {
+		float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+		if (l > 0.5) {
+			c.rgb = clamp(accent_col.rgb * (l / 0.68), 0.0, 1.0);
+		}
+	}
 	if (outline && c.a < 0.5) {
 		vec2 p = TEXTURE_PIXEL_SIZE;
 		float n = texture(TEXTURE, UV + vec2(p.x, 0.0)).a + texture(TEXTURE, UV - vec2(p.x, 0.0)).a
@@ -80,6 +110,8 @@ var _front: Node2D  # disegnato davanti (luci, libro, particelle)
 var _book: Sprite2D
 var _label: Node2D  # targa con il nome, disegnata sopra a tutto (scheletri e nebbia)
 var _sparks: Array = []  # [posizione, velocità, vita]
+var _necro_tex: Texture2D  # alloggio: il necromante scelto, in cima alla torre
+var _necro_col := Color(1, 1, 1)  # e il colore del suo bastone
 
 
 func _ready() -> void:
@@ -97,6 +129,10 @@ func _ready() -> void:
 		_shader.code = OUTLINE_SHADER
 	material = ShaderMaterial.new()
 	material.shader = _shader
+	var zona := zona_accento if zona_accento.has_area() else ZONE.get(azione, Rect2()) as Rect2
+	if zona.has_area():
+		material.set_shader_parameter("accent_rect", Vector4(zona.position.x, zona.position.y, zona.size.x, zona.size.y))
+		material.set_shader_parameter("accent_col", accento())
 	_img = texture.get_image() if texture else null
 	_behind = Node2D.new()
 	_behind.show_behind_parent = true
@@ -105,11 +141,27 @@ func _ready() -> void:
 	_front = Node2D.new()
 	_front.draw.connect(_draw_front)
 	add_child(_front)
+	if azione == Azione.PARTITA:
+		aggiorna_necromante()
 	if azione == Azione.RICERCHE:
 		_book = Sprite2D.new()
 		_book.texture = load("res://assets/menu/libro.png")
 		_book.centered = true
 		add_child(_book)
+
+
+## Colore d'accento dell'edificio (quello dell'Inspector o il predefinito).
+func accento() -> Color:
+	if colore_accento.a > 0.0:
+		return colore_accento
+	return ACCENTI.get(azione, Color(1, 1, 1)) as Color
+
+
+## Alloggio: mette sulla torre il necromante scelto (con il suo ritratto e il suo colore).
+func aggiorna_necromante() -> void:
+	var n: Necromante = Necromanti.attivo()
+	_necro_tex = n.ritratto if n != null else null
+	_necro_col = n.colore if n != null else Color(1, 1, 1)
 
 
 func set_highlight(on: bool) -> void:
@@ -269,15 +321,16 @@ func _draw_behind() -> void:
 			var a := atan2(y, x)
 			var v := sin(a * 3.0 + r * 0.55 - t * speed) * 0.5 + 0.5
 			v = v * (1.0 - r / 24.0) + (0.35 if r < 3.0 else 0.0)
+			var acc := accento()  # vortice del colore d'accento (blu)
 			var col: Color
 			if v > 0.72:
-				col = Color("ececec")
+				col = acc.lerp(Color.WHITE, 0.55)
 			elif v > 0.5:
-				col = Color("acacac")
+				col = acc
 			elif v > 0.3:
-				col = Color("4a4a4a")
+				col = acc.darkened(0.5)
 			else:
-				col = Color("242424")
+				col = acc.darkened(0.8)
 			_behind.draw_rect(Rect2(c + Vector2(x, y), Vector2.ONE), col)
 
 
@@ -290,21 +343,30 @@ func _draw_front() -> void:
 				var k := 0.15 + 0.2 * absf(sin(t * 3.1 + wp.x * 0.7 + wp.y))
 				f.draw_rect(Rect2(_tex(wp + Vector2(0, 1)), Vector2(5, 8)), Color(1, 1, 1, k))
 				f.draw_rect(Rect2(_tex(wp + Vector2(-2, -1)), Vector2(9, 12)), Color(1, 1, 1, k * 0.25))
-			# il necromante sui merli, con il bastone che pulsa
+			# il necromante scelto sui merli, con il bastone che pulsa del suo colore
 			var n := _tex(Vector2(31, 30))
-			f.draw_texture_rect_region(ATLAS, Rect2(n + Vector2(-8, -16), Vector2(16, 16)), Rect2(64, 32, 16, 16))
+			if _necro_tex != null:
+				f.draw_texture_rect(_necro_tex, Rect2(n + Vector2(-8, -16), Vector2(16, 16)), false)
+			else:
+				f.draw_texture_rect_region(ATLAS, Rect2(n + Vector2(-8, -16), Vector2(16, 16)), Rect2(64, 32, 16, 16))
 			var glow := absf(sin(t * 2.2))
 			var orb := n + Vector2(6, -14)
-			f.draw_rect(Rect2(orb - Vector2.ONE, Vector2(3, 3)), Color(1, 1, 1, 0.3 + 0.5 * glow))
+			var luce := _necro_col.lerp(Color.WHITE, 0.45)
+			f.draw_rect(Rect2(orb - Vector2.ONE, Vector2(3, 3)), Color(luce, 0.3 + 0.5 * glow))
 			if glow > 0.8:
-				f.draw_rect(Rect2(orb - Vector2(3, 0), Vector2(7, 1)), Color(1, 1, 1, 0.6))
-				f.draw_rect(Rect2(orb - Vector2(0, 3), Vector2(1, 7)), Color(1, 1, 1, 0.6))
+				f.draw_rect(Rect2(orb - Vector2(3, 0), Vector2(7, 1)), Color(luce, 0.6))
+				f.draw_rect(Rect2(orb - Vector2(0, 3), Vector2(1, 7)), Color(luce, 0.6))
 		Azione.RICERCHE:
-			# fiamme delle candele
+			# fiammelle delle candele, del colore d'accento (rosso): alone, fiamma e cuore chiaro
+			var fuoco := accento()
 			for cp in [Vector2(12, 30), Vector2(54, 30)]:
 				var hgt := 2.0 + roundf(absf(sin(t * 9.0 + cp.x)) * 1.5)
-				f.draw_rect(Rect2(_tex(cp - Vector2(0, hgt)), Vector2(1, hgt)), Color("ececec"))
-				f.draw_rect(Rect2(_tex(cp - Vector2(1, 1)), Vector2(3, 1)), Color(1, 1, 1, 0.5))
+				var guizzo := roundf(sin(t * 13.0 + cp.x * 3.0) * 0.6)  # la punta trema
+				f.draw_rect(Rect2(_tex(cp - Vector2(1, hgt + 1)), Vector2(3, hgt + 2)), Color(fuoco, 0.22 + 0.1 * absf(sin(t * 7.0 + cp.x))))
+				f.draw_rect(Rect2(_tex(cp - Vector2(-guizzo, hgt)), Vector2(1, 1)), fuoco.lightened(0.15))
+				f.draw_rect(Rect2(_tex(cp - Vector2(0, hgt - 1)), Vector2(1, hgt - 1)), fuoco)
+				f.draw_rect(Rect2(_tex(cp - Vector2(0, 1)), Vector2(1, 1)), fuoco.lerp(Color.WHITE, 0.6))
+				f.draw_rect(Rect2(_tex(cp - Vector2(1, 1)), Vector2(3, 1)), Color(fuoco, 0.45))
 			# rune della pedana che si accendono a turno
 			for i in 18:
 				var a := i / 18.0 * TAU
@@ -319,8 +381,9 @@ func _draw_front() -> void:
 		Azione.NEGOZIO:
 			# lanterna che tremola e moneta dell'insegna che luccica
 			var lk := 0.25 + 0.3 * absf(sin(t * 7.0) * sin(t * 2.3))
-			f.draw_rect(Rect2(_tex(Vector2(7, 20)), Vector2(1, 4)), Color(1, 1, 1, 0.4 + lk))
-			f.draw_rect(Rect2(_tex(Vector2(4, 18)), Vector2(7, 8)), Color(1, 1, 1, lk * 0.25))
+			var oro := accento()
+			f.draw_rect(Rect2(_tex(Vector2(7, 20)), Vector2(1, 4)), Color(oro.lerp(Color.WHITE, 0.4), 0.4 + lk))
+			f.draw_rect(Rect2(_tex(Vector2(4, 18)), Vector2(7, 8)), Color(oro, lk * 0.25))
 			var g := fmod(t, 3.0)
 			if g < 0.35:  # scintilla che attraversa la moneta
 				var p := _tex(Vector2(36, 23)) + Vector2(roundf(g / 0.35 * 4.0) - 2.0, -roundf(g / 0.35 * 4.0) + 2.0)
@@ -334,7 +397,8 @@ func _draw_front() -> void:
 		Azione.EVOCAZIONE:
 			# runa della chiave di volta
 			var k := 0.4 + 0.6 * absf(sin(t * 1.7))
-			f.draw_rect(Rect2(_tex(Vector2(36, 8)), Vector2(3, 5)), Color(1, 1, 1, k))
+			f.draw_rect(Rect2(_tex(Vector2(36, 8)), Vector2(3, 5)), Color(accento().lerp(Color.WHITE, 0.3), k))
+	var sc := accento().lerp(Color.WHITE, 0.35) if azione in [Azione.EVOCAZIONE, Azione.NEGOZIO] else Color.WHITE
 	for s in _sparks:
 		var a: float = clampf(s[2], 0.0, 1.0)
-		f.draw_rect(Rect2((s[0] as Vector2).round(), Vector2.ONE), Color(1, 1, 1, a))
+		f.draw_rect(Rect2((s[0] as Vector2).round(), Vector2.ONE), Color(sc, a))

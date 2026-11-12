@@ -9,20 +9,28 @@ extends Control
 ##   - le pergamene si guadagnano superando le ondate 10, 20, 30... (vedi main.gd)
 ##   - con almeno 10 pergamene puoi aprirne 10 insieme (pulsante APRI 10)
 ## Tasti: Spazio/Invio = apri una o continua, 0 = apri 10, Esc = torna al menu.
+## La prima volta che un'unità arriva al rango 3 (tre unità uguali) parte la guida
+## delle specializzazioni (vedi guida.gd): il necromante spiega e una freccia indica
+## PREPARA LA SQUADRA; finché non lo tocchi gli altri pulsanti non rispondono.
 
 const Data := preload("res://scripts/game_data.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const Guida := preload("res://scripts/guida.gd")
+const Spec := preload("res://scripts/specializzazioni.gd")
 const MENU_SCENE := "res://scenes/menu.tscn"
 const PREP_SCENE := "res://scenes/preparazione.tscn"
 
 ## Dialogo del necromante che spiega questa scena (compare solo la prima volta).
 ## Doppio clic sul file .tres per cambiare le battute; vuoto = nessun dialogo.
 @export var dialogo_tutorial: Dialogo = preload("res://dialoghi/evocazione.tres")
+## Dialogo della prima volta che trovi tre unità uguali (rango 3): spiega le specializzazioni.
+@export var dialogo_tre_uguali: Dialogo = preload("res://dialoghi/tre_uguali.tres")
 
 ## Il tuo tema (per il font). Vuoto = font predefinito.
 @export var tema: Theme
@@ -66,6 +74,9 @@ var open_rect := Rect2(340, 452, 280, 62)
 var multi_rect := Rect2(660, 452, 280, 62)
 var back_rect := Rect2(24, 652, 120, 50)
 var prep_rect := Rect2(980, 652, 276, 50)
+var guida_da_mostrare := false  # appena trovato il terzo doppione: guida a fine rivelazione
+var guida_attiva := false  # freccia su PREPARA LA SQUADRA
+var guida_kind := ""  # l'unità arrivata al rango 3
 
 
 func _ready() -> void:
@@ -78,6 +89,9 @@ func _ready() -> void:
 	Suoni.install()
 	Lingua.setup()
 	Dialoghi.avvia(self, dialogo_tutorial)
+	ReportDev.evento("SCENA", "Portale delle evocazioni", {"pergamene": int(st["scrolls"])})
+	guida_kind = Guida.in_corso()
+	guida_attiva = guida_kind != ""  # guida lasciata a metà: riprende da qui
 
 
 func _process(delta: float) -> void:
@@ -135,12 +149,19 @@ func _gui_input(event: InputEvent) -> void:
 	hover = _hover_at(event.position)  # sul telefono il tocco arriva senza movimento prima
 	if fase == Fase.RIVELA or fase == Fase.RIVELA_MULTI:
 		_continue()
+	elif guida_attiva:
+		if hover == "prep":  # durante la guida risponde solo PREPARA LA SQUADRA
+			_press("prep")
 	elif hover != "":
 		_press(hover)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if leaving != "" or not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if guida_attiva and fase == Fase.ATTESA:
+		if event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+			_press("prep")
 		return
 	if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
 		if fase == Fase.RIVELA or fase == Fase.RIVELA_MULTI:
@@ -165,6 +186,8 @@ func _press(id: String) -> void:
 			if result.is_empty():
 				return
 			results = []
+			_controlla_rango3([result])
+			_report_pergamene([result])
 			fase = Fase.CARICA
 			fase_t = 0.0
 			Suoni.play("evoca_carica")
@@ -178,6 +201,8 @@ func _press(id: String) -> void:
 					results.append(r)
 			if results.is_empty():
 				return
+			_controlla_rango3(results)
+			_report_pergamene(results)
 			print("[evocazione] aperte %d pergamene: %s" % [results.size(), results.map(func(x: Dictionary) -> String: return "%s(%s)" % [x["kind"], x["rarity"]])])
 			fase = Fase.CARICA
 			fase_t = -0.3  # carica un po' più lunga
@@ -203,6 +228,37 @@ func _continue() -> void:
 	fase = Fase.ATTESA
 	fase_t = 0.0
 	results = []
+	if guida_da_mostrare:
+		guida_da_mostrare = false
+		_avvia_guida()
+
+
+func _report_pergamene(lista: Array) -> void:
+	if ReportDev.attivo():
+		ReportDev.evento("PERGAMENE", "Apre %d pergamene" % lista.size(), {"risultati": lista.map(func(r: Dictionary) -> String:
+			return "%s (%s) %s" % [r["kind"], r["rarity"], "NUOVA" if r["new"] else ("+%d monete" % int(r.get("monete", 0)) if r.get("max", false) else "rango %d" % int(r["rank"]))]),
+			"rimaste": int(st["scrolls"])})
+
+
+## Prima volta che un'unità arriva al rango 3: alla fine della rivelazione parte la guida.
+func _controlla_rango3(lista: Array) -> void:
+	if Guida.finita() or Guida.in_corso() != "":
+		return
+	for r: Dictionary in lista:
+		if not r["new"] and int(r["rank"]) == 3 and not Spec.opzioni(r["kind"], 3).is_empty():
+			Guida.inizia(r["kind"])
+			guida_kind = r["kind"]
+			guida_da_mostrare = true
+			return
+
+
+## Il necromante spiega, poi la freccia indica PREPARA LA SQUADRA.
+func _avvia_guida() -> void:
+	var w := Dialoghi.avvia(self, dialogo_tre_uguali, true)
+	if w == null:
+		guida_attiva = true
+	else:
+		w.finito.connect(func() -> void: guida_attiva = true)
 
 
 ## Quando inizia a girarsi la carta i.
@@ -249,6 +305,8 @@ func _draw() -> void:
 	Pietra.text_c(self, font, back_rect.get_center().x, back_rect.position.y + 15, tr("< BACK"), 16, C6)
 	Pietra.stone(self, prep_rect, C3, hover == "prep")
 	Pietra.text_c(self, font, prep_rect.get_center().x, prep_rect.position.y + 15, tr("PREPARA LA SQUADRA >"), 16, C6)
+	if guida_attiva and fase == Fase.ATTESA and leaving == "":
+		Guida.disegna(self, font, vp, prep_rect, tr("Tocca qui per specializzare %s") % Data.nome(guida_kind), t)
 	if fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(C0, fade))
 

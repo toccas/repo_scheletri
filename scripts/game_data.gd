@@ -20,6 +20,8 @@ extends RefCounted
 ## - sheet/sx: in quale atlante sta la sprite ("base" = sprites.png, colonna sx;
 ##             "nuove" = unita_scheletri.png, indice sx: 4 unità per riga, 2 frame)
 ## - desc:     descrizione mostrata in preparazione ed evocazione
+## - cura:     solo per i guaritori (special "cura"): vita ridata a ogni colpo, che cresce
+##             con la vita dell'unità (ranghi, ricerche, potenziamento, ondate per gli eroi)
 const UNITS := {
 	"soldato": {
 		"ally_name": "Soldato scheletro", "enemy_name": "Soldato umano",
@@ -58,6 +60,16 @@ const UNITS := {
 		"role": "corpo", "rarity": "nemico", "special": "", "sheet": "base", "sx": 0,
 		"desc": "",
 	},
+	# Guaritore (scheletri ed eroi): special "cura", cura il compagno più ferito a portata;
+	# se nessuno è ferito tira un colpo magico debole. Gli eroi guaritori hanno l'aspetto
+	# del bioma (Bioma > sprite_guaritore) e arrivano dall'ondata scelta nell'Inspector.
+	"guaritore": {
+		"ally_name": "Guaritore scheletro", "enemy_name": "Guaritore",
+		"count": 1, "hp": 40.0, "dmg": 3.0, "range": 56.0, "cooldown": 1.5, "cura": 12.0,
+		"speed": 18.0, "melee": false, "splash": 0.0, "radius": 4.0, "xp": 3,
+		"role": "supporto", "rarity": "raro", "special": "cura", "sheet": "nuove", "sx": 18,
+		"desc": "Cura lo scheletro più ferito a portata. Se nessuno è ferito, tira un debole colpo magico.",
+	},
 	# --- Unità da evocare con le pergamene (solo scheletri) --------------------
 	"lanciere": {
 		"ally_name": "Lanciere", "count": 3, "hp": 55.0, "dmg": 7.0, "range": 9.0, "cooldown": 1.0,
@@ -93,7 +105,7 @@ const UNITS := {
 		"ally_name": "Catapulta d'ossa", "count": 1, "hp": 60.0, "dmg": 24.0, "range": 120.0, "cooldown": 3.2,
 		"speed": 0.0, "melee": false, "splash": 18.0, "radius": 6.0, "xp": 1,
 		"role": "distanza", "rarity": "raro", "special": "catapulta", "sheet": "nuove", "sx": 5,
-		"desc": "Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino.",
+		"desc": "Lancia teschi lontanissimo con danno ad area, ma non colpisce chi è troppo vicino né chi vola.",
 	},
 	"cecchino": {
 		"ally_name": "Cecchino spettrale", "count": 1, "hp": 30.0, "dmg": 34.0, "range": 160.0, "cooldown": 2.6,
@@ -180,10 +192,26 @@ const UNIT_ORDER := ["soldato", "arciere", "gigante", "mago"]
 ## Tutti gli scheletri, nell'ordine della collezione.
 const ALLY_ORDER := ["soldato", "arciere", "mago", "gigante",
 	"lanciere", "scudiero", "balestriere", "berserker",
-	"cavaliere", "catapulta", "totem", "muro", "carcassa",
+	"cavaliere", "catapulta", "totem", "muro", "carcassa", "guaritore",
 	"negromante", "peste", "banshee", "cecchino",
 	"lich", "golem", "mietitore", "ptero", "infernale"]
 const STARTING_UNITS := ["soldato", "arciere", "mago", "gigante"]
+## Ordine delle rarità, dalla più comune (per mettere in fila le unità).
+const RARITY_ORDER := ["base", "comune", "raro", "epico", "leggendario"]
+
+
+## Tutti gli scheletri in ordine di rarità (base, comuni, rari, epici, leggendari);
+## a parità di rarità restano nell'ordine di ALLY_ORDER.
+static func per_rarita() -> Array:
+	var out: Array = []
+	for r: String in RARITY_ORDER:
+		for k: String in ALLY_ORDER:
+			if UNITS[k]["rarity"] == r:
+				out.append(k)
+	for k: String in ALLY_ORDER:  # rarità sconosciute in fondo
+		if not k in out:
+			out.append(k)
+	return out
 
 const ROLE_NAMES := {"corpo": "Corpo a corpo", "distanza": "A distanza", "magia": "Magia", "supporto": "Supporto"}
 const RARITY_NAMES := {"base": "Base", "comune": "Comune", "raro": "Raro", "epico": "Epico", "leggendario": "Leggendario"}
@@ -261,6 +289,7 @@ const ACCENTI := {
 	"carcassa": Color("ec8a30"),    # miccia accesa
 	"ptero": Color("ec8a30"),       # cresta arancio
 	"infernale": Color("d64034"),   # fiamme e occhi rossi
+	"guaritore": Color("68be4c"),   # croce verde sul bastone e sulla tunica
 }
 ## Accenti degli eroi nemici (stesse tipologie, altri colori).
 const ACCENTI_NEMICI := {
@@ -269,6 +298,7 @@ const ACCENTI_NEMICI := {
 	"mago": Color("d64034"),        # cappello rosso (magia di fuoco)
 	"gigante": Color("f0ce52"),     # elmo con la fascia d'oro
 	"volante": Color("f0ce52"),     # aureola dell'angelo guerriero
+	"guaritore": Color("f0ce52"),   # croce d'oro del chierico
 }
 ## Viola della veste del necromante (colpi della torre).
 const ACCENTO_NECROMANTE := Color("9c5ccc")

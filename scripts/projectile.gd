@@ -21,7 +21,7 @@ var target = null
 var to_tower := false
 var dmg := 1.0
 var splash := 0.0
-var look := "arrow"  # "arrow", "magic" o "necro"
+var look := "arrow"  # "arrow", "magic", "necro" o "cura" (i guaritori: `dmg` è la vita ridata)
 var speed := 140.0  # pixel dell'arte al secondo
 ## Colore d'accento di chi ha tirato (impennaggio delle frecce, alone delle magie).
 var tint := Color("acacac")
@@ -78,6 +78,13 @@ func _sync() -> void:
 
 
 func _hit() -> void:
+	if look == "cura":
+		if target != null and is_instance_valid(target) and not target.dead:
+			target.heal(dmg)
+			game.spawn_ground_fx(target.ground, 8.0, tint, 0.5, "heal")
+			game.spawn_unit_fx(target.ground, "spark", dest_height, 1.0, 0.2, tint)
+		queue_free()
+		return
 	Suoni.play("impatto", 0.8 if splash > 0.0 else 1.0, -2.0 if look == "necro" else 0.0)
 	if to_tower:
 		game.damage_tower(dmg * Data.TOWER_RANGED_TAKEN)
@@ -87,9 +94,11 @@ func _hit() -> void:
 	elif target != null and is_instance_valid(target) and not target.dead:
 		game.spawn_unit_fx(target.ground, "spark", dest_height, signf(dest.x - ground.x + 0.01), 0.22,
 			tint if look != "arrow" else C_WHITE)
+		game.colpo_necro = look == "necro"  # colpo della torre: chi muore è ucciso dal necromante
 		target.take_damage(dmg, shooter)
 		if look == "necro":  # poteri del necromante: veleno, maledizione, gelo
 			game.on_necro_hit(target, dmg)
+		game.colpo_necro = false
 	if to_tower:
 		game.spawn_unit_fx(dest, "spark", dest_height, -1.0, 0.25)
 	queue_free()
@@ -112,6 +121,11 @@ func _draw() -> void:
 			draw_rect(Rect2(-2, -2, 4, 4), Color(tint, 0.45))
 			draw_rect(Rect2(-1, -1, 2, 2), C_WHITE)
 			draw_rect(Rect2(-3, 0, 2, 1), tint)
+		"cura":  # crocetta luminosa
+			draw_rect(Rect2(-2, -2, 5, 5), Color(tint, 0.35))
+			draw_rect(Rect2(-1, 0, 3, 1), tint)
+			draw_rect(Rect2(0, -1, 1, 3), tint)
+			draw_rect(Rect2(0, 0, 1, 1), C_WHITE)
 		"necro":
 			draw_rect(Rect2(-2, -2, 5, 5), Color(tint, 0.4))
 			draw_rect(Rect2(-1, -1, 3, 3), tint.darkened(0.3))

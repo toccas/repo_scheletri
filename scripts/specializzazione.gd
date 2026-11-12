@@ -88,12 +88,14 @@ extends Resource
 @export_range(0.0, 0.8, 0.05) var aura_rallenta := 0.0
 ## Negromante: scheletri rianimati in più contemporaneamente.
 @export_range(0, 6) var rianimati_extra := 0
+## Guaritore: scheletri feriti in più curati a ogni colpo (al 70%).
+@export_range(0, 6) var curati_extra := 0
 
 ## Come si sommano due specializzazioni (rango 3 + rango 5).
 const MOLTIPLICA := ["vita", "danno", "cadenza", "gittata", "velocita", "area", "danno_campioni", "potenza_speciale"]
 const SOMMA := ["unita_extra", "colpi_extra", "catena", "critico", "danno_nel_tempo", "rallenta", "stordisci",
 	"rubavita", "esecuzione", "respingi", "riduzione_danni", "spine", "rigenera", "schiva",
-	"aura_cura", "aura_rallenta", "rianimati_extra"]
+	"aura_cura", "aura_rallenta", "rianimati_extra", "curati_extra"]
 const MASSIMO := ["danno_colpi_extra", "danno_catena", "danno_critico", "durata_danno_nel_tempo", "durata_rallenta",
 	"durata_stordisci", "maledici", "esplosione", "danno_esplosione", "esplode_alla_morte"]
 ## Limiti dopo la somma.

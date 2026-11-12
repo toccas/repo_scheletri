@@ -142,7 +142,7 @@ const NODES := {
 	},
 	# --- Signore delle Ossa: ricerca in più nel ramo Necromante ---------------
 	"raccolto": {
-		"tree": "ossa", "name": "Raccolto d'ossa", "desc": "Probabilità che un nemico ucciso si rialzi come scheletro +5% per livello.",
+		"tree": "ossa", "name": "Raccolto d'ossa", "desc": "Probabilità che un nemico ucciso dal necromante si rialzi come scheletro +5% per livello.",
 		"branch": 0, "pos": Vector2i(0, 2), "costs": [8, 17, 32], "requires": ["occhio", 1],
 		"effect": "rialza", "value": 0.05, "icon": Vector2(96, 32), "tex": "necro",
 	},

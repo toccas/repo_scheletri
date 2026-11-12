@@ -46,7 +46,7 @@ azione = 1
 lato_etichetta = 3
 
 [node name="Etichetta" type="Marker2D" parent="Mondo/Cortile/Ricerca" unique_id=1802843982]
-position = Vector2(1.25, -65.75)
+position = Vector2(1.25, -69.75)
 gizmo_extents = 4.0
 
 [node name="Negozio" type="Sprite2D" parent="Mondo/Cortile" unique_id=293230516]

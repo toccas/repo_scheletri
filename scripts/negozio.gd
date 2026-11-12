@@ -13,6 +13,7 @@ extends Control
 ## Tasti: frecce sinistra/destra = pagina, Esc / Backspace = torna al menu.
 
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
@@ -84,6 +85,7 @@ var back_rect := Rect2(24, 652, 120, 50)
 
 
 func _ready() -> void:
+	ReportDev.evento("SCENA", "Negozio", {"monete": int(Portafoglio.load_state()["monete"])})
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if tema:
@@ -226,6 +228,7 @@ func _press(what: String) -> void:
 		pop_t = 0.4
 		_merchant(msg)
 		print("[negozio] %s -> %s" % [item.id, msg])
+		ReportDev.evento("NEGOZIO", "%s: %s" % [item.id, msg], {"riuscito": ok, "monete": int(Portafoglio.load_state()["monete"])})
 	elif what.begins_with("card:"):
 		var item := oggetti[int(what.substr(5))]
 		var why := Portafoglio.why_not(wallet, item)

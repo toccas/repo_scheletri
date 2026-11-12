@@ -39,7 +39,8 @@ extends Resource
 @export_group("Evocazioni (Signore delle Ossa)")
 ## Squadre in più da schierare a inizio partita.
 @export_range(0, 10) var squadre_extra := 0
-## Probabilità che un nemico ucciso si rialzi come scheletro (0.1 = 10%).
+## Probabilità che un nemico ucciso dal necromante (torre e magie) si rialzi come scheletro (0.1 = 10%).
+## Gli eroi finiti dagli scheletri non si rialzano.
 @export_range(0.0, 1.0, 0.01) var rialza_probabilita := 0.0
 ## Secondi di vita dello scheletro rialzato.
 @export_range(1.0, 120.0, 0.5) var rialza_durata := 20.0

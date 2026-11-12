@@ -24,6 +24,7 @@ const ITEMS := {
 	"arciere": [".DDDD.", "D....D", "LLLLLL"],
 	"mago": ["..A..", ".AA..", ".AaA.", "aaaaa"],
 	"gigante": [".MMMM.", "MLLLLM", "AAAAAA"],
+	"guaritore": ["..A..", ".AAA.", "..A..", "..M..", "..M.."],
 	"boss": ["A.A.A", "AAAAA", "aAaAa"],
 }
 const GRAYS := {"W": Color("ececec"), "L": Color("acacac"), "M": Color("707070"), "D": Color("3a3a3a"), "K": Color("141414")}

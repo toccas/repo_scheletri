@@ -15,6 +15,7 @@ extends Node2D
 ##   trafiggi  colpisce anche il nemico dietro (60%)      furia     più ferito = più forte
 ##   carica    dopo una corsa il colpo fa danno doppio     provoca   attira i nemici, -30% danni subiti
 ##   trapassa  secondo dardo sul nemico dietro (60%)       catapulta lontanissimo, area, non tira da vicino
+##                                                                   né a chi vola
 ##   cecchino  mira il nemico con più vita                 rianima   i nemici morti vicino tornano scheletri
 ##   peste     nubi che avvelenano e rallentano            maledici  i colpiti subiscono +30% danni
 ##   urlo      ferisce e stordisce chi è vicino            aura      +25% danni e velocità ai vicini
@@ -22,6 +23,7 @@ extends Node2D
 ##   muro      barricata che attira i nemici               esplodi   esplode sui nemici (rinasce a fine ondata)
 ##   volo      vola su tutto il campo e piomba sui nemici   raggio    raggio continuo che brucia sempre di più
 ##             (gli eroi corpo a corpo non lo colpiscono)             finché colpisce lo stesso bersaglio
+##   cura      (scheletri ed eroi) cura il compagno più ferito a portata; se nessuno è ferito combatte
 ##
 ## SPECIALIZZAZIONI (rango 3 e 5, vedi specializzazione.gd): `spec` contiene gli effetti
 ## sommati dei rami scelti; vita/danno/cadenza/gittata/area sono già nelle statistiche,
@@ -39,7 +41,7 @@ const SPECIAL_SOUNDS := {
 	"schianto": ["spada", 0.65], "falce": ["spada", 0.8], "carica": ["spada", 0.9],
 	"catapulta": ["freccia", 0.55], "cecchino": ["freccia", 1.25], "trapassa": ["freccia", 0.9],
 	"urlo": ["magia", 0.55], "rianima": ["necromante", 1.3], "peste": ["magia", 0.8],
-	"maledici": ["necromante", 1.1], "esplodi": ["palla_di_fuoco", 1.2],
+	"maledici": ["necromante", 1.1], "esplodi": ["palla_di_fuoco", 1.2], "cura": ["magia", 1.3],
 }
 
 const ALLY := 0
@@ -97,6 +99,10 @@ var aura_t := 0.0
 var dot_t := 0.0
 var dot_dps := 0.0
 var dot_col := Color(1, 0.5, 0.2)
+var dot_necro := false  # il veleno viene dal necromante (Strega)
+## L'ultimo danno è arrivato dal necromante (torre, magie, suo veleno)? Il Signore delle
+## Ossa rialza solo gli eroi uccisi da lui, non quelli finiti dagli scheletri.
+var ultimo_necro := false
 var slow_col := Color(0, 0, 0, 0)
 ## Eroi spronati da un campione (GRIDO): +buff_k danni, più veloci, per buff_t secondi.
 var buff_t := 0.0
@@ -283,6 +289,9 @@ void fragment() {
 	if in_volo and team == ENEMY:
 		sprite.texture = game.tex_volante
 		_update_frame()
+	if kind == "guaritore" and team == ENEMY:
+		sprite.texture = game.tex_guaritore
+		_update_frame()
 	if spec_col.a > 0.0:
 		var base_col := Data.accent(kind, team)
 		sprite.material.set_shader_parameter("swap", 1.0)
@@ -312,7 +321,7 @@ func _face() -> float:
 func _update_frame() -> void:
 	if team == ALLY:
 		sprite.region_rect = Data.ally_region(kind, frame)
-	elif in_volo:  # striscia 32x16: ali su, ali giù
+	elif in_volo or kind == "guaritore":  # striscia 32x16 con 2 frame (volanti, guaritori)
 		sprite.region_rect = Rect2(frame * 16, 0, 16, 16)
 	else:
 		# eroi del bioma (elfi, vichinghi...): la loro striscia ha una riga sola
@@ -354,6 +363,7 @@ func _process(delta: float) -> void:
 	_tinta_stati()
 	if dot_t > 0.0:  # fuoco / veleno delle specializzazioni
 		dot_t -= delta
+		ultimo_necro = dot_necro
 		poison(dot_dps * delta)
 		if dead:
 			return
@@ -441,6 +451,8 @@ func _in_range(other) -> bool:
 func _ally_update(delta: float) -> void:
 	if special == "aura" or special == "muro":
 		return  # non attaccano: restano dove li hai messi
+	if special == "cura" and _cura_update():
+		return
 	if special == "raggio":
 		_raggio_update(delta)
 		return
@@ -525,6 +537,8 @@ func _enemy_update(delta: float) -> void:
 		else:
 			ground = ground.move_toward(Vector2(game.wall_x, game.tower_base_y), get_speed() * delta)
 		return
+	if special == "cura" and _cura_update():
+		return  # si ferma a curare
 	# 1) scheletri vicini (prima chi provoca: scudieri e muri)  2) la torre  3) avanza verso sinistra
 	var engage := radius + 13.0 if melee else attack_range
 	var taunter = game.nearest_taunter(ground, engage + 22.0)
@@ -546,6 +560,58 @@ func _enemy_update(delta: float) -> void:
 	# vicino alla torre i nemici convergono verso la sua base
 	if to_tower < 40.0:
 		ground.y = move_toward(ground.y, game.tower_base_y, get_speed() * delta * 0.7)
+
+
+## Guaritori (scheletri ed eroi): se un compagno a portata è ferito restano fermi e
+## curano il più ferito (in proporzione alla vita); true = sta curando.
+func _cura_update() -> bool:
+	var amici: Node = game.allies_root if team == ALLY else game.enemies_root
+	var t = _piu_ferito(amici, [])
+	if t == null:
+		return false
+	if atk_timer <= 0.0:
+		atk_timer = get_cooldown()
+		attack_anim = ATTACK_ANIM
+		lunge = -1.0
+		var forza := potenza_cura()
+		_lancia_cura(t, forza)
+		var curati: Array = [t]
+		for _i in int(sp("curati_extra")):  # specializzazione: cura anche altri feriti
+			var altro = _piu_ferito(amici, curati)
+			if altro == null:
+				break
+			curati.append(altro)
+			_lancia_cura(altro, forza * 0.7)
+	return true
+
+
+## Il compagno a portata con meno vita in proporzione (null se nessuno è ferito).
+func _piu_ferito(amici: Node, esclusi: Array):
+	var best = null
+	var best_k := 0.98
+	for c in amici.get_children():
+		if c.dead or not c.visible or c.entering or c.hp >= c.max_hp - 0.5 or c in esclusi:
+			continue
+		if ground.distance_to(c.ground) > attack_range + c.radius:
+			continue
+		var k: float = c.hp / c.max_hp
+		if k < best_k:
+			best_k = k
+			best = c
+	return best
+
+
+## Vita ridata da un colpo di cura: cresce con la vita dell'unità (ranghi, ricerche,
+## livello della squadra; per gli eroi l'ondata) e con la potenza delle specializzazioni.
+func potenza_cura() -> float:
+	var d: Dictionary = Data.UNITS[kind]
+	var k := max_hp / maxf(1.0, float(d["hp"]))
+	return float(d.get("cura", 0.0)) * k * sp("potenza_speciale", 1.0)
+
+
+func _lancia_cura(t, forza: float) -> void:
+	game.spawn_projectile(team, ground, muzzle_height(), t, false, forza, 0.0, true, "cura", self)
+	Suoni.play("magia", 1.35 if team == ALLY else 1.2, -4.0)
 
 
 func _move_toward(p: Vector2, delta: float) -> void:
@@ -576,7 +642,7 @@ func _special_target():
 		if d > attack_range:
 			continue
 		if special == "catapulta":
-			if d < CATAPULT_MIN:
+			if d < CATAPULT_MIN or c.in_volo:  # non mira chi vola
 				continue
 			if best == null or d < best_v:
 				best = c
@@ -632,7 +698,7 @@ func _basic_attack(t, k: float = 1.0) -> void:
 	else:
 		lunge = -1.5
 		game.spawn_unit_fx(ground + Vector2(4 * _face(), 0), "spark", muzzle_height(), _face(), 0.15)
-		game.spawn_projectile(team, ground, muzzle_height(), t, false, get_dmg() * k, splash, kind == "mago", "", self)
+		game.spawn_projectile(team, ground, muzzle_height(), t, false, get_dmg() * k, splash, kind == "mago" or special == "cura", "", self)
 
 
 ## Altri `n` nemici vicini per i colpi extra (a distanza: entro la gittata; corpo a corpo: attorno al bersaglio).
@@ -646,7 +712,7 @@ func _altri_bersagli(t, n: int) -> Array:
 				continue
 		else:
 			var d: float = ground.distance_to(c.ground)
-			if d > attack_range or (special == "catapulta" and d < CATAPULT_MIN):
+			if d > attack_range or (special == "catapulta" and (d < CATAPULT_MIN or c.in_volo)):
 				continue
 		c_list.append(c)
 	c_list.sort_custom(func(a, b) -> bool: return a.ground.distance_squared_to(t.ground) < b.ground.distance_squared_to(t.ground))
@@ -710,6 +776,9 @@ func _special_attack(t, k: float = 1.0) -> void:
 			lunge = -1.5
 			game.spawn_unit_fx(ground + Vector2(4 * _face(), 0), "spark", muzzle_height(), _face(), 0.15)
 			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, 0.0, false, "", self)
+		"cura":  # nessuno da curare: un colpo magico debole
+			lunge = -1.0
+			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, 0.0, true, "", self)
 		"rianima":
 			lunge = -1.0
 			game.spawn_projectile(team, ground, muzzle_height(), t, false, dmg, 0.0, true, "", self)
@@ -746,7 +815,7 @@ func _attack_tower() -> void:
 		lunge = 5.0
 		game.spawn_unit_fx(ground + Vector2(-radius - 2, 0), "slash", muzzle_height(), _face(), 0.2)
 	else:
-		game.spawn_projectile(team, ground, muzzle_height(), null, true, get_dmg(), 0.0, kind == "mago", "", self)
+		game.spawn_projectile(team, ground, muzzle_height(), null, true, get_dmg(), 0.0, kind == "mago" or special == "cura", "", self)
 
 
 func _separate(delta: float) -> void:
@@ -775,6 +844,9 @@ func take_damage(amount: float, attacker = null) -> void:
 	var att_ok: bool = attacker != null and is_instance_valid(attacker) and not attacker.dead
 	if in_volo and att_ok and attacker.team != team and attacker.melee and not attacker.in_volo:
 		return  # spade e asce non arrivano fin lassù
+	if in_volo and attacker != null and is_instance_valid(attacker) and attacker.special == "catapulta" and attacker.team != team:
+		return  # i teschi della catapulta volano a parabola e ricadono a terra: chi vola non lo prendono
+	ultimo_necro = game.colpo_necro
 	if team == ALLY and not spec.is_empty():  # difese delle specializzazioni
 		if sp("schiva") > 0.0 and randf() < sp("schiva"):
 			game.spawn_unit_fx(ground, "spark", muzzle_height(), -_face(), 0.2, C_WHITE)
@@ -849,7 +921,7 @@ func _attack_sound() -> void:
 		Suoni.play(sp[0], sp[1] * big, -2.0)
 	elif melee:
 		Suoni.play("spada", big * (1.1 if team == ALLY else 0.95))
-	elif kind == "mago" or role == "magia":
+	elif kind == "mago" or role == "magia" or special == "cura":
 		Suoni.play("magia", 1.0 if team == ALLY else 0.85)
 	else:
 		Suoni.play("freccia", 1.0 if team == ALLY else 0.9)

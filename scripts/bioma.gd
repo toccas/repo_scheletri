@@ -42,3 +42,6 @@ enum Ambiente { CIMITERO, PALUDE, CATTEDRALE, MONTAGNA }
 ## guardano a destra. Vuoto = gli angeli guerrieri del cimitero. Il loro colore d'accento va
 ## in "Colori nemici" con la chiave "volante".
 @export var sprite_volante: Texture2D
+## Eroi guaritori di questo campo: striscia 32x16 con 2 frame, che guardano a destra.
+## Vuoto = i chierici del cimitero. Il colore delle cure va in "Colori nemici" con la chiave "guaritore".
+@export var sprite_guaritore: Texture2D

@@ -174,4 +174,6 @@ static func testo_effetti(s: Specializzazione) -> Array[String]:
 		t.append(Lingua.t("rallenta del %d%% i nemici vicini") % _pc(s.aura_rallenta))
 	if s.rianimati_extra > 0:
 		t.append(Lingua.t("+%d scheletri rianimati alla volta") % s.rianimati_extra)
+	if s.curati_extra > 0:
+		t.append(Lingua.t("cura anche altri %d scheletri feriti (70%%)") % s.curati_extra)
 	return t

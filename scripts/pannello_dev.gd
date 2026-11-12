@@ -9,6 +9,8 @@ extends CanvasLayer
 ##   RISORSE   pergamene, monete d'osso, punti, VIP, necromanti, fondi infiniti, tutorial
 ##   LIVELLI   sblocca/completa i livelli e gioca subito quello che vuoi
 ##   PARTITA   (solo in battaglia) vinci l'ondata, salta a un'ondata, livelli, torre invincibile
+##   REPORT    il registro di tutto quello che succede (vedi report_dev.gd): leggilo,
+##             salvalo in un file (e negli appunti) o mandalo con il modulo dei feedback
 ## Le modifiche si salvano subito; "Ricarica scena" le fa vedere nella scena aperta.
 
 const Data := preload("res://scripts/game_data.gd")
@@ -19,6 +21,8 @@ const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Necromanti := preload("res://scripts/necromanti.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
+const Impostazioni := preload("res://scripts/impostazioni.gd")
 const SAVE_PATH := "user://progressi.cfg"
 
 const C0 := Color("141414")
@@ -34,6 +38,10 @@ var avevo_messo_pausa := false
 var info: Label
 var reset_armato := false
 var tabs: TabContainer
+var report_vista: TextEdit
+var report_stato: Label
+var report_http: HTTPRequest
+var report_file := ""
 
 
 func _ready() -> void:
@@ -70,6 +78,7 @@ func _ready() -> void:
 	tabs.add_child(_tab_ricerche())
 	tabs.add_child(_tab_risorse())
 	tabs.add_child(_tab_livelli())
+	tabs.add_child(_tab_report())
 	if _partita() != null:
 		tabs.add_child(_tab_partita())
 		tabs.current_tab = tabs.get_tab_count() - 1
@@ -77,6 +86,7 @@ func _ready() -> void:
 		tabs.current_tab = 3  # dalla scelta del livello apre LIVELLI
 	info = Label.new()
 	info.add_theme_color_override("font_color", C5)
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # i messaggi lunghi vanno a capo
 	box.add_child(info)
 	_msg("Le modifiche si salvano subito. Premi \"Ricarica scena\" per vederle nella scena aperta.")
 
@@ -514,6 +524,103 @@ func _tab_livelli() -> Control:
 
 
 # --- Aspetto ---------------------------------------------------------------------------
+
+# --- Report -----------------------------------------------------------------------
+
+func _tab_report() -> Control:
+	var box := VBoxContainer.new()
+	box.name = "REPORT"
+	report_stato = Label.new()
+	report_stato.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(report_stato)
+	report_vista = TextEdit.new()
+	report_vista.editable = false
+	report_vista.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	report_vista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	report_vista.add_theme_font_size_override("font_size", 12)
+	report_vista.add_theme_color_override("font_readonly_color", C5)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("101010")
+	sb.set_content_margin_all(6)
+	report_vista.add_theme_stylebox_override("read_only", sb)
+	report_vista.add_theme_stylebox_override("normal", sb)
+	box.add_child(report_vista)
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	row.add_child(_btn("SALVA REPORT", _salva_report))
+	row.add_child(_btn("INVIA REPORT", _invia_report))
+	if not OS.has_feature("mobile"):
+		row.add_child(_btn("Apri cartella", func() -> void:
+			if report_file == "":
+				report_file = ReportDev.salva()
+			ReportDev.mostra_cartella(report_file)))
+	row.add_child(_btn("Aggiorna", _aggiorna_report))
+	var az := _btn("Azzera registro", Callable())
+	az.pressed.connect(func() -> void:
+		ReportDev.azzera()
+		ReportDev.sezione("REGISTRO AZZERATO")
+		_aggiorna_report()
+		_msg("Registro azzerato."))
+	row.add_child(az)
+	report_http = HTTPRequest.new()
+	report_http.timeout = 30.0
+	report_http.request_completed.connect(_report_inviato)
+	box.add_child(report_http)
+	_aggiorna_report()
+	return box
+
+
+func _aggiorna_report() -> void:
+	var t := ReportDev.testo()
+	var righe := t.split("\n")
+	var ultime := righe.slice(maxi(0, righe.size() - 400))
+	report_vista.text = "\n".join(ultime)
+	report_vista.scroll_vertical = report_vista.get_line_count()
+	report_stato.text = "Registro: %d righe · %d KB.  Si scrive da solo mentre giochi con la modalità dev attiva (partite, ondate, magie, scelte, negozio, ricerche...). Qui sotto le ultime 400 righe." % [righe.size() - 1, ceili(t.to_utf8_buffer().size() / 1024.0)]
+	if not ReportDev.attivo():
+		report_stato.text += "  ATTENZIONE: la modalità dev non è attiva, il registro è fermo."
+
+
+func _salva_report() -> void:
+	ReportDev.evento("DEV", "Report salvato")
+	report_file = ReportDev.salva()
+	_aggiorna_report()
+	if report_file == "":
+		_msg("Non sono riuscito a salvare il file, ma il report è negli appunti: incollalo in un messaggio.")
+	else:
+		_msg("Report salvato in %s e copiato negli appunti: puoi incollarlo in un messaggio o allegare il file." % report_file)
+
+
+## Manda il report con il modulo dei feedback (Formspree); senza modulo apre l'app email.
+func _invia_report() -> void:
+	var cod := Impostazioni.codici_dal_menu()
+	var url := String(cod.get("url", ""))
+	var email := String(cod.get("email", ""))
+	ReportDev.evento("DEV", "Report inviato")
+	var r := ReportDev.report_completo()
+	DisplayServer.clipboard_set(r)
+	if url.begins_with("http"):
+		# i moduli accettano testi lunghi ma non infiniti: le ultime 90.000 lettere bastano
+		var corpo := r if r.length() <= 90000 else r.substr(0, 2500) + "\n(... tagliato ...)\n" + r.substr(r.length() - 87000)
+		var data := {"_subject": "Report dev · Gioco Scheletri", "tipo": "report dev", "messaggio": corpo}
+		var err := report_http.request(url, ["Content-Type: application/json", "Accept: application/json"],
+			HTTPClient.METHOD_POST, JSON.stringify(data))
+		_msg("Invio del report in corso..." if err == OK else "Invio non riuscito (errore %d): il report è negli appunti." % err)
+		return
+	if email != "" and not email.contains("esempio"):
+		var testo := "Il report completo è negli appunti: incollalo qui sotto (tieni premuto > Incolla).\n\n" + r.substr(0, 1500)
+		OS.shell_open("mailto:%s?subject=%s&body=%s" % [email, "Report dev · Gioco Scheletri".uri_encode(), testo.uri_encode()])
+		_msg("Si è aperta l'app email: il report completo è negli appunti, incollalo nel messaggio.")
+		return
+	_msg("Nessun modulo né email impostati (Inspector del nodo Menu, \"Bug e consigli\"): il report è negli appunti, usa SALVA REPORT per il file.")
+
+
+func _report_inviato(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+	if result == HTTPRequest.RESULT_SUCCESS and code >= 200 and code < 300:
+		_msg("Report inviato! Arriva come un messaggio di Bug e consigli.")
+	else:
+		_msg("Invio non riuscito (risultato %d, codice %d): il report è negli appunti, oppure usa SALVA REPORT." % [result, code])
+
 
 func _btn(text: String, fn: Callable) -> Button:
 	var b := Button.new()

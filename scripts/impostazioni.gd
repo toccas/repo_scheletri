@@ -179,6 +179,12 @@ static func codici_dal_menu() -> Dictionary:
 			out["dev"] = String(s.get_node_property_value(0, i))
 		elif nome == "codice_torre_infernale":
 			out["infernale"] = String(s.get_node_property_value(0, i))
+		elif nome == "email_feedback":  # per mandare il report dev
+			out["email"] = String(s.get_node_property_value(0, i))
+		elif nome == "url_invio_feedback":
+			out["url"] = String(s.get_node_property_value(0, i))
+		elif nome == "versione_gioco":
+			out["versione"] = String(s.get_node_property_value(0, i))
 	return out
 
 

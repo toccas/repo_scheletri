@@ -9,6 +9,7 @@ extends Control
 ## C = classifica, Esc = torna al menu.
 
 const Pietra := preload("res://scripts/ui_pietra.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
@@ -203,6 +204,7 @@ func _gioca(i: int, infinita: bool = false) -> void:
 		return
 	Suoni.play("conferma")
 	Livelli.scegli(lista[i], infinita and Livelli.finito(lista[i].id))
+	ReportDev.evento("LIVELLO", "Sceglie %s%s" % [lista[i].id, " (infinita)" if infinita and Livelli.finito(lista[i].id) else ""], {"record": Livelli.record(lista[i].id)})
 	leaving = PREP_SCENE
 
 

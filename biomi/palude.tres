@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="Bioma" format=3 uid="uid://bmltkakrti35r"]
+[gd_resource type="Resource" script_class="Bioma" format=3]
 
-[ext_resource type="Script" uid="uid://cbseq6shyvorj" path="res://scripts/bioma.gd" id="1_bio"]
-[ext_resource type="Texture2D" uid="uid://cdsewbci6a3u1" path="res://assets/biomi/palude/cielo.png" id="2_cie"]
-[ext_resource type="Texture2D" uid="uid://d2580orgsq3bl" path="res://assets/biomi/palude/terreno.png" id="3_ter"]
-[ext_resource type="Texture2D" uid="uid://djak0f5h7dm2l" path="res://assets/biomi/palude/lastre.png" id="4_las"]
-[ext_resource type="Texture2D" uid="uid://corh811ogopfj" path="res://assets/biomi/palude/ostacoli.png" id="5_ost"]
-[ext_resource type="Texture2D" uid="uid://cgtpn1p2dmp6v" path="res://assets/biomi/palude/nemici.png" id="6_nem"]
-[ext_resource type="Texture2D" uid="uid://bk088y3ekmx4c" path="res://assets/nemici/volanti/palude.png" id="9_vol"]
+[ext_resource type="Script" path="res://scripts/bioma.gd" id="1_bio"]
+[ext_resource type="Texture2D" path="res://assets/biomi/palude/cielo.png" id="2_cie"]
+[ext_resource type="Texture2D" path="res://assets/biomi/palude/terreno.png" id="3_ter"]
+[ext_resource type="Texture2D" path="res://assets/biomi/palude/lastre.png" id="4_las"]
+[ext_resource type="Texture2D" path="res://assets/biomi/palude/ostacoli.png" id="5_ost"]
+[ext_resource type="Texture2D" path="res://assets/biomi/palude/nemici.png" id="6_nem"]
+[ext_resource type="Texture2D" path="res://assets/nemici/volanti/palude.png" id="9_vol"]
+[ext_resource type="Texture2D" path="res://assets/nemici/guaritori/palude.png" id="10_gua"]
 
 [resource]
 script = ExtResource("1_bio")
@@ -17,14 +18,10 @@ lastre = ExtResource("4_las")
 ostacoli = ExtResource("5_ost")
 ambiente = 1
 stelle = false
+pipistrelli = true
 eroi_lontani = false
 colore_barriera = Color(0.07, 0.11, 0.09, 1)
 sprite_nemici = ExtResource("6_nem")
-colori_nemici = Dictionary[String, Color]({
-"arciere": Color(0.4078, 0.7451, 0.298, 1),
-"gigante": Color(0.7137, 0.8392, 0.251, 1),
-"mago": Color(0.8706, 0.3843, 0.7137, 1),
-"soldato": Color(0.251, 0.6902, 0.6275, 1),
-"volante": Color(0.8078, 0.5882, 0.9647, 1)
-})
+colori_nemici = Dictionary[String, Color]({"soldato": Color(0.251, 0.6902, 0.6275, 1), "arciere": Color(0.4078, 0.7451, 0.298, 1), "mago": Color(0.8706, 0.3843, 0.7137, 1), "gigante": Color(0.7137, 0.8392, 0.251, 1), "volante": Color(0.8078, 0.5882, 0.9647, 1), "guaritore": Color(0.4078, 0.7451, 0.2980, 1)})
 sprite_volante = ExtResource("9_vol")
+sprite_guaritore = ExtResource("10_gua")

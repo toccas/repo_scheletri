@@ -15,6 +15,8 @@ extends Control
 ## SPECIALIZZAZIONI: al rango 3 e al rango 5 ogni unità sceglie tra due rami.
 ## Clicca la stella in basso a destra sulla carta (o tasto destro sulla carta) per
 ## aprire la scelta. I rami si modificano in specializzazioni/<unità>.tres.
+## La prima volta che un'unità arriva al rango 3 una guida (guida.gd) mostra con una
+## freccia dove toccare: la stella sulla carta, poi uno dei due rami, poi CHIUDI.
 ##
 ## STATISTICHE: nell'Inspector di questo nodo, sezione "Statistiche delle unità",
 ## c'è un gruppo per ogni scheletro (vita, attacco, velocità d'attacco, gittata,
@@ -24,6 +26,7 @@ extends Control
 ## level-up si applicano sopra questi valori.
 
 const Data := preload("res://scripts/game_data.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
@@ -33,6 +36,7 @@ const Pietra := preload("res://scripts/ui_pietra.gd")
 const Livelli := preload("res://scripts/livelli.gd")
 const Spec := preload("res://scripts/specializzazioni.gd")
 const Necromanti := preload("res://scripts/necromanti.gd")
+const Guida := preload("res://scripts/guida.gd")
 const TEX_SKY := preload("res://assets/campo/cielo.png")
 const TEX_GROUND := preload("res://assets/campo/terreno.png")
 const LEVELS_SCENE := "res://scenes/selezione_livello.tscn"
@@ -82,6 +86,8 @@ var spec_kind := ""
 var spec_rects: Array = []  # [{rect, rango, idx}]
 var spec_close := Rect2()
 var spec_hover := -1
+var guida_kind := ""  # guida delle specializzazioni: l'unità arrivata al rango 3
+var guida_passo := 0  # 0 = nessuna, 1 = tocca la stella, 2 = scegli un ramo, 3 = chiudi
 var _icone_rami := {}
 ## [nome nell'Inspector, chiave, intervallo]: le statistiche modificabili di ogni unità.
 const STAT_FIELDS := [
@@ -192,18 +198,40 @@ func _ready() -> void:
 	st = Collezione.load_state()
 	while st["squad"].size() < Collezione.SQUAD_SIZE:
 		st["squad"].append("")
-	for i in Data.ALLY_ORDER.size():
+	var ordine := Data.per_rarita()  # collezione in ordine di rarità
+	for i in ordine.size():
 		var c := i % GRID_COLS
 		var r := floori(i / float(GRID_COLS))
-		card_rects[Data.ALLY_ORDER[i]] = Rect2(GRID_POS + Vector2(c * (CARD.x + CARD_GAP), r * (CARD.y + CARD_GAP)), CARD)
+		card_rects[ordine[i]] = Rect2(GRID_POS + Vector2(c * (CARD.x + CARD_GAP), r * (CARD.y + CARD_GAP)), CARD)
 	for i in Collezione.SQUAD_SIZE:
 		altar_rects.append(Rect2(672 + i * 146, 150, 136, 230))
 	_select_first_empty()
+	_prepara_guida()
+	ReportDev.evento("SCENA", "Preparazione", {"squadra": _squad(), "collezione": st["owned"].size(), "necromante": Necromanti.attivo_id()})
 	for k in st["owned"]:
-		if Spec.da_scegliere(k, st["owned"][k]) > 0:
+		if guida_passo == 0 and Spec.da_scegliere(k, st["owned"][k]) > 0:
 			_say(tr("Nuove specializzazioni da scegliere: clicca la stella sulle carte!"))
 			message_t = 4.0
 			break
+
+
+## Guida delle specializzazioni: parte se un'unità è al rango 3 senza ramo scelto
+## e la guida non è mai stata completata.
+func _prepara_guida() -> void:
+	if Guida.finita():
+		return
+	var k := Guida.in_corso()
+	if k == "" or not st["owned"].has(k) or Spec.da_scegliere(k, st["owned"][k]) != 3:
+		k = ""
+		for u: String in Data.per_rarita():
+			if st["owned"].has(u) and Spec.da_scegliere(u, st["owned"][u]) == 3:
+				k = u
+				break
+	if k == "":
+		return
+	Guida.inizia(k)
+	guida_kind = k
+	guida_passo = 1
 
 
 func _select_first_empty() -> void:
@@ -282,6 +310,11 @@ func _gui_input(event: InputEvent) -> void:
 	var h := _hit(event.position)
 	if h.is_empty():
 		return
+	if guida_passo == 1:  # guida: risponde solo la stella dell'unità indicata
+		var destro: bool = event.button_index == MOUSE_BUTTON_RIGHT and h["type"] == "card"
+		if h["id"] is String and h["id"] == guida_kind and (h["type"] == "spec" or destro):
+			_apri_rami(guida_kind)
+		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		if h["type"] in ["card", "spec"] and st["owned"].has(h["id"]):
 			_apri_rami(h["id"])
@@ -312,10 +345,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if leaving != "" or not (event is InputEventKey and event.pressed and not event.echo):
 		return
+	if guida_passo in [1, 2]:
+		return  # durante la guida si tocca solo il punto indicato
 	if spec_kind != "":
 		if event.keycode in [KEY_ESCAPE, KEY_BACKSPACE, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 			Suoni.play("click", 0.9)
 			spec_kind = ""
+			_fine_guida()
 		return
 	var num: int = [KEY_1, KEY_2, KEY_3, KEY_4].find(event.keycode)
 	if num >= 0:
@@ -341,6 +377,7 @@ func _place(kind: String) -> void:
 		squad[j] = squad[selected]
 	squad[selected] = kind
 	_save()
+	ReportDev.evento("SQUADRA", "Mette %s sull'altare %d" % [kind, selected + 1], {"squadra": _squad()})
 	# passa al prossimo altare vuoto, così riempi la squadra di fila
 	for i in squad.size():
 		if squad[i] == "":
@@ -357,6 +394,7 @@ func _press(id: String) -> void:
 				return
 			Suoni.play("conferma")
 			_save()
+			ReportDev.evento("PREPARAZIONE", "Inizia la run", {"squadra": _squad(), "necromante": Necromanti.attivo_id()})
 			leaving = Livelli.scena_scelta()
 		"back":
 			Suoni.play("click")
@@ -373,6 +411,7 @@ func _press(id: String) -> void:
 				if prossimo == Necromanti.attivo_id():
 					_say(tr("Altri necromanti si comprano nel negozio."))
 				Necromanti.scegli(prossimo)
+				ReportDev.evento("NECROMANTE", "Sceglie %s" % prossimo)
 			mostra_necro = true
 
 
@@ -457,6 +496,7 @@ func _draw() -> void:
 
 	if spec_kind != "":
 		_draw_rami(vp)
+	_draw_guida(vp)
 	if message_t > 0.0:
 		var a := clampf(message_t, 0.0, 1.0)
 		var w := font.get_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 32
@@ -660,7 +700,9 @@ func _draw_info(r: Rect2, k: String) -> void:
 	var ss := stats_for(k)
 	var e := Spec.effetti(k, rank)  # le specializzazioni cambiano le statistiche
 	var line := tr("x%d per squadra · Vita %d") % [ss["count"] + int(e["unita_extra"]), int(ss["hp"] * rm * e["vita"])]
-	if ss["dmg"] > 0.0:
+	if d.has("cura"):  # guaritori: vita ridata a ogni colpo (al posto dell'attacco)
+		line += tr(" · Cura %d") % int(float(d["cura"]) * rm * float(e["vita"]) * float(e["potenza_speciale"]))
+	elif ss["dmg"] > 0.0:
 		line += tr(" · Attacco %d") % int(ss["dmg"] * rm * e["danno"])
 	if not d["melee"]:
 		line += tr(" · Gittata %d") % int(ss["range"] * e["gittata"])
@@ -696,6 +738,22 @@ func _sfondo_livello() -> void:
 func _badge_rect(k: String) -> Rect2:
 	var r: Rect2 = card_rects[k]
 	return Rect2(r.end.x - 28, r.end.y - 28, 22, 22)
+
+
+## Freccia e indicazione della guida delle specializzazioni.
+func _draw_guida(vp: Vector2) -> void:
+	if guida_passo == 1 and spec_kind == "":
+		Guida.disegna(self, font, vp, _badge_rect(guida_kind),
+			tr("Tocca la stella di %s per scegliere la specializzazione") % Data.nome(guida_kind), t)
+	elif guida_passo == 2 and spec_kind == guida_kind:
+		var zona := Rect2()
+		for o in spec_rects:
+			if int(o["rango"]) == 3:
+				zona = o["rect"] if not zona.has_area() else zona.merge(o["rect"])
+		if zona.has_area():
+			Guida.disegna(self, font, vp, zona, tr("Tocca uno dei due rami per sceglierlo"), t)
+	elif guida_passo == 3 and spec_kind != "":
+		Guida.disegna(self, font, vp, spec_close, tr("Fatto! Tocca CHIUDI"), t)
 
 
 ## Stella sulla carta: grigia (rango basso), lampeggiante (da scegliere), colorata (scelta fatta).
@@ -737,7 +795,19 @@ func _apri_rami(k: String) -> void:
 	Suoni.play("click")
 	spec_kind = k
 	message_t = 0.0
+	if guida_passo == 1 and k == guida_kind:
+		guida_passo = 2
 	Dialoghi.avvia(self, dialogo_specializzazioni)
+
+
+## Ultimo passo della guida: la scelta è fatta e il pannello si chiude.
+func _fine_guida() -> void:
+	if guida_passo != 3:
+		return
+	guida_passo = 0
+	Guida.completa()
+	_say(tr("Fatto! Puoi cambiare il ramo quando vuoi, toccando la stella."))
+	message_t = 4.0
 
 
 func _spec_click(event: InputEventMouseButton) -> void:
@@ -746,6 +816,8 @@ func _spec_click(event: InputEventMouseButton) -> void:
 		return
 	var p := event.position
 	for o in spec_rects:
+		if guida_passo == 2 and int(o["rango"]) != 3:
+			continue  # guida: solo i rami del rango 3
 		if (o["rect"] as Rect2).has_point(p):
 			var rank: int = st["owned"].get(spec_kind, 1)
 			if rank < int(o["rango"]):
@@ -754,10 +826,16 @@ func _spec_click(event: InputEventMouseButton) -> void:
 				return
 			Suoni.play("conferma")
 			Spec.scegli(spec_kind, o["rango"], o["idx"])
+			ReportDev.evento("RAMO", "%s rango %d: %s" % [spec_kind, int(o["rango"]), Spec.opzioni(spec_kind, int(o["rango"]))[int(o["idx"])].nome])
+			if guida_passo == 2:
+				guida_passo = 3
 			return
+	if guida_passo == 2 or (guida_passo == 3 and not spec_close.has_point(p)):
+		return  # guida: prima il ramo, poi CHIUDI
 	if spec_close.has_point(p) or not Rect2(140, 70, 1000, 580).has_point(p):
 		Suoni.play("click", 0.9)
 		spec_kind = ""
+		_fine_guida()
 
 
 ## Icona dell'unità con il colore del ramo (stesso cambio colore della partita).

@@ -29,6 +29,7 @@ const FinePartitaScript := preload("res://scripts/fine_partita.gd")
 const Pietra := preload("res://scripts/ui_pietra.gd")
 const Collezione := preload("res://scripts/collezione.gd")
 const Specializzazioni := preload("res://scripts/specializzazioni.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Portafoglio := preload("res://scripts/portafoglio.gd")
 const Suoni := preload("res://scripts/suoni.gd")
 const Livelli := preload("res://scripts/livelli.gd")
@@ -37,6 +38,8 @@ const PannelloImpostazioni := preload("res://scripts/impostazioni.gd")
 const NECRO_ATLAS := preload("res://assets/necromanti/necromanti.png")
 ## Eroi volanti del cimitero (gli altri biomi hanno i loro, vedi Bioma > sprite_volante).
 const TEX_VOLANTE := preload("res://assets/nemici/volanti/cimitero.png")
+## Eroi guaritori del cimitero (gli altri biomi hanno i loro, vedi Bioma > sprite_guaritore).
+const TEX_GUARITORE := preload("res://assets/nemici/guaritori/cimitero.png")
 const AURA_RADIUS := 40.0  # raggio dell'aura del totem
 const RAISE_RADIUS := 60.0  # il negromante minore rianima i nemici morti entro questa distanza
 const RAISE_MAX := 3
@@ -149,6 +152,23 @@ enum State { DEPLOY, PLAYING, LEVEL_UP, PLACING, GAME_OVER, VICTORY }
 @export_range(0, 20) var volanti_infinita_ogni := 5
 ## Dialogo della prima ondata con i volanti (una volta sola; la partita si ferma).
 @export var volanti_dialogo: Dialogo = preload("res://dialoghi/volanti.tres")
+@export_group("Eroi guaritori", "guaritori_")
+## Restano dietro agli altri eroi e curano il più ferito: conviene abbatterli per primi.
+@export var guaritori_attivi := true
+## Prima ondata in cui compaiono.
+@export_range(1, 200) var guaritori_prima_ondata := 12
+## Un guaritore ogni tanti eroi dell'ondata (almeno uno, dalla prima ondata in poi).
+@export_range(3, 60) var guaritori_uno_ogni_eroi := 14
+## Guaritori al massimo in un'ondata.
+@export_range(1, 20) var guaritori_massimi := 6
+## Dialogo della prima ondata con i guaritori (una volta sola; la partita si ferma).
+@export var guaritori_dialogo: Dialogo = preload("res://dialoghi/guaritori.tres")
+@export_group("Ondate su misura")
+## Decidi tu quali e quanti eroi arrivano in certe ondate: Aggiungi elemento >
+## Nuovo OndataNemici. Ogni riga vale per un'ondata (o un intervallo, anche "ogni N"),
+## e può SOSTITUIRE gli eroi normali o AGGIUNGERSI a loro. Vuoto = ondate automatiche.
+## Vedi scripts/ondata_nemici.gd.
+@export var ondate_su_misura: Array[OndataNemici] = []
 @export_group("Musica")
 ## Musica dello schieramento: suona finché non suoni il corno, poi parte quella del
 ## livello (lo stream del nodo AudioStreamPlayer2D della scena). Vuoto = sempre quella del livello.
@@ -316,6 +336,7 @@ var avviso_dato := false  # già avvisato: il prossimo tocco sul corno fa partir
 var tut_potenzia := false  # tutorial del potenziamento: le squadre schierate lampeggiano
 var dialogo_pausa := false  # un dialogo a metà partita ferma il gioco
 var tex_volante: Texture2D = TEX_VOLANTE
+var tex_guaritore: Texture2D = TEX_GUARITORE
 var musica: AudioStreamPlayer2D  # il nodo AudioStreamPlayer2D della scena
 var musica_livello: AudioStream
 
@@ -361,6 +382,8 @@ var tower_max_hp := Data.TOWER_HP
 var tower_hp := Data.TOWER_HP
 
 var necro_level := 1
+var rep_ondata := {}  # report dev: cosa è successo nell'ondata in corso
+var rep_inizio_ms := 0  # report dev: inizio della partita
 var necro_xp := 0.0
 var necro_xp_next := Data.xp_to_next(1)
 var necro_dmg := Data.NECRO_DMG
@@ -380,6 +403,9 @@ var rallenta_durata := 2.0
 var congela_prob := 0.0
 var congela_durata := 1.0
 var rialza_prob := 0.0
+## true mentre i danni arrivano dal necromante (colpi della torre, magie): così si sa chi ha
+## ucciso un eroe. Il Signore delle Ossa rialza solo gli eroi uccisi da lui.
+var colpo_necro := false
 var rialza_durata := 20.0
 var ally_veleno := 0.0
 var ally_gelo := 0.0
@@ -468,6 +494,12 @@ var spell_row: Control  # fila degli incantesimi in basso
 var spell_slots := {}
 var levelup: Control  # scelta del level-up: tre lapidi
 var levelup_opts: Array = []
+var levelup_scelta := -1  # lapide selezionata (-1 = nessuna): il dono si prende solo con CONFERMA
+var levelup_conferma: Button  # pulsantino sotto la lapide selezionata
+var levelup_aperto_ms := 0  # quando sono comparse le lapidi
+var levelup_scelta_ms := 0  # quando è stata selezionata l'ultima lapide
+const LEVELUP_PAUSA_MS := 350  # tocchi ignorati appena compaiono le lapidi (stavi lanciando magie)
+const LEVELUP_CONFERMA_MS := 250  # CONFERMA ignorato subito dopo aver selezionato
 var next_queue: Array = []  # composizione della prossima ondata (per lo stendardo)
 var next_queue_wave := 0
 var smoke: Array = []  # fumo della torre danneggiata
@@ -553,9 +585,38 @@ func _ready() -> void:
 		tut_attesa = tut_cella >= 0
 	_show_deploy_hint()
 	_prepara_musica()
+	_report_inizio()
 	if "--autotest" in OS.get_cmdline_user_args():
 		_start_autotest()
 
+
+## Report dev: tutto quello che serve per capire come è partita la partita.
+func _report_inizio() -> void:
+	if not ReportDev.attivo():
+		return
+	rep_inizio_ms = Time.get_ticks_msec()
+	var col := Collezione.load_state()
+	var squadra := []
+	for k in unlocked_units:
+		var rk := int(col["owned"].get(k, 1))
+		var rami := Specializzazioni.nomi_attivi(k, rk)
+		squadra.append("%s r%d%s" % [k, rk, (" (" + rami + ")") if rami != "" else ""])
+	var ric: Dictionary = Research.load_state()
+	var livelli_ric := 0
+	for id in ric["levels"]:
+		livelli_ric += int(ric["levels"][id])
+	ReportDev.sezione("PARTITA · " + String(id_livello).to_upper())
+	ReportDev.evento("PARTITA", "Nuova partita su %s%s" % [id_livello, " (infinita)" if infinita else ""], {
+		"necromante": necromante.id if necromante != null else "?", "squadra": squadra,
+		"squadre_schierabili": max_deploy, "torre": int(tower_max_hp), "attacco_necromante": snappedf(necro_dmg, 0.1),
+		"livelli_ricerca": livelli_ric, "punti_ricerca": int(ric["points"]), "ondate": ondate_totali})
+
+
+func _report_squadra(azione: String, idx: int) -> void:
+	if ReportDev.attivo():
+		var c: Vector2i = slots[idx]["cell"]
+		ReportDev.evento("SCHIERA", "%s %s nella casella %d,%d" % [azione, slots[idx]["kind"], c.x, c.y],
+			{"livello": int(slots[idx]["lv"]), "fase": State.keys()[state], "evocazioni": "%d/%d" % [deployed_count(), max_deploy]})
 
 ## Durante lo schieramento suona la musica dello schieramento; al corno quella del livello.
 func _prepara_musica() -> void:
@@ -868,6 +929,7 @@ func _apply_bioma() -> void:
 	tex_nemici = b.sprite_nemici
 	colori_nemici = b.colori_nemici
 	tex_volante = b.sprite_volante if b.sprite_volante else TEX_VOLANTE
+	tex_guaritore = b.sprite_guaritore if b.sprite_guaritore else TEX_GUARITORE
 
 
 ## Corsie = gruppi di file vicine non bloccate.
@@ -1021,6 +1083,8 @@ func _process(delta: float) -> void:
 			_autotest_cast()
 	_update_hud()
 	_update_ambient(delta)
+	if levelup != null and levelup.visible and levelup_conferma != null and levelup_conferma.visible:
+		levelup_conferma.queue_redraw()  # l'alone del pulsante pulsa
 	queue_redraw()
 	tower_node.queue_redraw()
 	ambient_node.queue_redraw()
@@ -1036,6 +1100,7 @@ func _process_waves(delta: float) -> void:
 				spawn_timer = maxf(0.25, 0.8 - wave * 0.006)
 		elif _alive_count(enemies_root) == 0:
 			wave_running = false
+			_report_fine_ondata()
 			if wave >= ondate_totali and not infinita:
 				_end_run(true)
 				return
@@ -1058,6 +1123,22 @@ func _process_waves(delta: float) -> void:
 			_start_wave(wave + 1)
 
 
+## Report dev: riepilogo dell'ondata appena superata.
+func _report_fine_ondata() -> void:
+	if not ReportDev.attivo():
+		return
+	var vive := 0
+	for u in allies_root.get_children():
+		if not u.dead:
+			vive += 1
+	ReportDev.evento("ONDATA", "Ondata %d superata" % wave, {
+		"secondi": snappedf((Time.get_ticks_msec() - int(rep_ondata.get("inizio", 0))) / 1000.0, 0.1),
+		"torre": "%d/%d" % [int(tower_hp), int(tower_max_hp)], "danni_torre": int(rep_ondata.get("danni_torre", 0.0)),
+		"uccisi": int(rep_ondata.get("uccisi", 0)), "scheletri_morti": rep_ondata.get("scheletri_morti", {}),
+		"scheletri_vivi": vive, "magie": int(rep_ondata.get("magie", 0)), "livello_necromante": necro_level,
+		"velocita": Engine.time_scale})
+
+
 func _start_wave(n: int) -> void:
 	wave = n
 	spawn_queue = next_queue.duplicate() if next_queue_wave == n else _coda_ondata(n)
@@ -1065,6 +1146,17 @@ func _start_wave(n: int) -> void:
 	next_queue_wave = n + 1
 	spawn_timer = 0.0
 	wave_running = true
+	rep_ondata = {"inizio": Time.get_ticks_msec()}
+	if ReportDev.attivo():
+		var conta := {}
+		for e: Dictionary in spawn_queue:
+			var k: String = String(e["kind"]) + (" (campione)" if e["boss"] else "")
+			if e.get("campione") is Campione:
+				k = "campione " + String((e["campione"] as Campione).id)
+			conta[k] = int(conta.get(k, 0)) + 1
+		ReportDev.evento("ONDATA", "Inizia l'ondata %d%s" % [n, (" · " + tema_ondata(n)) if tema_ondata(n) != "" else ""],
+			{"nemici": conta, "totale": spawn_queue.size(), "torre": "%d/%d" % [int(tower_hp), int(tower_max_hp)],
+			"vita_eroi": snappedf(vita_eroi(n), 0.01), "danno_eroi": snappedf(danno_eroi(n), 0.01)})
 	Suoni.play("ondata", 0.85 if n % Data.BOSS_EVERY == 0 else 1.0)
 	var volanti := spawn_queue.any(func(e) -> bool: return e["kind"] == "volante")
 	if volanti and volanti_dialogo != null:
@@ -1072,12 +1164,20 @@ func _start_wave(n: int) -> void:
 		if w != null:  # prima ondata con i volanti: il necromante avvisa, la partita aspetta
 			dialogo_pausa = true
 			w.finito.connect(func() -> void: dialogo_pausa = false)
+	var guaritori := spawn_queue.any(func(e) -> bool: return e["kind"] == "guaritore")
+	if guaritori and guaritori_dialogo != null and not dialogo_pausa:
+		var wg := Dialoghi.avvia(self, guaritori_dialogo)
+		if wg != null:  # prima ondata con i guaritori
+			dialogo_pausa = true
+			wg.finito.connect(func() -> void: dialogo_pausa = false)
 	if n % Data.BOSS_EVERY == 0 and not _campione_in_coda(spawn_queue):
 		set_hint(tr("Ondata %d: arriva un campione degli eroi!") % n, 3.0)
 	elif n % Data.BOSS_EVERY == 0:
 		set_hint(tr("Ondata %d · arriva un campione: %s") % [n, tr(_campione_in_coda(spawn_queue).nome)], 3.0)
 	elif volanti:
 		set_hint(tr("Ondata %d: arrivano eroi volanti! Li colpiscono solo le unità a distanza, la torre e le magie.") % n, 4.0)
+	elif guaritori and n == guaritori_prima_ondata:
+		set_hint(tr("Ondata %d: arrivano i guaritori! Curano gli altri eroi: abbattili per primi.") % n, 4.0)
 	elif tema_ondata(n) != "":
 		set_hint(tr("Ondata %d · %s") % [n, nome_tema(tema_ondata(n))], 3.0)
 		Suoni.play("ondata", 0.92)
@@ -1248,6 +1348,7 @@ func damage_tower(amount: float) -> void:
 	if state != State.PLAYING or dev_invincibile:
 		return
 	tower_hp -= amount
+	rep_ondata["danni_torre"] = float(rep_ondata.get("danni_torre", 0.0)) + amount
 	tower_flash = 0.15
 	Suoni.play("torre_colpita")
 	shake(0.12, 1.0)
@@ -1258,6 +1359,7 @@ func damage_tower(amount: float) -> void:
 
 func on_enemy_killed(u) -> void:
 	kills += 1
+	rep_ondata["uccisi"] = int(rep_ondata.get("uccisi", 0)) + 1
 	if not u.is_boss and u.visible:  # per la RESURREZIONE dei campioni
 		eroi_caduti.append({"kind": u.kind, "g": u.ground})
 		if eroi_caduti.size() > 30:
@@ -1311,6 +1413,10 @@ func _absorb_remains() -> void:
 ## La casella resta occupata anche se la squadra muore tutta:
 ## a fine ondata viene rianimata (vedi _revive_squads).
 func on_ally_died(u) -> void:
+	if not u.entering:
+		var morti: Dictionary = rep_ondata.get("scheletri_morti", {})
+		morti[u.kind] = int(morti.get(u.kind, 0)) + 1
+		rep_ondata["scheletri_morti"] = morti
 	for s in slots:
 		if u in s["units"]:
 			s["units"].erase(u)
@@ -1472,10 +1578,11 @@ func nearest_taunter(from: Vector2, dist: float):
 
 
 ## Nube di peste: avvelena (danno nel tempo) e rallenta i nemici dentro.
+## `necro` = nube di una magia del necromante (chi ci muore conta come ucciso da lui).
 func add_plague_cloud(g: Vector2, dps: float, _rank: int = 1, raggio: float = 16.0, lento: float = 0.3, maledizione: float = 0.0,
-		durata: float = 3.0, colore: Color = Color(0, 0, 0, 0), neve: bool = false) -> void:
+		durata: float = 3.0, colore: Color = Color(0, 0, 0, 0), neve: bool = false, necro: bool = false) -> void:
 	clouds.append({"p": g, "t": durata, "dps": dps, "r": raggio, "slow": lento, "curse": maledizione,
-		"col": colore if colore.a > 0.0 else colore_nube_peste, "neve": neve})
+		"col": colore if colore.a > 0.0 else colore_nube_peste, "neve": neve, "necro": necro})
 
 
 func _update_clouds(delta: float) -> void:
@@ -1483,6 +1590,7 @@ func _update_clouds(delta: float) -> void:
 		cl["t"] -= delta
 		for c in enemies_root.get_children():
 			if not c.dead and c.ground.distance_to(cl["p"]) <= float(cl.get("r", 16.0)) + c.radius:
+				c.ultimo_necro = bool(cl.get("necro", false))
 				c.poison(cl["dps"] * delta)
 				c.slow_k = maxf(c.slow_k if c.slow_t > 0.0 else 0.0, float(cl.get("slow", 0.3)))
 				c.slow_t = maxf(c.slow_t, 0.4)
@@ -1500,7 +1608,7 @@ func on_necro_hit(bersaglio, dmg: float) -> void:
 	if bersaglio == null or not is_instance_valid(bersaglio) or bersaglio.dead:
 		return
 	if veleno_k > 0.0:
-		avvelena(bersaglio, dmg * veleno_k, veleno_durata, colore_necromante)
+		avvelena(bersaglio, dmg * veleno_k, veleno_durata, colore_necromante, true)
 	if maled_durata > 0.0:
 		maledici(bersaglio, maled_durata, maled_forza)
 	if rallenta_k > 0.0:
@@ -1519,10 +1627,12 @@ func on_ally_hit(bersaglio, amount: float) -> void:
 		rallenta(bersaglio, ally_gelo, 1.5, Color("78e2ea"))
 
 
-func avvelena(u, dps: float, secs: float, col: Color) -> void:
+## `necro` = veleno del necromante (chi ne muore conta come ucciso da lui).
+func avvelena(u, dps: float, secs: float, col: Color, necro: bool = false) -> void:
 	u.dot_dps = maxf(u.dot_dps if u.dot_t > 0.0 else 0.0, dps)
 	u.dot_t = maxf(u.dot_t, secs)
 	u.dot_col = col
+	u.dot_necro = necro
 
 
 ## Maledetto: subisce `forza` danni in più (0.3 = +30%) per `secs` secondi.
@@ -1547,7 +1657,11 @@ func congela(u, secs: float) -> void:
 
 ## Signore delle Ossa: a volte il nemico ucciso si rialza come scheletro.
 func _rialza_ossa(dead_enemy) -> void:
-	if rialza_prob <= 0.0 or dead_enemy.is_boss or not dead_enemy.visible or randf() >= rialza_prob:
+	if rialza_prob <= 0.0 or dead_enemy.is_boss or not dead_enemy.visible:
+		return
+	if not dead_enemy.ultimo_necro:
+		return  # ucciso dagli scheletri: si rialza solo chi muore per mano del necromante
+	if randf() >= rialza_prob:
 		return
 	var vivi := 0
 	for m in allies_root.get_children():
@@ -1573,7 +1687,7 @@ func _contagia(dead_enemy) -> void:
 		return
 	for c in enemies_root.get_children():
 		if c != dead_enemy and not c.dead and c.ground.distance_to(dead_enemy.ground) <= 24.0:
-			avvelena(c, dead_enemy.dot_dps, 3.0, dead_enemy.dot_col)
+			avvelena(c, dead_enemy.dot_dps, 3.0, dead_enemy.dot_col, dead_enemy.dot_necro)
 	spawn_ground_fx(dead_enemy.ground, 24.0, Color("8ccc3c"), 0.4)
 
 
@@ -1749,7 +1863,9 @@ func _draw_picker_tip() -> void:
 	if picker_hover in unlocked_units:
 		var st := ally_stats(picker_hover)
 		var l2 := tr("Vita %d") % int(st["hp"])
-		if st["dmg"] > 0.0:
+		if d.has("cura"):  # guaritori: vita ridata a ogni colpo (al posto dell'attacco)
+			l2 += tr(" · Cura %d") % int(float(d["cura"]) * float(st["hp"]) / float(d["hp"]))
+		elif st["dmg"] > 0.0:
 			l2 += tr(" · Attacco %d") % int(st["dmg"])
 		if st["rank"] > 1:
 			l2 += tr(" · rango %d") % st["rank"]
@@ -1797,8 +1913,10 @@ func _pick_unit(idx: int, kind: String) -> void:
 	if slots[idx]["kind"] == kind:
 		Suoni.play("conferma")
 		_potenzia_squadra(idx)
+		_report_squadra("Potenzia", idx)
 	else:
 		_spawn_squad(idx, kind)
+		_report_squadra("Schiera", idx)
 	_show_deploy_hint()
 
 
@@ -1850,6 +1968,7 @@ func _on_start_pressed() -> void:
 	start_button.hide()
 	next_wave_timer = 1.0
 	set_hint(tr("Arrivano gli eroi!"), 2.0)
+	ReportDev.evento("PARTITA", "Suona il corno", {"squadre": squad_count(), "evocazioni": "%d/%d" % [deployed_count(), max_deploy]})
 
 
 # --- Level-up ----------------------------------------------------------------
@@ -1899,6 +2018,8 @@ func _open_level_up() -> void:
 ## Tre lapidi che emergono dal terreno, sopra il campo oscurato.
 func _show_level_up(opts: Array) -> void:
 	levelup_opts = opts
+	levelup_scelta = -1
+	levelup_aperto_ms = Time.get_ticks_msec()
 	for c in levelup.get_children():
 		levelup.remove_child(c)
 		c.queue_free()
@@ -1910,13 +2031,72 @@ func _show_level_up(opts: Array) -> void:
 		var b := _flat_button()
 		b.position = Vector2(x0 + i * (size.x + gap), 214)
 		b.size = size
-		b.pressed.connect(_choose_level_up.bind(opts[i]))
+		b.pressed.connect(_seleziona_levelup.bind(i))
 		b.mouse_entered.connect(b.queue_redraw)
 		b.mouse_exited.connect(b.queue_redraw)
 		b.draw.connect(_draw_levelup_card.bind(b, i))
 		levelup.add_child(b)
+	levelup_conferma = _flat_button()
+	levelup_conferma.size = Vector2(200, 46)
+	levelup_conferma.pressed.connect(_conferma_levelup)
+	levelup_conferma.mouse_entered.connect(levelup_conferma.queue_redraw)
+	levelup_conferma.mouse_exited.connect(levelup_conferma.queue_redraw)
+	levelup_conferma.draw.connect(_draw_levelup_conferma)
+	levelup_conferma.hide()
+	levelup.add_child(levelup_conferma)
 	levelup.show()
 	levelup.queue_redraw()
+
+
+## Primo passo: la lapide toccata si alza e sotto compare CONFERMA. Un tocco arrivato
+## appena dopo l'apertura (stavi lanciando una magia) non seleziona niente.
+func _seleziona_levelup(i: int) -> void:
+	if i < 0 or i >= levelup_opts.size() or not levelup.visible:
+		return
+	if Time.get_ticks_msec() - levelup_aperto_ms < LEVELUP_PAUSA_MS:
+		return
+	if i != levelup_scelta:
+		levelup_scelta = i
+		levelup_scelta_ms = Time.get_ticks_msec()
+	var tomba: Control = levelup.get_child(i)
+	levelup_conferma.position = Vector2(roundf(tomba.position.x + (tomba.size.x - levelup_conferma.size.x) / 2.0),
+		tomba.position.y + tomba.size.y + 22.0)
+	levelup_conferma.show()
+	for c in levelup.get_children():
+		c.queue_redraw()
+	levelup.queue_redraw()
+
+
+## Secondo passo: CONFERMA prende il dono della lapide selezionata.
+func _conferma_levelup() -> void:
+	if levelup_scelta < 0 or levelup_scelta >= levelup_opts.size() or not levelup.visible:
+		return
+	if Time.get_ticks_msec() - levelup_scelta_ms < LEVELUP_CONFERMA_MS:
+		return
+	var o: Dictionary = levelup_opts[levelup_scelta]
+	levelup_scelta = -1
+	_choose_level_up(o)
+
+
+## CONFERMA: pietra chiara con alone che pulsa e una freccia che punta alla lapide.
+func _draw_levelup_conferma() -> void:
+	var b := levelup_conferma
+	var r := Rect2(Vector2.ZERO, b.size)
+	var p := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 5.0)
+	b.draw_rect(r.grow(8.0 + p * 3.0), Color(1, 1, 1, 0.06 + 0.05 * p))
+	b.draw_rect(r.grow(4.0 + p * 2.0), Color(1, 1, 1, 0.1 + 0.08 * p))
+	var premuto := b.button_pressed
+	var cx := r.size.x / 2.0
+	# freccia a gradini verso la lapide
+	for k in 3:
+		var w := 6.0 + k * 6.0
+		b.draw_rect(Rect2(cx - w / 2.0, -16.0 + k * 4.0, w, 4.0), C6)
+	Pietra.stone(b, Rect2(Vector2(0, 2 if premuto else 0), r.size), C6 if b.is_hovered() else C5, true)
+	var testo := tr("CONFERMA")
+	var fs := 24
+	while fs > 14 and ui_font.get_string_size(testo, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > r.size.x - 24.0:
+		fs -= 2
+	Pietra.text_c(b, ui_font, cx, (r.size.y - fs) / 2.0 - 2.0 + (2.0 if premuto else 0.0), testo, fs, C0, false)
 
 
 func _draw_levelup_bg() -> void:
@@ -1932,16 +2112,24 @@ func _draw_levelup_bg() -> void:
 	for i in 9:
 		var x := 176.0 + i * 112.0 + (i % 3) * 17.0
 		levelup.draw_rect(Rect2(x, 527 + (i % 2) * 2, 12 + (i % 3) * 3, 9), C3 if i % 2 else C4)
-	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 590, tr("Scegli un dono · tasti 1 2 3"), 16, C5)
+	var aiuto := tr("Tocca una lapide, poi premi CONFERMA · tasti 1 2 3") if levelup_scelta < 0 \
+		else tr("Premi CONFERMA per prendere il dono · Invio")
+	Pietra.text_c(levelup, ui_font, vp.x / 2.0, 620, aiuto, 16, C5)
 
 
 func _draw_levelup_card(b: Button, i: int) -> void:
 	if i >= levelup_opts.size():
 		return
 	var o: Dictionary = levelup_opts[i]
-	var hot := b.is_hovered()
-	var r := Rect2(Vector2(0, -12 if hot else 0), b.size + Vector2(0, 12 if hot else 0))
-	Pietra.tomb(b, r, C4 if hot else Color("5a5a5a"), hot, 6.0)
+	var scelta := levelup_scelta == i
+	var spenta := levelup_scelta >= 0 and not scelta  # le altre si scuriscono
+	var sopra := b.is_hovered() and not scelta  # col mouse si alza appena, senza cornice
+	var alza := 18.0 if scelta else (6.0 if sopra else 0.0)
+	var r := Rect2(Vector2(0, -alza), b.size + Vector2(0, alza))
+	if scelta:  # cornice chiara a gradini attorno alla lapide scelta
+		Pietra.tomb(b, r.grow(6.0), C6, false, 6.0)
+	var base := C4 if scelta else (Color("646464") if sopra else (C2 if spenta else Color("5a5a5a")))
+	Pietra.tomb(b, r, base, scelta, 6.0)
 	var icon_rect := Rect2(Vector2(r.get_center().x - 48, r.position.y + 34), Vector2(96, 96))
 	if o.has("summon"):
 		b.draw_texture_rect_region(Data.ally_texture(o["summon"]), icon_rect, Data.ally_region(o["summon"]))
@@ -1954,9 +2142,14 @@ func _draw_levelup_card(b: Button, i: int) -> void:
 	Pietra.text_c(b, ui_font, r.get_center().x, r.position.y + 150 + (24 - ts) / 2.0, title, ts, C6)
 	Pietra.text_block(b, ui_font, Vector2(22, r.position.y + 192), r.size.x - 44, o["text"], 16, C6)
 	Pietra.text_c(b, ui_font, r.get_center().x, r.end.y - 40, "[%d]" % (i + 1), 16, C1, false)
+	if spenta:  # velo scuro sulle lapidi non scelte
+		Pietra.stepped(b, r, Color(0.05, 0.05, 0.05, 0.5), 6.0)
 
 
 func _choose_level_up(o: Dictionary) -> void:
+	if ReportDev.attivo():
+		ReportDev.evento("LEVELUP", "Livello %d del necromante: sceglie %s" % [necro_level, String(o.get("title", "?"))],
+			{"opzioni": levelup_opts.map(func(x: Dictionary) -> String: return String(x.get("title", "?")) + (" " + String(x["summon"]) if x.has("summon") else ""))})
 	if levelup:
 		levelup.hide()
 	pending_levelups -= 1
@@ -2004,8 +2197,21 @@ func _cast(key: String, g: Vector2) -> void:
 	var a: Dictionary = Data.ABILITIES[key]
 	var power: float = a["power"] * necro_dmg / Data.NECRO_DMG * ability_power_mult
 	ability_cd[key] = 0.0 if dev_senza_ricarica else a["cooldown"] * ability_cd_mult
+	if ReportDev.attivo():
+		var vicini := 0
+		for e in enemies_root.get_children():
+			if not e.dead and e.ground.distance_to(g) <= float(a["radius"]) + e.radius:
+				vicini += 1
+		rep_ondata["magie"] = int(rep_ondata.get("magie", 0)) + 1
+		ReportDev.evento("MAGIA", "%s (ondata %d)" % [key, wave], {"nemici_nell_area": vicini, "punto": g.round()})
 	selected_ability = ""
 	set_hint("", 0.0)
+	colpo_necro = true  # i danni delle magie sono del necromante
+	_cast_effetto(key, g, a, power)
+	colpo_necro = false
+
+
+func _cast_effetto(key: String, g: Vector2, a: Dictionary, power: float) -> void:
 	match key:
 		"palla_di_fuoco":
 			damage_area(g, a["radius"], power, 1)
@@ -2025,7 +2231,7 @@ func _cast(key: String, g: Vector2) -> void:
 			Suoni.play("area_curativa")
 		# --- Strega Pestilenziale ---
 		"nube_di_peste":
-			add_plague_cloud(g, power * 0.25, 1, a["radius"], 0.3, 2.0, 5.0 * durata_magie, a["color"])
+			add_plague_cloud(g, power * 0.25, 1, a["radius"], 0.3, 2.0, 5.0 * durata_magie, a["color"], false, true)
 			spawn_ground_fx(g, a["radius"], a["color"], 1.0, "nube")
 			Suoni.play("nube_di_peste")
 		"maledizione":
@@ -2045,13 +2251,13 @@ func _cast(key: String, g: Vector2) -> void:
 					vicini.append(e)
 			vicini.sort_custom(func(x, y): return g.distance_to(x.ground) < g.distance_to(y.ground))
 			for e in vicini.slice(0, 10):
-				avvelena(e, power * 0.25, 4.0 * durata_magie, a["color"])
+				avvelena(e, power * 0.25, 4.0 * durata_magie, a["color"], true)
 				spawn_ground_fx(e.ground, 7.0, a["color"], 0.9, "sciame")  # mosche su ogni nemico
 			spawn_ground_fx(g, 22.0, a["color"], 1.0, "sciame")
 			Suoni.play("sciame")
 		# --- Lich del Ghiaccio ---
 		"bufera":
-			add_plague_cloud(g, power * 0.2, 1, a["radius"], 0.5, 0.0, 5.0 * durata_magie, a["color"], true)
+			add_plague_cloud(g, power * 0.2, 1, a["radius"], 0.5, 0.0, 5.0 * durata_magie, a["color"], true, true)
 			spawn_ground_fx(g, a["radius"], a["color"], 1.0, "bufera")
 			Suoni.play("bufera")
 		"prigione_di_ghiaccio":
@@ -2071,7 +2277,9 @@ func _cast(key: String, g: Vector2) -> void:
 			get_tree().create_timer(FxScript.COMETA_CADUTA, false).timeout.connect(func() -> void:
 				if state != State.PLAYING:
 					return
+				colpo_necro = true
 				damage_area(g, raggio, power, 1)
+				colpo_necro = false
 				for e in enemies_root.get_children():
 					if not e.dead and g.distance_to(e.ground) <= raggio * 2.0 + e.radius:
 						rallenta(e, 0.5, 3.0 * durata_magie, col_c)
@@ -2088,8 +2296,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var num: int = [KEY_1, KEY_2, KEY_3, KEY_4].find(event.keycode)
-		if levelup.visible and num >= 0 and num < levelup_opts.size():
-			_choose_level_up(levelup_opts[num])
+		if levelup.visible:  # 1 2 3 selezionano, lo stesso tasto di nuovo o Invio confermano
+			if num >= 0 and num < levelup_opts.size():
+				if num == levelup_scelta:
+					_conferma_levelup()
+				else:
+					_seleziona_levelup(num)
+			elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE] and levelup_scelta >= 0:
+				_conferma_levelup()
 			return
 		if picker.visible and num >= 0 and num < picker_kinds.size():
 			_pick_unit(picker_slot, picker_kinds[num])
@@ -2115,6 +2329,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			selected_ability = ""
 			set_hint("", 0.0)
 		elif state == State.DEPLOY and idx >= 0 and slots[idx]["kind"] != "":
+			_report_squadra("Toglie", idx)
 			_remove_squad(idx)
 			_show_deploy_hint()
 		return
@@ -2156,11 +2371,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			if potenziabile(idx, pending_summon):
 				Suoni.play("conferma")
 				_potenzia_squadra(idx)
+				_report_squadra("Potenzia (level-up)", idx)
 				pending_summon = ""
 				_resume_after_choice()
 			elif slots[idx]["kind"] == "" and slot_in_portata(idx):
 				Suoni.play("conferma")
 				_spawn_squad(idx, pending_summon)
+				_report_squadra("Evoca (level-up)", idx)
 				pending_summon = ""
 				_resume_after_choice()
 			else:
@@ -2187,6 +2404,7 @@ func _cycle_speed() -> void:
 		next = 1.0
 		set_hint(tr("La velocità x3 si sblocca con il PACCHETTO VIP del negozio."), 3.0)
 	Engine.time_scale = next
+	ReportDev.evento("VELOCITA", "x%d" % int(next))
 
 
 # --- Fine partita e progressi --------------------------------------------------
@@ -2239,6 +2457,10 @@ func _end_run(won: bool) -> void:
 		get_tree().quit()
 		return
 
+	ReportDev.evento("FINE", "%s all'ondata %d" % ["VITTORIA" if won else "SCONFITTA", wave], {
+		"uccisioni": kills, "livello_necromante": necro_level, "punti": earned, "monete": coins,
+		"pergamene": scrolls_earned, "campioni_battuti": campioni_battuti, "record_prima": record_prima,
+		"durata_min": snappedf((Time.get_ticks_msec() - rep_inizio_ms) / 60000.0, 0.1), "squadre": squad_count()})
 	if schermata_finale_cinematica:
 		_mostra_fine(won, earned, total, coins, record_prima, nuovo_livello, posto)
 		return
@@ -2629,6 +2851,7 @@ func toggle_pause() -> void:
 		return
 	paused = not paused
 	pause_overlay.visible = paused
+	ReportDev.evento("PAUSA", "aperta" if paused else "chiusa", {"ondata": wave})
 	if paused:
 		selected_ability = ""
 
@@ -2892,7 +3115,7 @@ func _wave_counts() -> Array:
 					champs[key] = u.dati
 				counts[key] = counts.get(key, 0) + 1
 	var out := []
-	for k in ["soldato", "arciere", "mago", "gigante", "volante", "soldato!", "arciere!", "mago!", "gigante!"]:
+	for k in ["soldato", "arciere", "mago", "gigante", "guaritore", "volante", "soldato!", "arciere!", "mago!", "gigante!"]:
 		if counts.has(k):
 			out.append([k.trim_suffix("!"), counts[k], k.ends_with("!"), null])
 	for k in champs:
@@ -2923,6 +3146,8 @@ func _draw_wave_banner() -> void:
 		var camp: Campione = e[3]
 		if e[0] == "volante":
 			n.draw_texture_rect_region(tex_volante, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(0, 0, 16, 16))
+		elif e[0] == "guaritore":
+			n.draw_texture_rect_region(tex_guaritore, Rect2(Vector2(6, y), Vector2(32, 32)), Rect2(0, 0, 16, 16))
 		elif camp != null and camp.sprite != null:  # il campione con la sua sprite (girata verso sinistra)
 			var fs := camp.sprite.get_height()
 			n.draw_set_transform(Vector2(40, y - 4), 0.0, Vector2(-1, 1))  # girato verso sinistra
@@ -3751,9 +3976,31 @@ func _eroi_ondata(n: int) -> Array:
 
 ## Ondata con il campione dell'ondata al posto del primo boss e i volanti mescolati.
 func _coda_ondata(n: int) -> Array:
-	var q := _eroi_ondata(n)
-	for _v in volanti_in_ondata(n):  # mescolati agli altri (il campione resta in fondo)
-		q.insert(randi_range(0, maxi(0, q.size() - 1)), {"kind": "volante", "boss": false})
+	var sostituisci: OndataNemici = null
+	var aggiunte: Array[OndataNemici] = []
+	for o in ondate_su_misura:
+		if o == null or not o.comprende(n):
+			continue
+		if o.modo == OndataNemici.Modo.SOSTITUISCI:
+			sostituisci = o
+		else:
+			aggiunte.append(o)
+	var q: Array
+	if sostituisci != null:  # ondata su misura: solo gli eroi scelti nell'Inspector
+		q = sostituisci.coda()
+		if sostituisci.tieni_campione and n % Data.BOSS_EVERY == 0:
+			q.append({"kind": "gigante", "boss": true})
+	else:
+		q = _eroi_ondata(n)
+		for _g in guaritori_in_ondata(n, q.size()):  # nella seconda metà: arrivano dietro agli altri
+			q.insert(randi_range(floori(q.size() * 0.5), q.size()), {"kind": "guaritore", "boss": false})
+		for _v in volanti_in_ondata(n):  # mescolati agli altri (il campione resta in fondo)
+			q.insert(randi_range(0, maxi(0, q.size() - 1)), {"kind": "volante", "boss": false})
+	for o in aggiunte:  # eroi in più, mescolati prima dell'eventuale campione in fondo
+		for e: Dictionary in o.coda():
+			q.insert(randi_range(0, maxi(0, q.size() - 1)), e)
+	if q.is_empty():
+		q.append({"kind": "soldato", "boss": false})  # un'ondata vuota bloccherebbe la partita
 	if not campioni_attivi or campioni == null or n % Data.BOSS_EVERY != 0:
 		return q
 	var c := campioni.per_ondata(n)
@@ -3778,6 +4025,13 @@ func volanti_in_ondata(n: int) -> int:
 	return volanti_numero + volanti_in_piu_ogni_10_ondate * floori(n / 10.0)
 
 
+## Quanti eroi guaritori nell'ondata `n` con `eroi` eroi (vedi "Eroi guaritori" nell'Inspector).
+func guaritori_in_ondata(n: int, eroi: int) -> int:
+	if not guaritori_attivi or n < guaritori_prima_ondata:
+		return 0
+	return clampi(floori(float(eroi) / float(guaritori_uno_ogni_eroi)), 1, guaritori_massimi)
+
+
 func _campione_in_coda(q: Array) -> Campione:
 	for e in q:
 		if e.get("campione") is Campione:
@@ -3791,6 +4045,7 @@ func evoca_campione(c: Campione) -> void:
 
 
 func _annuncia_campione(u) -> void:
+	ReportDev.evento("CAMPIONE", "Arriva %s (ondata %d)" % [u.dati.id, wave], {"vita": int(u.max_hp)})
 	campione_attivo = u
 	intro_campione = u.dati
 	intro_t = 3.5
@@ -3822,6 +4077,7 @@ func campione_fase2(u) -> void:
 
 
 func on_campione_sconfitto(u) -> void:
+	ReportDev.evento("CAMPIONE", "Sconfitto %s (ondata %d)" % [u.dati.id, wave], {"torre": int(tower_hp)})
 	var c: Campione = u.dati
 	if not c.id in campioni_battuti:
 		campioni_battuti.append(c.id)

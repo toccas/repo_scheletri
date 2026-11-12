@@ -21,6 +21,7 @@ extends Node2D
 ## Se un nodo manca, quell'elemento torna alla posizione di partenza.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const Suoni := preload("res://scripts/suoni.gd")
@@ -82,6 +83,7 @@ func _ready() -> void:
 	st = Research.load_state()
 	if not Engine.is_editor_hint():
 		albero = Necromanti.attivo_id()
+		ReportDev.evento("SCENA", "Ricerche", {"albero": albero, "punti": int(st["points"])})
 	_scegli_albero(albero)
 	Suoni.install()
 	Lingua.setup()
@@ -257,7 +259,9 @@ func _buy() -> void:
 		message_t = 2.5
 		return
 	var lv_before := Research.level(st, selected)
+	var costo := Research.next_cost(st, selected)
 	if Research.buy(st, selected):
+		ReportDev.evento("RICERCA", "Compra %s (livello %d)" % [selected, Research.level(st, selected)], {"costo": costo, "punti_rimasti": int(st["points"])})
 		Suoni.play("livello", 1.2, -3.0)
 		flash[selected] = 0.6
 		message = "%s %s!" % [tr(Research.NODES[selected]["name"]), tr("SBLOCCATO") if lv_before == 0 else tr("POTENZIATO")]

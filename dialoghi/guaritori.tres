@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Dialogo" format=3 uid="uid://dbkww25ptfrfd"]
+
+[ext_resource type="Script" uid="uid://bu58i2w021ulv" path="res://scripts/battuta_dialogo.gd" id="1_a2oli"]
+[ext_resource type="Script" uid="uid://d0onuc1l7eimi" path="res://scripts/dialogo.gd" id="2_8x4u6"]
+
+[sub_resource type="Resource" id="Resource_gua0"]
+script = ExtResource("1_a2oli")
+testo = "Vedi quelli vestiti di bianco, in fondo alla fila? Sono guaritori: rimettono in piedi gli eroi che abbiamo ferito."
+espressione = 4
+
+[sub_resource type="Resource" id="Resource_gua1"]
+script = ExtResource("1_a2oli")
+testo = "Hanno poca vita e restano dietro: abbattili per primi con le unità a distanza e le magie. Anche noi possiamo curarci: cerca il Guaritore scheletro nelle pergamene."
+
+[resource]
+script = ExtResource("2_8x4u6")
+id = "guaritori"
+battute = Array[ExtResource("1_a2oli")]([SubResource("Resource_gua0"), SubResource("Resource_gua1")])

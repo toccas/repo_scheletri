@@ -14,6 +14,7 @@ extends Node2D
 ## Comandi: mouse/tocco; frecce sinistra/destra + Invio.
 
 const PixelFont := preload("res://scripts/pixel_font.gd")
+const ReportDev := preload("res://scripts/report_dev.gd")
 const Lingua := preload("res://scripts/lingua.gd")
 const Dialoghi := preload("res://scripts/dialoghi.gd")
 const SceltaLingua := preload("res://scripts/scelta_lingua.gd")
@@ -126,6 +127,7 @@ func _ready() -> void:
 		return
 	Engine.time_scale = 1.0
 	rnd.randomize()
+	ReportDev.evento("SCENA", "Menu", {"monete": int(Portafoglio.load_state()["monete"]), "pergamene": int(Collezione.load_state()["scrolls"])})
 	Portafoglio.install_dev_tool(get_tree())
 	Suoni.install()
 	Lingua.setup()
